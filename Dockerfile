@@ -6,15 +6,37 @@ RUN npm ci --only=production
 COPY frontend/ ./
 RUN npm run build
 
-FROM python:3.11-slim AS backend
+# Use Ubuntu base for Ollama support
+FROM ubuntu:22.04
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    curl \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Ollama
+RUN curl -fsSL https://ollama.ai/install.sh | sh
+
+# Set up Python environment
 WORKDIR /app
 COPY requirements-ui.txt ./
-RUN pip install --no-cache-dir -r requirements-ui.txt
+RUN pip3 install --no-cache-dir -r requirements-ui.txt
+
+# Copy application files
 COPY src/ ./src/
 COPY travel_agent.py ./
 COPY api.py ./
+
+# Copy frontend build
 COPY --from=frontend-build /app/frontend/build ./static
 
-EXPOSE 8000
-CMD ["python", "api.py"]
+# Create data directory
+RUN mkdir -p /app/data
 
+EXPOSE 8000
+
+# Simple startup command
+CMD ["bash", "-c", "ollama serve & sleep 15 && ollama pull llama3.1:8b && python3 api.py"]

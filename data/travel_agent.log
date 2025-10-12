@@ -32,3 +32,18 @@
 2025-10-13 01:15:18,601 - INFO - Travel agent initialized successfully
 2025-10-13 01:16:47,507 - INFO - Processing new request: I'm planning a trip to a country in South America that starts with the letter 'P'. I need to know th...
 2025-10-13 01:16:47,624 - INFO - Processing query: I'm planning a trip to a country in South America that starts with the letter 'P'. I need to know th...
+2025-10-12 22:31:41,379 - INFO - Local LLM (llama3.1:8b) initialized
+2025-10-12 22:31:41,380 - INFO - Travel agent initialized successfully
+2025-10-12 22:33:29,016 - INFO - Local LLM (llama3.1:8b) initialized
+2025-10-12 22:33:29,017 - INFO - Travel agent initialized successfully
+2025-10-12 22:36:17,535 - INFO - Local LLM (llama3.1:8b) initialized
+2025-10-12 22:36:17,536 - INFO - Travel agent initialized successfully
+2025-10-12 22:37:49,715 - ERROR - OpenAI LLM initialization failed: No module named 'openai'
+2025-10-12 22:37:51,185 - ERROR - OpenAI LLM initialization failed: No module named 'openai'
+2025-10-12 22:37:52,615 - ERROR - OpenAI LLM initialization failed: No module named 'openai'
+2025-10-12 22:37:53,977 - ERROR - OpenAI LLM initialization failed: No module named 'openai'
+2025-10-12 22:37:56,928 - ERROR - OpenAI LLM initialization failed: No module named 'openai'
+2025-10-12 22:38:00,418 - ERROR - OpenAI LLM initialization failed: No module named 'openai'
+2025-10-12 22:38:04,562 - ERROR - OpenAI LLM initialization failed: No module named 'openai'
+2025-10-12 22:38:12,030 - ERROR - OpenAI LLM initialization failed: No module named 'openai'
+2025-10-12 22:38:26,156 - ERROR - OpenAI LLM initialization failed: No module named 'openai'

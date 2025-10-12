@@ -1,0 +1,87 @@
+# Node modules
+node_modules/
+frontend/node_modules/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+logs/
+
+# Data files (will be mounted as volume)
+data/
+*.db
+
+# Cache
+cache/
+.cache/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Test files
+tests/
+test_*
+*_test.py
+
+# Coverage reports
+.coverage
+htmlcov/
+
+# Jupyter notebooks
+*.ipynb
+.ipynb_checkpoints/
+
+# Large files that shouldn't be in container
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Docker files
+Dockerfile*
+docker-compose*
+.dockerignore

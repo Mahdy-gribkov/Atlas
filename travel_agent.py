@@ -29,6 +29,9 @@ from src.database.secure_database import SecureDatabase
 from src.apis import RestCountriesClient, WikipediaClient, NominatimClient
 
 # Configure logging
+import os
+os.makedirs('data', exist_ok=True)  # Create data directory if it doesn't exist
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -139,6 +142,8 @@ class TravelAgent:
         """Initialize local LLM using Ollama."""
         try:
             import ollama
+            # Test if Ollama is available
+            ollama.list()
             self.llm_type = "local"
             self.model_name = config.OLLAMA_MODEL
             logger.info(f"Local LLM ({self.model_name}) initialized")
@@ -150,6 +155,8 @@ class TravelAgent:
         """Initialize OpenAI LLM (fallback)."""
         try:
             import openai
+            if not config.OPENAI_API_KEY:
+                raise ValueError("OpenAI API key not provided")
             self.llm_type = "openai"
             openai.api_key = config.OPENAI_API_KEY
             logger.info("OpenAI LLM initialized")
