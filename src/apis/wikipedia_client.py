@@ -36,3 +36,7 @@ class WikipediaClient:
     async def search_travel_info(self, query: str) -> Dict[str, Any]:
         """Search for travel-related information."""
         return await self._make_request(f'page/summary/{query}')
+    
+    async def search(self, query: str) -> Dict[str, Any]:
+        """Search for information (alias for search_travel_info)."""
+        return await self.search_travel_info(query)

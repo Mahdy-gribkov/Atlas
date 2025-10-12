@@ -20,3 +20,15 @@
 2025-10-13 00:47:33,887 - INFO - Local LLM (llama3.1:8b) initialized
 2025-10-13 00:47:33,888 - INFO - Travel agent initialized successfully
 2025-10-13 00:47:55,714 - INFO - Processing query: hello, i want a trip to vnezuela from tel aviv tommorow morning with a hotel and car. i have 3k usd...
+2025-10-13 01:10:08,458 - INFO - Local LLM (llama3.1:8b) initialized
+2025-10-13 01:10:08,459 - INFO - Travel agent initialized successfully
+2025-10-13 01:10:13,948 - INFO - Processing query: i want to travel to france...
+2025-10-13 01:10:15,010 - ERROR - Wikipedia search error: 'WikipediaClient' object has no attribute 'search'
+2025-10-13 01:12:24,237 - INFO - Local LLM (llama3.1:8b) initialized
+2025-10-13 01:12:24,238 - INFO - Travel agent initialized successfully
+2025-10-13 01:13:54,608 - INFO - Local LLM (llama3.1:8b) initialized
+2025-10-13 01:13:54,609 - INFO - Travel agent initialized successfully
+2025-10-13 01:15:18,601 - INFO - Local LLM (llama3.1:8b) initialized
+2025-10-13 01:15:18,601 - INFO - Travel agent initialized successfully
+2025-10-13 01:16:47,507 - INFO - Processing new request: I'm planning a trip to a country in South America that starts with the letter 'P'. I need to know th...
+2025-10-13 01:16:47,624 - INFO - Processing query: I'm planning a trip to a country in South America that starts with the letter 'P'. I need to know th...
