@@ -38,5 +38,11 @@ RUN mkdir -p /app/data
 
 EXPOSE 8000
 
-# Simple startup command
-CMD ["bash", "-c", "ollama serve & sleep 15 && ollama pull llama3.1:8b && python3 api.py"]
+# Download the model during build
+RUN ollama serve & \
+    sleep 10 && \
+    ollama pull llama3.1:8b && \
+    pkill ollama
+
+# Simple startup command (model already downloaded)
+CMD ["bash", "-c", "ollama serve & sleep 5 && python3 api.py"]

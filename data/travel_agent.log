@@ -47,3 +47,10 @@
 2025-10-12 22:38:04,562 - ERROR - OpenAI LLM initialization failed: No module named 'openai'
 2025-10-12 22:38:12,030 - ERROR - OpenAI LLM initialization failed: No module named 'openai'
 2025-10-12 22:38:26,156 - ERROR - OpenAI LLM initialization failed: No module named 'openai'
+2025-10-13 02:12:58,779 - INFO - HTTP Request: GET http://127.0.0.1:11434/api/tags "HTTP/1.1 200 OK"
+2025-10-13 02:12:58,780 - INFO - Local LLM (llama3.1:8b) initialized
+2025-10-13 02:12:58,780 - INFO - Travel agent initialized successfully
+2025-10-13 02:13:33,515 - INFO - Processing query: i want to travel to europe in jan 26 with 2000 ils for 3 days. anywhere, anytime at this month, maxi...
+2025-10-13 02:13:34,554 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 500 Internal Server Error"
+2025-10-13 02:13:34,555 - ERROR - LLM call failed: model requires more system memory (5.6 GiB) than is available (2.8 GiB) (status code: 500)
+2025-10-13 02:13:34,556 - ERROR - Failed to save conversation: 'SecureDatabase' object has no attribute 'save_conversation'

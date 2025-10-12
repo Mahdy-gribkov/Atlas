@@ -201,6 +201,21 @@ async def health_check():
 # Serve React build files
 if os.path.exists("static"):
     app.mount("/static", StaticFiles(directory="static"), name="static")
+    
+    # Serve React app for all other routes
+    @app.get("/{full_path:path}")
+    async def serve_react_app(full_path: str):
+        """Serve React app for all routes not handled by API."""
+        if full_path.startswith("api/") or full_path.startswith("static/"):
+            raise HTTPException(status_code=404, detail="Not found")
+        
+        # Serve index.html for all other routes (React Router)
+        index_path = os.path.join("static", "index.html")
+        if os.path.exists(index_path):
+            from fastapi.responses import FileResponse
+            return FileResponse(index_path)
+        else:
+            raise HTTPException(status_code=404, detail="React app not found")
 
 if __name__ == "__main__":
     import uvicorn
