@@ -2,6 +2,30 @@
 
 A **privacy-first, free, and intelligent travel planning assistant** built with LangChain and local AI models. No data leaves your device, no API costs, complete privacy.
 
+## 🚀 **ONE-CLICK START**
+
+### Windows:
+```bash
+start.bat
+```
+
+### Linux/Mac:
+```bash
+./start.sh
+```
+
+**That's it!** Your Travel AI Agent will be running at:
+- **Frontend**: http://localhost:80
+- **API**: http://localhost:8000
+
+## ✨ **What You Get**
+- 🎨 **Beautiful React Frontend** - Modern, responsive UI
+- 🤖 **Local AI Agent** - Llama 3.1:8b model (no internet required)
+- 🔒 **Privacy-First** - Everything runs locally
+- 🌍 **Travel Planning** - Country info, weather, flights, budgets
+- 📱 **Mobile Ready** - Works on all devices
+- 🚀 **One Container** - Everything included, perfect for sharing
+
 ## ✨ Features
 
 ### 🧠 **Intelligent Planning**

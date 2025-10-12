@@ -44,5 +44,32 @@ RUN ollama serve & \
     ollama pull llama3.1:8b && \
     pkill ollama
 
-# Simple startup command (model already downloaded)
-CMD ["bash", "-c", "ollama serve & sleep 5 && python3 api.py"]
+# Install nginx to serve frontend
+RUN apt-get update && apt-get install -y nginx && rm -rf /var/lib/apt/lists/*
+
+# Configure nginx to serve frontend and proxy API
+RUN echo 'server { \
+    listen 80; \
+    server_name localhost; \
+    \
+    # Serve frontend static files \
+    location / { \
+        root /app/static; \
+        index index.html; \
+        try_files $uri $uri/ /index.html; \
+    } \
+    \
+    # Proxy API requests to backend \
+    location /api/ { \
+        proxy_pass http://localhost:8000; \
+        proxy_set_header Host $host; \
+        proxy_set_header X-Real-IP $remote_addr; \
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
+        proxy_set_header X-Forwarded-Proto $scheme; \
+    } \
+}' > /etc/nginx/sites-available/default
+
+EXPOSE 80
+
+# Perfect startup: Ollama + Backend + Frontend all in one
+CMD ["bash", "-c", "ollama serve & sleep 5 && python3 api.py & nginx -g 'daemon off;'"]
