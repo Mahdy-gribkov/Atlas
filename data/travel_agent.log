@@ -1,0 +1,22 @@
+2025-10-12 23:05:17,960 - INFO - Local LLM (llama3.1:8b) initialized
+2025-10-12 23:05:17,960 - INFO - Travel agent initialized successfully
+2025-10-12 23:07:02,744 - INFO - Processing query: I'm planning a trip to a country in South America that starts with the letter 'P'. I need to know th...
+2025-10-12 23:17:51,168 - INFO - Local LLM (llama3.1:8b) initialized
+2025-10-12 23:17:51,169 - INFO - Travel agent initialized successfully
+2025-10-12 23:18:06,113 - INFO - Processing query: I'm planning a trip to a country in South America that starts with the letter 'P'. I need to know th...
+2025-10-12 23:21:20,086 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
+2025-10-12 23:21:20,095 - ERROR - Failed to save conversation: 'SecureDatabase' object has no attribute 'save_conversation'
+2025-10-12 23:22:06,077 - INFO - Local LLM (llama3.1:8b) initialized
+2025-10-12 23:22:06,077 - INFO - Travel agent initialized successfully
+2025-10-12 23:22:22,083 - INFO - Processing query: I'm planning a trip to a country in South America that starts with the letter 'P'. I need to know th...
+2025-10-12 23:24:25,477 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
+2025-10-12 23:24:25,480 - ERROR - Failed to save conversation: 'SecureDatabase' object has no attribute 'save_conversation'
+2025-10-13 00:33:55,936 - INFO - Local LLM (llama3.1:8b) initialized
+2025-10-13 00:33:55,937 - INFO - Travel agent initialized successfully
+2025-10-13 00:35:35,531 - INFO - Processing chat request: Plan a trip to Japan with $3000 budget...
+2025-10-13 00:35:35,533 - INFO - Processing query: Plan a trip to Japan with $3000 budget...
+2025-10-13 00:39:04,228 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
+2025-10-13 00:39:04,233 - ERROR - Failed to save conversation: 'SecureDatabase' object has no attribute 'save_conversation'
+2025-10-13 00:47:33,887 - INFO - Local LLM (llama3.1:8b) initialized
+2025-10-13 00:47:33,888 - INFO - Travel agent initialized successfully
+2025-10-13 00:47:55,714 - INFO - Processing query: hello, i want a trip to vnezuela from tel aviv tommorow morning with a hotel and car. i have 3k usd...

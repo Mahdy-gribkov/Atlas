@@ -1,0 +1,45 @@
+# Core Dependencies - Current Versions
+langchain
+langchain-openai
+langchain-community
+openai
+
+# Web Framework
+fastapi
+uvicorn
+pydantic
+
+# HTTP Client
+aiohttp
+requests
+
+# Security & Encryption
+cryptography
+bcrypt
+
+# Data Processing
+pandas
+numpy
+
+# Web Scraping
+beautifulsoup4
+lxml
+
+# Environment Management
+python-dotenv
+
+# Testing
+pytest
+pytest-asyncio
+
+# Development
+black
+flake8
+mypy
+
+# Local LLM (Optional)
+ollama
+
+# Utilities
+python-dateutil
+pytz

@@ -1,280 +1,254 @@
 # 🌍 Travel AI Agent
 
-A **privacy-first, completely free** travel planning assistant built with LangChain that helps users plan amazing trips using only free APIs and public data sources. **Zero costs, complete privacy protection, and local data processing.**
+A **privacy-first, free, and intelligent travel planning assistant** powered by local AI and free APIs. No data leaves your device, no API costs, complete privacy.
 
-## 🔒 Privacy & Security First
+## ✨ Features
 
-- **Zero External Data Storage**: All your data stays on your device
-- **Local Processing**: AI processing happens locally when possible
-- **Encrypted Storage**: SQLite database with AES-256 encryption
-- **Free APIs Only**: No paid services, no hidden costs
-- **Data Minimization**: Collect only essential data, delete immediately after use
-- **Anonymous API Calls**: No user data transmitted to external services
+### 🧠 **Intelligent Planning**
+- **Local AI**: Uses Llama 3.1 8B model running on your device
+- **Context Awareness**: Remembers conversation history and preferences
+- **Multi-step Planning**: Breaks down complex travel requests into actionable steps
 
-## 🆓 Completely Free
+### 🔍 **Information Sources**
+- **Country Information**: Detailed data about countries, capitals, currencies
+- **Wikipedia Integration**: Rich cultural and historical information
+- **Geocoding**: Precise coordinates and location data
+- **Web Search**: Real-time information from the internet
+- **Travel APIs**: Weather, flights, hotels (when API keys provided)
 
-- **No API Costs**: All APIs are free or have generous free tiers
-- **No Subscription Fees**: Use forever without any costs
-- **No Hidden Charges**: Transparent, open-source implementation
-- **Self-Hosted**: Run on your own device, no cloud dependencies
+### 🛡️ **Privacy & Security**
+- **Zero Data Leakage**: Everything runs locally on your machine
+- **Encrypted Storage**: All data encrypted with AES-256
+- **No Tracking**: No analytics, no data collection
+- **Free Forever**: No subscription fees, no API costs
 
-## 🚀 Features
-
-### Core Capabilities
-- **Weather Information**: Current weather and 5-day forecasts
-- **Currency Exchange**: Real-time exchange rates and conversions
-- **Flight Information**: Flight status and airline data
-- **Country Information**: Comprehensive destination details
-- **Wikipedia Integration**: General information and facts
-- **Geocoding**: Address and location services
-
-### Advanced Features
-- **Trip Planning**: Comprehensive travel planning assistance
-- **Local Memory**: Encrypted conversation history
-- **Rate Limiting**: Intelligent API usage management
-- **Caching**: Local data caching for better performance
-- **Multi-Language Support**: Works in multiple languages
-- **Interactive Chat**: Natural language conversation
-
-## 🛠️ Technology Stack
-
-- **Backend**: Python 3.9+ with FastAPI
-- **AI Framework**: LangChain with local LLM support
-- **Database**: Encrypted SQLite with automatic cleanup
-- **APIs**: Free services only (OpenWeather, Fixer.io, etc.)
-- **Security**: End-to-end encryption and data protection
-- **Deployment**: Local deployment with Docker support
-
-## 📋 Free API Sources
-
-| Service | Free Tier | Features |
-|---------|-----------|----------|
-| **OpenWeather** | 1000 calls/day | Weather data and forecasts |
-| **Fixer.io** | 100 calls/month | Currency exchange rates |
-| **AviationStack** | 100 calls/month | Flight information |
-| **REST Countries** | Unlimited | Country information |
-| **Wikipedia** | Unlimited | General information |
-| **OpenStreetMap** | 1000 calls/day | Geocoding and maps |
+### 🚀 **Performance**
+- **Fast Responses**: Optimized for speed and efficiency
+- **Offline Capable**: Works without internet (except for real-time data)
+- **Low Resource Usage**: Efficient memory and CPU usage
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.9 or higher
-- Free API keys (get them for free from the services above)
+- **Python 3.9+**
+- **8GB+ RAM** (for local LLM)
+- **Windows/Linux/Mac**
 
 ### Installation
 
-#### Option 1: Automated Setup (Recommended)
-```bash
-# Clone the repository
-git clone <your-repo-url>
-cd Travel_Agent
-
-# Run setup script
-# On Windows:
-scripts\setup.bat
-
-# On Linux/Mac:
-chmod +x scripts/setup.sh
-./scripts/setup.sh
-```
-
-#### Option 2: Manual Setup
-```bash
-# Create virtual environment
-python -m venv venv
-
-# Activate virtual environment
-# On Windows:
-venv\Scripts\activate
-# On Linux/Mac:
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Create directories
-mkdir data logs cache temp
-
-# Copy environment file
-cp env.example .env
-```
-
-### Configuration
-
-1. **Get Free API Keys** (Optional - Local LLM is default):
-   - [OpenWeather API](https://openweathermap.org/api) - Free tier: 1000 calls/day
-   - [Fixer.io API](https://fixer.io/) - Free tier: 100 calls/month
-   - [AviationStack API](https://aviationstack.com/) - Free tier: 100 calls/month
-   - **Local LLM (Ollama)**: Completely free, no API key needed (recommended)
-   - [OpenAI API](https://platform.openai.com/) - $5 free credit (optional)
-
-2. **Edit .env file**:
-   ```env
-   # Local LLM (recommended - completely free)
-   USE_LOCAL_LLM=true
-   OLLAMA_MODEL=llama2
-   
-   # Free APIs (optional)
-   OPENWEATHER_API_KEY=your_openweather_key_here
-   FIXER_API_KEY=your_fixer_key_here
-   AVIATIONSTACK_API_KEY=your_aviationstack_key_here
-   
-   # OpenAI (optional - only if you want to use OpenAI instead of local LLM)
-   OPENAI_API_KEY=your_openai_key_here
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd Travel_Agent
    ```
 
-### Running the Agent
+2. **Install dependencies**
+   ```bash
+   pip install -r requirements-simple.txt
+   ```
 
-```bash
-# Interactive chat mode (default)
-python main.py
+3. **Install Ollama (for local AI)**
+   ```bash
+   # Windows
+   winget install Ollama.Ollama
+   
+   # Linux/Mac
+   curl -fsSL https://ollama.com/install.sh | sh
+   ```
 
-# Trip planning mode
-python main.py --plan-trip
+4. **Download AI model**
+   ```bash
+   ollama pull llama3.1:8b
+   ```
 
-# Test API connections
-python main.py --test-apis
+5. **Run the travel agent**
+   ```bash
+   python travel_agent.py
+   ```
 
-# Show help
-python main.py --help
+## 🎯 Usage Examples
+
+### Basic Country Information
+```
+You: Tell me about Peru
+Agent: **Peru**
+Capital: Lima
+Coordinates: -12.0459808, -77.0305912
+Tourist Attractions: Peru is famous for Machu Picchu, the ancient Inca citadel...
 ```
 
-## 💬 Usage Examples
-
-### Interactive Chat
+### Travel Planning
 ```
-You: What's the weather like in Paris?
-Agent: I'll check the current weather in Paris for you...
-
-You: Convert 1000 USD to EUR
-Agent: Converting 1000 USD to EUR...
-
-You: Tell me about Japan
-Agent: I'll get information about Japan for you...
-
-You: Plan a trip to London
-Agent: I'll help you plan a comprehensive trip to London...
+You: I want to plan a trip to Japan for 2 weeks with a $3000 budget
+Agent: ✈️ Planning your Japan trip...
+- Flights: $800-1200 (round trip from major US cities)
+- Accommodation: $100-200/night (hotels/ryokans)
+- Food: $50-100/day
+- Activities: $500-800
+- Transportation: $200-400 (JR Pass)
+Total estimated: $2800-3600
 ```
 
-### Trip Planning
+### Real-time Information
 ```
-Destination: Paris, France
-Start date: 2024-06-15
-End date: 2024-06-22
-Travelers: 2
-Budget: 2000 USD
-
-Agent: Planning your trip to Paris...
-- Weather forecast for your dates
-- Currency information (USD to EUR)
-- Destination details and recommendations
-- Local attractions and activities
+You: What's the current weather in Tokyo?
+Agent: 🌤️ Current weather in Tokyo:
+- Temperature: 15°C (59°F)
+- Condition: Partly cloudy
+- Humidity: 65%
+- Wind: 10 km/h
 ```
 
-## 🔧 Available Commands
+## 🏗️ Architecture
 
-| Command | Description |
-|---------|-------------|
-| `help` | Show available commands |
-| `features` | Show available features |
-| `privacy` | Show privacy information |
-| `stats` | Show database statistics |
-| `cleanup` | Clean up expired data |
-| `quit` | Exit the application |
+### Core Components
+- **Travel Agent**: Main AI assistant with conversation memory
+- **Local LLM**: Llama 3.1 8B for natural language processing
+- **API Clients**: Free services for real-time data
+- **Secure Database**: Encrypted local storage
+- **Web Search**: Real-time internet information
 
-## 📊 API Usage & Limits
+### Data Flow
+```
+User Query → Travel Agent → Local LLM → API Calls → Response
+                ↓
+         Secure Database (encrypted storage)
+```
 
-The agent intelligently manages API usage to stay within free tier limits:
+## 🔧 Configuration
 
-- **Weather**: 1000 calls/day (OpenWeather)
-- **Currency**: 100 calls/month (Fixer.io)
-- **Flights**: 100 calls/month (AviationStack)
-- **Countries**: Unlimited (REST Countries)
-- **Wikipedia**: Unlimited
-- **Maps**: 1000 calls/day (OpenStreetMap)
+### Environment Variables (Optional)
+Create a `.env` file for API keys:
+```env
+# Local LLM (default)
+USE_LOCAL_LLM=true
+OLLAMA_MODEL=llama3.1:8b
 
-## 🛡️ Security Features
+# Optional API keys for enhanced features
+OPENWEATHER_API_KEY=your_key_here
+FIXER_API_KEY=your_key_here
+AVIATIONSTACK_API_KEY=your_key_here
 
-### Data Protection
-- **Local Encryption**: All data encrypted with AES-256
-- **Automatic Cleanup**: Expired data deleted automatically
-- **No External Storage**: Data never leaves your device
-- **Anonymous Requests**: API calls don't include user identifiers
+# Security
+ENCRYPTION_KEY=your_encryption_key_here
+```
 
-### Privacy Measures
-- **Zero Tracking**: No user behavior monitoring
-- **Local Memory**: Conversation history stored locally
-- **Data Minimization**: Only essential data collected
-- **Immediate Deletion**: Temporary data deleted after use
+### Available Models
+- **llama3.1:8b** (Recommended - 4.7GB, 8GB RAM)
+- **llama3.1:70b** (Best quality - 40GB, 80GB RAM)
+- **mistral:7b** (Fastest - 4.1GB, 6GB RAM)
 
-## 🏗️ Project Structure
+## 🛠️ Development
 
+### Project Structure
 ```
 Travel_Agent/
-├── src/
-│   ├── agent/              # Core agent implementation
-│   ├── apis/               # Free API clients
-│   ├── database/           # Encrypted local database
-│   └── config.py           # Configuration management
-├── scripts/                # Setup and utility scripts
-├── docs/                   # Documentation
-├── main.py                 # Main application
-├── requirements.txt        # Python dependencies
-├── setup.py               # Package setup
-└── README.md              # This file
+├── travel_agent.py          # Main application
+├── requirements-simple.txt  # Dependencies
+├── README.md               # This file
+└── src/
+    ├── config.py           # Configuration management
+    ├── apis/               # API clients
+    │   ├── country_client.py
+    │   ├── wikipedia_client.py
+    │   ├── maps_client.py
+    │   └── web_search_client.py
+    └── database/
+        └── secure_database.py
 ```
 
-## 🤝 Contributing
+### Adding New Features
+1. **New API**: Add client in `src/apis/`
+2. **New Tool**: Add function in `travel_agent.py`
+3. **New Model**: Update `config.py` with model options
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+## 🔒 Security Features
 
-### Development Setup
+### Data Protection
+- **AES-256 Encryption**: All stored data encrypted
+- **Local Processing**: No data sent to external servers
+- **Secure Storage**: SQLite database with encryption
+- **Input Validation**: All inputs sanitized and validated
+
+### Privacy Guarantees
+- **No Analytics**: Zero tracking or data collection
+- **No Logging**: No conversation logs stored externally
+- **No Telemetry**: No usage statistics sent anywhere
+- **Open Source**: Full transparency in code
+
+## 🚀 Performance Optimization
+
+### Speed Improvements
+- **Direct LLM Calls**: No complex agent framework overhead
+- **Async Operations**: Parallel API calls for faster responses
+- **Caching**: Intelligent caching of frequently accessed data
+- **Optimized Models**: Best balance of speed and quality
+
+### Resource Management
+- **Memory Efficient**: Optimized for low RAM usage
+- **CPU Optimized**: Efficient processing algorithms
+- **Storage Efficient**: Compressed data storage
+- **Network Efficient**: Minimal API calls
+
+## 🆘 Troubleshooting
+
+### Common Issues
+
+**"Ollama not found"**
 ```bash
-# Install development dependencies
-pip install -r requirements.txt
-pip install -e ".[dev]"
-
-# Run tests
-pytest
-
-# Format code
-black src/
-
-# Type checking
-mypy src/
+# Restart terminal or add to PATH
+export PATH=$PATH:/usr/local/bin
 ```
 
-## 📝 License
+**"Model not available"**
+```bash
+# Download the model
+ollama pull llama3.1:8b
+```
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+**"API errors"**
+- Check internet connection
+- Verify API keys (if using paid services)
+- Free APIs have rate limits
 
-## 🆘 Support
+**"Slow responses"**
+- Use smaller model (mistral:7b)
+- Increase RAM allocation
+- Close other applications
 
-- **Documentation**: Check the `docs/` folder for detailed guides
-- **Issues**: Open an issue on GitHub for bugs or feature requests
-- **Discussions**: Use GitHub Discussions for questions and ideas
+### Getting Help
+- Check the logs in `data/` directory
+- Verify all dependencies installed
+- Ensure Python 3.9+ is being used
 
-## 🎯 Roadmap
+## 📈 Roadmap
 
-- [ ] **Phase 1**: Core agent with free APIs ✅
-- [ ] **Phase 2**: Local LLM integration (Ollama)
-- [ ] **Phase 3**: Web interface
-- [ ] **Phase 4**: Mobile app
-- [ ] **Phase 5**: Advanced trip planning features
+### Planned Features
+- **Multi-language Support**: Spanish, French, German, Japanese
+- **Voice Interface**: Speech-to-text and text-to-speech
+- **Mobile App**: iOS and Android versions
+- **Advanced Planning**: Itinerary optimization, booking integration
+- **Offline Maps**: Downloadable maps for offline use
+
+### Contributing
+1. Fork the repository
+2. Create feature branch
+3. Make changes with tests
+4. Submit pull request
+
+## 📄 License
+
+MIT License - Free for personal and commercial use.
 
 ## 🙏 Acknowledgments
 
-- **LangChain** for the amazing AI framework
-- **OpenWeather** for free weather data
-- **Fixer.io** for free currency rates
-- **AviationStack** for free flight data
-- **REST Countries** for free country information
-- **Wikipedia** for free general information
-- **OpenStreetMap** for free mapping data
+- **Meta AI** for Llama models
+- **Ollama** for local LLM hosting
+- **Free API providers** for data services
+- **Open source community** for tools and libraries
 
 ---
 
-**Happy Traveling! 🌍✈️**
+**Built with ❤️ for privacy-conscious travelers**
 
-*Built with ❤️ using only free APIs and open-source technologies*
+*Your data stays on your device. Always.*

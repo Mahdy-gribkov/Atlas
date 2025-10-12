@@ -23,7 +23,7 @@ class Config:
     OPENAI_API_KEY: Optional[str] = os.getenv('OPENAI_API_KEY')
     
     # Local LLM Settings (Free)
-    OLLAMA_MODEL: str = os.getenv('OLLAMA_MODEL', 'llama2')
+    OLLAMA_MODEL: str = os.getenv('OLLAMA_MODEL', 'llama3.1:8b')
     USE_LOCAL_LLM: bool = os.getenv('USE_LOCAL_LLM', 'true').lower() == 'true'
     
     # Security Settings
