@@ -2,6 +2,9 @@
 """
 FastAPI backend for Travel AI Agent
 Provides REST API for React frontend
+
+Author: Mahdy Gribkov
+License: MIT
 """
 
 from fastapi import FastAPI, HTTPException

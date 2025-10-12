@@ -1,6 +1,6 @@
 # 🌍 Travel AI Agent
 
-A **privacy-first, free, and intelligent travel planning assistant** powered by local AI and free APIs. No data leaves your device, no API costs, complete privacy.
+A **privacy-first, free, and intelligent travel planning assistant** built with LangChain and local AI models. No data leaves your device, no API costs, complete privacy.
 
 ## ✨ Features
 
@@ -61,10 +61,49 @@ A **privacy-first, free, and intelligent travel planning assistant** powered by 
    ollama pull llama3.1:8b
    ```
 
-5. **Run the travel agent**
-   ```bash
-   python travel_agent.py
-   ```
+## 🎯 Running the Application
+
+### Option 1: Command Line Interface
+```bash
+python travel_agent.py
+```
+
+### Option 2: Web Interface (Recommended)
+```bash
+# Windows
+start-ui.bat
+
+# Manual start
+python api.py
+# Then in another terminal:
+cd frontend && npm start
+```
+
+### Option 3: Docker Deployment
+```bash
+# Build and run with Docker Compose
+docker-compose up --build
+
+# Or build manually
+docker build -t travel-agent .
+docker run -p 8000:8000 travel-agent
+```
+
+### Option 4: Railway Deployment
+1. Connect your GitHub repository to Railway
+2. Railway will automatically detect the `railway.json` configuration
+3. Deploy with one click - no additional setup needed
+
+### Option 5: Development Mode
+```bash
+# Backend only
+python api.py
+
+# Frontend only (in separate terminal)
+cd frontend
+npm install
+npm start
+```
 
 ## 🎯 Usage Examples
 
@@ -143,18 +182,33 @@ ENCRYPTION_KEY=your_encryption_key_here
 ### Project Structure
 ```
 Travel_Agent/
-├── travel_agent.py          # Main application
-├── requirements-simple.txt  # Dependencies
-├── README.md               # This file
+├── travel_agent.py          # CLI application
+├── api.py                   # FastAPI web server
+├── requirements-simple.txt  # CLI dependencies
+├── requirements-ui.txt      # Web UI dependencies
+├── Dockerfile              # Docker configuration
+├── docker-compose.yml      # Docker Compose setup
+├── railway.json            # Railway deployment config
+├── start-ui.bat            # Windows startup script
+├── frontend/               # React.js web interface
+│   ├── src/
+│   │   ├── App.js          # Main React component
+│   │   ├── App.css         # Styling
+│   │   └── index.js        # Entry point
+│   └── package.json        # Node.js dependencies
 └── src/
     ├── config.py           # Configuration management
     ├── apis/               # API clients
     │   ├── country_client.py
     │   ├── wikipedia_client.py
     │   ├── maps_client.py
-    │   └── web_search_client.py
+    │   ├── web_search_client.py
+    │   ├── weather_client.py
+    │   ├── currency_client.py
+    │   └── flight_client.py
     └── database/
-        └── secure_database.py
+        ├── secure_database.py
+        └── models.py
 ```
 
 ### Adding New Features
@@ -220,6 +274,91 @@ ollama pull llama3.1:8b
 - Check the logs in `data/` directory
 - Verify all dependencies installed
 - Ensure Python 3.9+ is being used
+
+## 🚀 Deployment Options
+
+### Docker Deployment (Recommended for Production)
+
+**Why Docker?**
+- Consistent environment across all platforms
+- Easy scaling and container orchestration
+- Simplified deployment process
+- Professional portfolio demonstration
+
+**Prerequisites:**
+- Docker Desktop installed and running
+- Start Docker Desktop before running commands
+
+**Quick Start:**
+```bash
+# Start Docker Desktop first, then:
+docker-compose up --build
+
+# Access at http://localhost:8000
+```
+
+**Manual Docker:**
+```bash
+# Build image
+docker build -t travel-agent .
+
+# Run container
+docker run -p 8000:8000 -v $(pwd)/data:/app/data travel-agent
+```
+
+### Railway Deployment (Cloud Hosting)
+
+**Why Railway?**
+- Zero-config deployment from GitHub
+- Automatic HTTPS and custom domains
+- Built-in monitoring and logs
+- Free tier available
+
+**Setup:**
+1. Push code to GitHub
+2. Connect repository to Railway
+3. Railway auto-detects `railway.json`
+4. Deploy with one click
+
+**Railway vs Docker:**
+- **Railway**: Cloud hosting, no local setup needed
+- **Docker**: Local/self-hosted, full control
+- **Use Railway** for: Portfolio demos, sharing with others
+- **Use Docker** for: Local development, enterprise deployment
+
+### Local Development
+
+**Web Interface:**
+```bash
+# Backend
+python api.py
+
+# Frontend (new terminal)
+cd frontend
+npm install
+npm start
+```
+
+**CLI Only:**
+```bash
+python travel_agent.py
+```
+
+### Production Considerations
+
+**Environment Variables:**
+```env
+# Production settings
+USE_LOCAL_LLM=false
+OPENAI_API_KEY=your_key_here
+ENCRYPTION_KEY=your_secure_key
+```
+
+**Security:**
+- Use HTTPS in production
+- Set strong encryption keys
+- Enable rate limiting
+- Monitor API usage
 
 ## 📈 Roadmap
 

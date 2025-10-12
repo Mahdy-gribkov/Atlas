@@ -8,7 +8,7 @@ A comprehensive travel planning agent that runs entirely locally using:
 - Encrypted local storage for privacy
 - Web search capabilities for current information
 
-Author: Travel AI Agent Team
+Author: Mahdy Gribkov
 License: MIT
 """
 
