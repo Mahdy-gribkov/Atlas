@@ -500,6 +500,46 @@ class SecureDatabase:
             print(f"Error getting database stats: {e}")
             return {}
     
+    def save_conversation(self, user_id: str, user_message: str, assistant_response: str) -> bool:
+        """
+        Save conversation to database.
+        
+        Args:
+            user_id: User identifier
+            user_message: User's message
+            assistant_response: Assistant's response
+            
+        Returns:
+            bool: True if saved successfully
+        """
+        try:
+            # Encrypt the conversation data
+            encrypted_user_msg = self._encrypt_data(user_message)
+            encrypted_assistant_msg = self._encrypt_data(assistant_response)
+            
+            # Store in a simple conversations table
+            self.conn.execute("""
+                CREATE TABLE IF NOT EXISTS conversations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT NOT NULL,
+                    user_message TEXT NOT NULL,
+                    assistant_response TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            self.conn.execute("""
+                INSERT INTO conversations (user_id, user_message, assistant_response)
+                VALUES (?, ?, ?)
+            """, (user_id, encrypted_user_msg, encrypted_assistant_msg))
+            
+            self.conn.commit()
+            return True
+            
+        except Exception as e:
+            print(f"Error saving conversation: {e}")
+            return False
+    
     def close(self):
         """Close database connection securely."""
         if self.conn:

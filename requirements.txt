@@ -1,0 +1,25 @@
+# Core Dependencies
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+
+# HTTP Client
+aiohttp==3.9.1
+requests==2.31.0
+
+# Security & Encryption
+cryptography==41.0.8
+
+# Data Processing
+python-dateutil==2.8.2
+pytz==2023.3
+
+# Environment Management
+python-dotenv==1.0.0
+
+# Local LLM (Optional)
+ollama==0.1.7
+
+# Development (Optional)
+pytest==7.4.3
+pytest-asyncio==0.21.1

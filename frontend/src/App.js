@@ -6,7 +6,7 @@ function App() {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: 'Welcome! I\'m your AI travel planning assistant. I can help you plan trips, find flights, hotels, and provide travel information. Where would you like to go?'
+      content: '🌍 Welcome! I\'m your AI travel planning assistant. I can help you:\n\n✈️ Find flights and travel options\n🏨 Search for accommodations\n🌤️ Check weather conditions\n💰 Plan travel budgets\n📍 Get destination information\n\nWhere would you like to go?'
     }
   ]);
   const [input, setInput] = useState('');
@@ -94,11 +94,11 @@ function App() {
   };
 
   const exampleQueries = [
-    "Plan a trip to Japan with $3000 budget",
-    "Find flights to Paris in January", 
-    "Best hotels in Bangkok under $50/night",
-    "What's the weather in Tokyo?",
-    "Tell me about Peru attractions"
+    "I need flights from Tel Aviv to New York tomorrow morning",
+    "Plan a 2-week trip to Japan with $3000 budget", 
+    "What's the weather like in Tokyo this week?",
+    "Find budget hotels in Bangkok under $50/night",
+    "Tell me about attractions in Peru"
   ];
 
   const travelCategories = [

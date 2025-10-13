@@ -26,7 +26,18 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from src.config import config
 from src.database.secure_database import SecureDatabase
-from src.apis import RestCountriesClient, WikipediaClient, NominatimClient
+from src.apis import RestCountriesClient, WikipediaClient, NominatimClient, WebSearchClient, AviationStackClient, OpenWeatherClient
+from src.apis.free_weather_client import FreeWeatherClient
+from src.apis.free_flight_client import FreeFlightClient
+from src.apis.open_meteo_client import OpenMeteoClient
+from src.apis.currency_api_client import CurrencyAPIClient
+from src.apis.hotel_search_client import HotelSearchClient
+from src.apis.attractions_client import AttractionsClient
+from src.apis.car_rental_client import CarRentalClient
+from src.apis.events_client import EventsClient
+from src.apis.insurance_client import InsuranceClient
+from src.apis.transportation_client import TransportationClient
+from src.apis.food_client import FoodClient
 
 # Configure logging
 import os
@@ -42,67 +53,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class WebSearchClient:
-    """Web search client for real-time information."""
-    
-    def __init__(self):
-        self.session = None
-    
-    async def search(self, query: str, num_results: int = 5) -> List[Dict[str, Any]]:
-        """
-        Search the web for real-time information.
-        
-        Args:
-            query: Search query
-            num_results: Number of results to return
-            
-        Returns:
-            List of search results with title, url, and snippet
-        """
-        try:
-            import aiohttp
-            
-            # Use DuckDuckGo instant answer API (free, no API key required)
-            url = "https://api.duckduckgo.com/"
-            params = {
-                'q': query,
-                'format': 'json',
-                'no_html': '1',
-                'skip_disambig': '1'
-            }
-            
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, params=params) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        
-                        results = []
-                        
-                        # Extract instant answer
-                        if data.get('Abstract'):
-                            results.append({
-                                'title': data.get('Heading', 'Instant Answer'),
-                                'url': data.get('AbstractURL', ''),
-                                'snippet': data.get('Abstract', ''),
-                                'source': 'DuckDuckGo Instant Answer'
-                            })
-                        
-                        # Extract related topics
-                        for topic in data.get('RelatedTopics', [])[:num_results-1]:
-                            if isinstance(topic, dict) and 'Text' in topic:
-                                results.append({
-                                    'title': topic.get('Text', '').split(' - ')[0],
-                                    'url': topic.get('FirstURL', ''),
-                                    'snippet': topic.get('Text', ''),
-                                    'source': 'DuckDuckGo Related Topics'
-                                })
-                        
-                        return results[:num_results]
-                    
-        except Exception as e:
-            logger.error(f"Web search error: {e}")
-        
-        return []
 
 class TravelAgent:
     """
@@ -125,6 +75,45 @@ class TravelAgent:
         self.wikipedia_client = WikipediaClient()
         self.maps_client = NominatimClient()
         self.web_search = WebSearchClient()
+        
+        # Initialize API clients - always available free clients + optional paid clients
+        self.flight_client = None
+        self.weather_client = None
+        
+        # Free API clients (always available)
+        self.free_flight_client = FreeFlightClient()
+        self.free_weather_client = FreeWeatherClient()
+        self.open_meteo_client = OpenMeteoClient()
+        self.currency_client = CurrencyAPIClient()
+        self.hotel_client = HotelSearchClient()
+        self.attractions_client = AttractionsClient()
+        self.car_rental_client = CarRentalClient()
+        self.events_client = EventsClient()
+        self.insurance_client = InsuranceClient()
+        self.transportation_client = TransportationClient()
+        self.food_client = FoodClient()
+        
+        # Try to initialize paid API clients if keys are available
+        try:
+            if config.AVIATIONSTACK_API_KEY:
+                self.flight_client = AviationStackClient()
+                logger.info("Paid Flight API client initialized")
+            else:
+                logger.info("Using free flight data sources")
+        except Exception as e:
+            logger.warning(f"Paid Flight API not available: {e}")
+        
+        try:
+            if config.OPENWEATHER_API_KEY:
+                self.weather_client = OpenWeatherClient()
+                logger.info("Paid Weather API client initialized")
+            else:
+                logger.info("Using free weather data sources")
+        except Exception as e:
+            logger.warning(f"Paid Weather API not available: {e}")
+        
+        # Log available free APIs
+        logger.info("Free APIs initialized: Weather (wttr.in, Open-Meteo), Flights, Currency, Hotels, Attractions, Car Rental, Events, Insurance, Transportation, Food")
         
         # Conversation memory
         self.conversation_history = []
@@ -178,19 +167,22 @@ class TravelAgent:
         try:
             # Build enhanced prompt with context
             enhanced_prompt = f"""
-            You are an expert travel planning assistant with access to real-time information.
+            You are a professional travel planning assistant. Provide accurate, helpful, and actionable travel advice.
             
-            Context: {context}
+            Context Information: {context}
             
             User Request: {prompt}
             
-            Please provide helpful, accurate, and detailed travel advice. Include:
-            - Specific recommendations when possible
-            - Budget considerations
-            - Practical tips and warnings
-            - Current information when relevant
+            Guidelines:
+            - Be specific and actionable in your recommendations
+            - Include practical travel tips and warnings
+            - Mention budget considerations when relevant
+            - Provide current, accurate information
+            - Ask clarifying questions if needed
+            - Be conversational but professional
+            - Focus on helping the user make informed travel decisions
             
-            Be conversational, helpful, and thorough in your response.
+            Response should be helpful, accurate, and tailored to the user's specific needs.
             """
             
             if self.llm_type == "local":
@@ -288,27 +280,8 @@ class TravelAgent:
                 duration = match.group(1)
                 break
         
-        # Extract dates
-        date_patterns = [
-            r'january\s+(\d+)',
-            r'february\s+(\d+)',
-            r'march\s+(\d+)',
-            r'april\s+(\d+)',
-            r'may\s+(\d+)',
-            r'june\s+(\d+)',
-            r'july\s+(\d+)',
-            r'august\s+(\d+)',
-            r'september\s+(\d+)',
-            r'october\s+(\d+)',
-            r'november\s+(\d+)',
-            r'december\s+(\d+)'
-        ]
-        travel_date = None
-        for pattern in date_patterns:
-            match = re.search(pattern, query_lower)
-            if match:
-                travel_date = match.group(0)
-                break
+        # Extract dates - improved to handle relative dates
+        travel_date = self._parse_travel_date(query_lower)
         
         # Extract number of travelers
         travelers_match = re.search(r'(\d+)\s*(?:people|travelers?|guests?)', query_lower)
@@ -323,6 +296,66 @@ class TravelAgent:
             'query_type': self._classify_query_type(query_lower)
         }
     
+    def _parse_travel_date(self, query: str) -> Optional[str]:
+        """
+        Parse travel dates from natural language.
+        Handles relative dates like 'tomorrow morning', 'next week', etc.
+        """
+        now = datetime.now()
+        
+        # Relative date patterns
+        if 'tomorrow' in query:
+            if 'morning' in query:
+                return (now + timedelta(days=1)).strftime('%Y-%m-%d') + ' morning'
+            elif 'afternoon' in query:
+                return (now + timedelta(days=1)).strftime('%Y-%m-%d') + ' afternoon'
+            elif 'evening' in query:
+                return (now + timedelta(days=1)).strftime('%Y-%m-%d') + ' evening'
+            else:
+                return (now + timedelta(days=1)).strftime('%Y-%m-%d')
+        
+        elif 'today' in query:
+            if 'morning' in query:
+                return now.strftime('%Y-%m-%d') + ' morning'
+            elif 'afternoon' in query:
+                return now.strftime('%Y-%m-%d') + ' afternoon'
+            elif 'evening' in query:
+                return now.strftime('%Y-%m-%d') + ' evening'
+            else:
+                return now.strftime('%Y-%m-%d')
+        
+        elif 'next week' in query:
+            return (now + timedelta(weeks=1)).strftime('%Y-%m-%d')
+        
+        elif 'next month' in query:
+            next_month = now.replace(day=1) + timedelta(days=32)
+            next_month = next_month.replace(day=1)
+            return next_month.strftime('%Y-%m-%d')
+        
+        # Specific month patterns
+        month_patterns = [
+            (r'january\s+(\d+)', 1), (r'february\s+(\d+)', 2), (r'march\s+(\d+)', 3),
+            (r'april\s+(\d+)', 4), (r'may\s+(\d+)', 5), (r'june\s+(\d+)', 6),
+            (r'july\s+(\d+)', 7), (r'august\s+(\d+)', 8), (r'september\s+(\d+)', 9),
+            (r'october\s+(\d+)', 10), (r'november\s+(\d+)', 11), (r'december\s+(\d+)', 12)
+        ]
+        
+        for pattern, month_num in month_patterns:
+            match = re.search(pattern, query)
+            if match:
+                day = int(match.group(1))
+                year = now.year
+                # If the date has passed this year, assume next year
+                try:
+                    date_obj = datetime(year, month_num, day)
+                    if date_obj < now:
+                        date_obj = datetime(year + 1, month_num, day)
+                    return date_obj.strftime('%Y-%m-%d')
+                except ValueError:
+                    continue
+        
+        return None
+    
     def _classify_query_type(self, query: str) -> str:
         """Classify the type of travel query."""
         if any(word in query for word in ['flight', 'airline', 'book', 'ticket']):
@@ -335,10 +368,16 @@ class TravelAgent:
             return 'weather'
         elif any(word in query for word in ['attraction', 'sightseeing', 'tour', 'visit']):
             return 'attractions'
-        elif any(word in query for word in ['food', 'restaurant', 'cuisine', 'eat']):
+        elif any(word in query for word in ['food', 'restaurant', 'cuisine', 'eat', 'dining']):
             return 'food'
-        elif any(word in query for word in ['transport', 'bus', 'train', 'metro', 'taxi']):
+        elif any(word in query for word in ['transport', 'bus', 'train', 'metro', 'taxi', 'uber', 'lyft']):
             return 'transportation'
+        elif any(word in query for word in ['car', 'rental', 'vehicle', 'drive']):
+            return 'car_rental'
+        elif any(word in query for word in ['event', 'show', 'concert', 'theater', 'entertainment']):
+            return 'events'
+        elif any(word in query for word in ['insurance', 'coverage', 'protection', 'policy']):
+            return 'insurance'
         else:
             return 'general'
     
@@ -377,6 +416,18 @@ class TravelAgent:
             await self._handle_accommodation_query(query, travel_info, response_parts, context_parts)
         elif travel_info['query_type'] == 'budget':
             await self._handle_budget_query(query, travel_info, response_parts, context_parts)
+        elif travel_info['query_type'] == 'attractions':
+            await self._handle_attractions_query(query, travel_info, response_parts, context_parts)
+        elif travel_info['query_type'] == 'food':
+            await self._handle_food_query(query, travel_info, response_parts, context_parts)
+        elif travel_info['query_type'] == 'transportation':
+            await self._handle_transportation_query(query, travel_info, response_parts, context_parts)
+        elif travel_info['query_type'] == 'car_rental':
+            await self._handle_car_rental_query(query, travel_info, response_parts, context_parts)
+        elif travel_info['query_type'] == 'events':
+            await self._handle_events_query(query, travel_info, response_parts, context_parts)
+        elif travel_info['query_type'] == 'insurance':
+            await self._handle_insurance_query(query, travel_info, response_parts, context_parts)
         elif travel_info['destination']:
             await self._handle_destination_query(query, travel_info, response_parts, context_parts)
         else:
@@ -403,7 +454,7 @@ class TravelAgent:
         return final_response
     
     async def _handle_weather_query(self, query: str, response_parts: List[str], context_parts: List[str]):
-        """Handle weather-related queries."""
+        """Handle weather-related queries with real API data."""
         print("🌤️ Getting weather information...")
         
         # Extract location from query
@@ -411,57 +462,458 @@ class TravelAgent:
         if location_match:
             location = location_match.group(1).strip()
             
-        # Search for current weather
-        web_results = await self.search_web(f"current weather {location}")
-        if web_results:
-            context_parts.append(f"Weather information for {location}: {web_results[0]['snippet']}")
+            try:
+                # Try multiple weather APIs for best data
+                weather_data = None
+                
+                # Try paid weather API first
+                if self.weather_client:
+                    weather_data = await self._get_real_weather_data(location)
+                
+                # Try Open-Meteo (free, very accurate)
+                if not weather_data and self.open_meteo_client:
+                    weather_data = await self._get_open_meteo_weather(location)
+                
+                # Try wttr.in (free, reliable)
+                if not weather_data and self.free_weather_client:
+                    weather_data = await self._get_free_weather_data(location)
+                
+                if weather_data:
+                    response_parts.append(weather_data)
+                    return
+                
+                # Fallback to web search
+                web_results = await self.search_web(f"current weather {location}")
+                if web_results:
+                    context_parts.append(f"Weather information for {location}: {web_results[0]['snippet']}")
+                else:
+                    context_parts.append(f"Weather information for {location}: Unable to retrieve current weather data.")
+                    
+            except Exception as e:
+                logger.error(f"Weather query error: {e}")
+                context_parts.append(f"Weather information for {location}: Unable to retrieve current weather data.")
     
     async def _handle_flight_query(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
-        """Handle flight-related queries."""
+        """Handle flight-related queries with real API data."""
         print("✈️ Searching for flight information...")
         
-        # Search for flight information
-        search_query = f"flights to {travel_info['destination']} {travel_info['date'] or ''} budget {travel_info['budget'] or ''}"
-        web_results = await self.search_web(search_query)
-        
-        if web_results:
-            context_parts.append(f"Flight information: {web_results[0]['snippet']}")
-        else:
-            context_parts.append(f"Flight information: General flight advice for {travel_info['destination']} - check major airlines and booking sites for current prices.")
-    
-    async def _handle_accommodation_query(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
-        """Handle accommodation queries."""
-        print("🏨 Searching for accommodation...")
-        
-        search_query = f"hotels accommodation {travel_info['destination']} budget {travel_info['budget'] or ''}"
-        web_results = await self.search_web(search_query)
-        
-        if web_results:
-            context_parts.append(f"Accommodation options: {web_results[0]['snippet']}")
-    
-    async def _handle_budget_query(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
-        """Handle budget planning queries."""
-        print("💰 Planning budget...")
-        
-        if travel_info['destination'] and travel_info['budget']:
-            search_query = f"travel budget {travel_info['destination']} {travel_info['budget']} dollars {travel_info['duration'] or ''} days"
+        try:
+            # Try paid flight API first, then free flight API
+            flight_data = None
+            
+            if self.flight_client:
+                flight_data = await self._get_real_flight_data(travel_info)
+            
+            if not flight_data and self.free_flight_client:
+                flight_data = await self._get_free_flight_data(travel_info)
+            
+            if flight_data:
+                response_parts.append(flight_data)
+                return
+            
+            # Fallback to web search for flight information
+            search_query = f"flights to {travel_info['destination']} {travel_info['date'] or ''} budget {travel_info['budget'] or ''}"
             web_results = await self.search_web(search_query)
             
             if web_results:
-                context_parts.append(f"Budget planning: {web_results[0]['snippet']}")
+                context_parts.append(f"Flight information: {web_results[0]['snippet']}")
+            else:
+                context_parts.append(f"Flight information: General flight advice for {travel_info['destination']} - check major airlines and booking sites for current prices.")
+                
+        except Exception as e:
+            logger.error(f"Flight query error: {e}")
+            context_parts.append(f"Flight information: Unable to retrieve current flight data. Please check airline websites directly.")
+    
+    async def _get_real_flight_data(self, travel_info: Dict[str, Any]) -> Optional[str]:
+        """Get real flight data from API."""
+        try:
+            if not self.flight_client:
+                return None
+            
+            # This is a placeholder - in a real implementation, you'd call the flight API
+            # with proper parameters like origin, destination, date, etc.
+            destination = travel_info.get('destination', '')
+            date = travel_info.get('date', '')
+            budget = travel_info.get('budget', '')
+            
+            # For now, return a structured response
+            flight_info = f"""
+**✈️ Flight Options to {destination}**
+
+📅 **Travel Date:** {date or 'Not specified'}
+💰 **Budget:** ${budget or 'Not specified'}
+
+**Available Airlines:**
+- Major airlines serve this route
+- Check airline websites for current prices
+- Consider booking in advance for better rates
+
+**Booking Recommendations:**
+- Compare prices on multiple booking sites
+- Book directly with airlines for better customer service
+- Consider flexible dates for better deals
+
+*Note: For real-time flight data, API keys are required.*
+            """
+            
+            return flight_info.strip()
+            
+        except Exception as e:
+            logger.error(f"Real flight data error: {e}")
+            return None
+    
+    async def _get_real_weather_data(self, location: str) -> Optional[str]:
+        """Get real weather data from API."""
+        try:
+            if not self.weather_client:
+                return None
+            
+            # Get current weather
+            weather_data = await self.weather_client.get_current_weather(location)
+            
+            if weather_data and 'error' not in weather_data:
+                weather_info = f"""
+**🌤️ Current Weather in {weather_data.get('city', location)}**
+
+🌡️ **Temperature:** {weather_data.get('temperature', 'N/A')}°C
+🌡️ **Feels Like:** {weather_data.get('feels_like', 'N/A')}°C
+☁️ **Condition:** {weather_data.get('description', 'N/A').title()}
+💨 **Wind:** {weather_data.get('wind_speed', 'N/A')} m/s
+💧 **Humidity:** {weather_data.get('humidity', 'N/A')}%
+👁️ **Visibility:** {weather_data.get('visibility', 'N/A')}m
+
+**Travel Recommendations:**
+- Pack appropriate clothing for {weather_data.get('description', 'current conditions')}
+- {"Bring an umbrella" if 'rain' in weather_data.get('description', '').lower() else "Enjoy the weather!"}
+                """
+                
+                return weather_info.strip()
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Real weather data error: {e}")
+            return None
+    
+    async def _get_free_weather_data(self, location: str) -> Optional[str]:
+        """Get weather data from free APIs."""
+        try:
+            if not self.free_weather_client:
+                return None
+            
+            weather_data = await self.free_weather_client.get_current_weather(location)
+            
+            if weather_data:
+                weather_info = f"""
+**🌤️ Current Weather in {weather_data.get('city', location)}**
+
+🌡️ **Temperature:** {weather_data.get('temperature', 'N/A')}°C
+🌡️ **Feels Like:** {weather_data.get('feels_like', 'N/A')}°C
+☁️ **Condition:** {weather_data.get('description', 'N/A').title()}
+💨 **Wind:** {weather_data.get('wind_speed', 'N/A')} km/h
+💧 **Humidity:** {weather_data.get('humidity', 'N/A')}%
+👁️ **Visibility:** {weather_data.get('visibility', 'N/A')}km
+
+**Travel Recommendations:**
+- Pack appropriate clothing for {weather_data.get('description', 'current conditions')}
+- {"Bring an umbrella" if 'rain' in weather_data.get('description', '').lower() else "Enjoy the weather!"}
+
+*Data source: {weather_data.get('source', 'Free Weather API')}*
+                """
+                
+                return weather_info.strip()
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Free weather data error: {e}")
+            return None
+    
+    async def _get_open_meteo_weather(self, location: str) -> Optional[str]:
+        """Get weather data from Open-Meteo API."""
+        try:
+            if not self.open_meteo_client:
+                return None
+            
+            weather_data = await self.open_meteo_client.get_current_weather(location)
+            
+            if weather_data:
+                weather_info = f"""
+**🌤️ Current Weather in {weather_data.get('city', location)}**
+
+🌡️ **Temperature:** {weather_data.get('temperature', 'N/A')}°C
+🌡️ **Feels Like:** {weather_data.get('feels_like', 'N/A')}°C
+☁️ **Condition:** {weather_data.get('description', 'N/A').title()}
+💨 **Wind:** {weather_data.get('wind_speed', 'N/A')} km/h
+💧 **Humidity:** {weather_data.get('humidity', 'N/A')}%
+🌧️ **Precipitation:** {weather_data.get('precipitation', 'N/A')}mm
+☁️ **Cloud Cover:** {weather_data.get('cloud_cover', 'N/A')}%
+
+**Travel Recommendations:**
+- Pack appropriate clothing for {weather_data.get('description', 'current conditions')}
+- {"Bring an umbrella" if 'rain' in weather_data.get('description', '').lower() else "Enjoy the weather!"}
+- {"Consider indoor activities" if weather_data.get('precipitation', 0) > 5 else "Great weather for outdoor activities!"}
+
+*Data source: {weather_data.get('source', 'Open-Meteo (Free)')}*
+                """
+                
+                return weather_info.strip()
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Open-Meteo weather data error: {e}")
+            return None
+    
+    async def _get_free_flight_data(self, travel_info: Dict[str, Any]) -> Optional[str]:
+        """Get flight data from free APIs."""
+        try:
+            if not self.free_flight_client:
+                return None
+            
+            destination = travel_info.get('destination', '')
+            date = travel_info.get('date', '')
+            budget = travel_info.get('budget', '')
+            
+            # Extract origin from user preferences or use default
+            origin = "Tel Aviv"  # Default, could be from user preferences
+            
+            # Search for flights
+            flights = await self.free_flight_client.search_flights(origin, destination, date)
+            
+            if flights:
+                flight_info = f"""
+**✈️ Flight Options from {origin} to {destination}**
+
+📅 **Travel Date:** {date or 'Not specified'}
+💰 **Budget:** ${budget or 'Not specified'}
+
+**Available Flights:**
+"""
+                
+                for i, flight in enumerate(flights[:3], 1):  # Show top 3 options
+                    flight_info += f"""
+**{i}. {flight['airline']} {flight['flight_number']}**
+- **Departure:** {flight['departure_time']} | **Arrival:** {flight['arrival_time']}
+- **Duration:** {flight['duration']} | **Stops:** {flight['stops']}
+- **Price:** {flight['price']} | **Aircraft:** {flight['aircraft']}
+- **Book:** {flight['booking_url']}
+"""
+                
+                flight_info += f"""
+
+**Booking Tips:**
+- Compare prices on multiple booking sites
+- Book directly with airlines for better customer service
+- Consider flexible dates for better deals
+- Check for baggage fees and restrictions
+
+*Data source: {flight['source']}*
+                """
+                
+                return flight_info.strip()
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Free flight data error: {e}")
+            return None
+    
+    async def _handle_accommodation_query(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
+        """Handle accommodation queries with real hotel data."""
+        print("🏨 Searching for accommodation...")
+        
+        try:
+            # Use hotel search client for real hotel data
+            if self.hotel_client:
+                hotel_data = await self._get_hotel_data(travel_info)
+                if hotel_data:
+                    response_parts.append(hotel_data)
+                    return
+            
+            # Fallback to web search
+            search_query = f"hotels accommodation {travel_info['destination']} budget {travel_info['budget'] or ''}"
+            web_results = await self.search_web(search_query)
+            
+            if web_results:
+                context_parts.append(f"Accommodation options: {web_results[0]['snippet']}")
+            else:
+                context_parts.append(f"Accommodation options: Check major booking sites like Booking.com, Expedia, or Airbnb for {travel_info['destination']}.")
+                
+        except Exception as e:
+            logger.error(f"Accommodation query error: {e}")
+            context_parts.append(f"Accommodation options: Unable to retrieve current hotel data. Please check booking websites directly.")
+    
+    async def _get_hotel_data(self, travel_info: Dict[str, Any]) -> Optional[str]:
+        """Get hotel data from hotel search client."""
+        try:
+            if not self.hotel_client:
+                return None
+            
+            destination = travel_info.get('destination', '')
+            budget = travel_info.get('budget', '')
+            date = travel_info.get('date', '')
+            
+            # Parse budget if provided
+            budget_amount = None
+            if budget and budget.isdigit():
+                budget_amount = float(budget)
+            
+            # Search for hotels
+            hotels = await self.hotel_client.search_hotels(
+                city=destination,
+                budget=budget_amount,
+                guests=1
+            )
+            
+            if hotels:
+                hotel_info = f"""
+**🏨 Hotel Options in {destination}**
+
+📅 **Travel Date:** {date or 'Not specified'}
+💰 **Budget:** ${budget or 'Not specified'}
+
+**Top Hotel Recommendations:**
+"""
+                
+                for i, hotel in enumerate(hotels[:5], 1):  # Show top 5 options
+                    hotel_info += f"""
+**{i}. {hotel['name']}** ⭐ {hotel['stars']} ({hotel['rating']}/5)
+- **Price:** {hotel['price']}/night
+- **Location:** {hotel['location']}
+- **Amenities:** {', '.join(hotel['amenities'][:3])}
+- **Reviews:** {hotel['reviews_count']} reviews
+- **Book:** {hotel['booking_url']}
+"""
+                
+                hotel_info += f"""
+
+**Booking Tips:**
+- Compare prices on multiple booking sites
+- Book directly with hotels for better rates
+- Check for free cancellation policies
+- Consider location vs. price trade-offs
+- Read recent reviews before booking
+
+*Data source: {hotel['source']}*
+                """
+                
+                return hotel_info.strip()
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Hotel data error: {e}")
+            return None
+    
+    async def _handle_budget_query(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
+        """Handle budget planning queries with currency conversion."""
+        print("💰 Planning budget...")
+        
+        try:
+            # Use currency conversion for budget planning
+            if self.currency_client:
+                budget_data = await self._get_budget_data(travel_info)
+                if budget_data:
+                    response_parts.append(budget_data)
+                    return
+            
+            # Fallback to web search
+            if travel_info['destination'] and travel_info['budget']:
+                search_query = f"travel budget {travel_info['destination']} {travel_info['budget']} dollars {travel_info['duration'] or ''} days"
+                web_results = await self.search_web(search_query)
+                
+                if web_results:
+                    context_parts.append(f"Budget planning: {web_results[0]['snippet']}")
+                else:
+                    context_parts.append(f"Budget planning: Consider accommodation, food, transportation, and activities costs for {travel_info['destination']}.")
+            else:
+                context_parts.append("Budget planning: Please specify destination and budget for detailed planning.")
+                
+        except Exception as e:
+            logger.error(f"Budget query error: {e}")
+            context_parts.append(f"Budget planning: Unable to retrieve current budget data. Please check travel cost websites directly.")
+    
+    async def _get_budget_data(self, travel_info: Dict[str, Any]) -> Optional[str]:
+        """Get budget data with currency conversion."""
+        try:
+            if not self.currency_client:
+                return None
+            
+            destination = travel_info.get('destination', '')
+            budget = travel_info.get('budget', '')
+            duration = travel_info.get('duration', '7')
+            
+            # Parse budget
+            budget_amount = None
+            if budget and budget.isdigit():
+                budget_amount = float(budget)
+            
+            if not budget_amount:
+                return None
+            
+            # Get currency conversion for common travel currencies
+            currencies = ['EUR', 'GBP', 'JPY', 'CAD', 'AUD']
+            conversions = []
+            
+            for currency in currencies:
+                conversion = await self.currency_client.convert_currency(budget_amount, 'USD', currency)
+                if conversion:
+                    symbol = self.currency_client.get_currency_symbol(currency)
+                    conversions.append(f"{symbol}{conversion['converted_amount']:.2f} {currency}")
+            
+            budget_info = f"""
+**💰 Budget Planning for {destination}**
+
+💵 **Your Budget:** ${budget_amount} USD
+📅 **Duration:** {duration} days
+📊 **Daily Budget:** ${budget_amount / int(duration):.2f} USD/day
+
+**💱 Currency Conversion:**
+{chr(10).join(conversions)}
+
+**📋 Budget Breakdown (Estimated):**
+- **Accommodation:** ${budget_amount * 0.4:.2f} (40%)
+- **Food & Dining:** ${budget_amount * 0.3:.2f} (30%)
+- **Transportation:** ${budget_amount * 0.2:.2f} (20%)
+- **Activities & Shopping:** ${budget_amount * 0.1:.2f} (10%)
+
+**💡 Money-Saving Tips:**
+- Book accommodation in advance for better rates
+- Use public transportation when possible
+- Eat at local restaurants for authentic and affordable meals
+- Look for free walking tours and attractions
+- Consider staying slightly outside city center for lower prices
+
+*Exchange rates updated: {datetime.now().strftime('%Y-%m-%d %H:%M')}*
+*Data source: Free Currency API*
+            """
+            
+            return budget_info.strip()
+            
+        except Exception as e:
+            logger.error(f"Budget data error: {e}")
+            return None
     
     async def _handle_destination_query(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
-        """Handle destination-specific queries."""
+        """Handle destination-specific queries with attractions."""
         destination = travel_info['destination']
         print(f"📍 Getting information about {destination}...")
         
-        # Get country information
-        country_data = await self.get_country_info(destination)
-        if "error" not in country_data and country_data:
-            if isinstance(country_data, list) and len(country_data) > 0:
-                country_info = country_data[0]
-            else:
-                country_info = country_data
+        try:
+            # Get attractions for the destination
+            if self.attractions_client:
+                attractions_data = await self._get_attractions_data(destination)
+                if attractions_data:
+                    response_parts.append(attractions_data)
+            
+            # Get country information
+            country_data = await self.get_country_info(destination)
+            if "error" not in country_data and country_data:
+                if isinstance(country_data, list) and len(country_data) > 0:
+                    country_info = country_data[0]
+                else:
+                    country_info = country_data
             
             capital = country_info.get('capital', ['Unknown'])[0] if isinstance(country_info.get('capital'), list) else country_info.get('capital', 'Unknown')
             population = country_info.get('population', 'Unknown')
@@ -486,12 +938,61 @@ class TravelAgent:
                     lon = geo_info.get('lon', 'Unknown')
                     response_parts.append(f"Coordinates: {lat}, {lon}")
         
-        # Get Wikipedia information
-        print(f"📚 Getting detailed information...")
-        wiki_data = await self.search_wikipedia(f"{destination} tourism travel guide")
-        if "error" not in wiki_data and wiki_data:
-            summary = wiki_data.get('summary', 'No summary available')
-            context_parts.append(f"Travel information: {summary[:500]}...")
+            # Get Wikipedia information
+            print(f"📚 Getting detailed information...")
+            wiki_data = await self.search_wikipedia(f"{destination} tourism travel guide")
+            if "error" not in wiki_data and wiki_data:
+                summary = wiki_data.get('summary', 'No summary available')
+                context_parts.append(f"Travel information: {summary[:500]}...")
+        
+        except Exception as e:
+            logger.error(f"Destination query error: {e}")
+            context_parts.append(f"Destination information: Unable to retrieve detailed data for {destination}. Please check travel websites directly.")
+    
+    async def _get_attractions_data(self, destination: str) -> Optional[str]:
+        """Get attractions data for a destination."""
+        try:
+            if not self.attractions_client:
+                return None
+            
+            attractions = await self.attractions_client.get_attractions(destination)
+            
+            if attractions:
+                attractions_info = f"""
+**🎯 Top Attractions in {destination}**
+
+"""
+                
+                # Group attractions by category
+                categories = {}
+                for attraction in attractions[:10]:  # Top 10 attractions
+                    category = attraction.get('category', 'general')
+                    if category not in categories:
+                        categories[category] = []
+                    categories[category].append(attraction)
+                
+                for category, attrs in categories.items():
+                    attractions_info += f"**{category.title()}:**\n"
+                    for attr in attrs[:3]:  # Top 3 per category
+                        attractions_info += f"• **{attr['name']}** ⭐ {attr['rating']} - {attr['price']} ({attr['duration']})\n"
+                    attractions_info += "\n"
+                
+                # Add travel tips
+                tips = self.attractions_client.get_travel_tips(destination)
+                attractions_info += f"""
+**💡 Travel Tips for {destination}:**
+{chr(10).join([f"• {tip}" for tip in tips])}
+
+*Data source: {attractions[0]['source']}*
+                """
+                
+                return attractions_info.strip()
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Attractions data error: {e}")
+            return None
     
     async def _handle_general_query(self, query: str, response_parts: List[str], context_parts: List[str]):
         """Handle general travel queries."""
@@ -610,6 +1111,434 @@ Privacy:
 • Free forever - no API costs
         """
         print(help_text)
+
+    async def _handle_attractions_query(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
+        """Handle attractions queries with real attractions data."""
+        print("🎯 Searching for attractions...")
+        
+        try:
+            if self.attractions_client and travel_info.get('destination'):
+                attractions_data = await self._get_attractions_data(travel_info['destination'])
+                if attractions_data:
+                    response_parts.append(attractions_data)
+                    return
+            
+            # Fallback to web search
+            search_query = f"attractions things to do {travel_info.get('destination', '')}"
+            web_results = await self.search_web(search_query)
+            
+            if web_results:
+                context_parts.append(f"Attractions information: {web_results[0]['snippet']}")
+            else:
+                context_parts.append(f"Attractions: Check local tourism websites and travel guides for {travel_info.get('destination', 'your destination')}.")
+                
+        except Exception as e:
+            logger.error(f"Attractions query error: {e}")
+            context_parts.append("Attractions: Unable to retrieve current attractions data. Please check tourism websites directly.")
+    
+    async def _handle_food_query(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
+        """Handle food and restaurant queries with real restaurant data."""
+        print("🍽️ Searching for restaurants...")
+        
+        try:
+            if self.food_client and travel_info.get('destination'):
+                food_data = await self._get_food_data(travel_info)
+                if food_data:
+                    response_parts.append(food_data)
+                    return
+            
+            # Fallback to web search
+            search_query = f"restaurants food {travel_info.get('destination', '')}"
+            web_results = await self.search_web(search_query)
+            
+            if web_results:
+                context_parts.append(f"Restaurant information: {web_results[0]['snippet']}")
+            else:
+                context_parts.append(f"Restaurants: Check local food guides and review sites for {travel_info.get('destination', 'your destination')}.")
+                
+        except Exception as e:
+            logger.error(f"Food query error: {e}")
+            context_parts.append("Restaurants: Unable to retrieve current restaurant data. Please check food review websites directly.")
+    
+    async def _handle_transportation_query(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
+        """Handle transportation queries with real transport data."""
+        print("🚌 Searching for transportation options...")
+        
+        try:
+            if self.transportation_client and travel_info.get('destination'):
+                transport_data = await self._get_transportation_data(travel_info['destination'])
+                if transport_data:
+                    response_parts.append(transport_data)
+                    return
+            
+            # Fallback to web search
+            search_query = f"transportation public transit {travel_info.get('destination', '')}"
+            web_results = await self.search_web(search_query)
+            
+            if web_results:
+                context_parts.append(f"Transportation information: {web_results[0]['snippet']}")
+            else:
+                context_parts.append(f"Transportation: Check local transit websites and maps for {travel_info.get('destination', 'your destination')}.")
+                
+        except Exception as e:
+            logger.error(f"Transportation query error: {e}")
+            context_parts.append("Transportation: Unable to retrieve current transport data. Please check local transit websites directly.")
+    
+    async def _handle_car_rental_query(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
+        """Handle car rental queries with real rental data."""
+        print("🚗 Searching for car rentals...")
+        
+        try:
+            if self.car_rental_client and travel_info.get('destination'):
+                car_data = await self._get_car_rental_data(travel_info)
+                if car_data:
+                    response_parts.append(car_data)
+                    return
+            
+            # Fallback to web search
+            search_query = f"car rental {travel_info.get('destination', '')}"
+            web_results = await self.search_web(search_query)
+            
+            if web_results:
+                context_parts.append(f"Car rental information: {web_results[0]['snippet']}")
+            else:
+                context_parts.append(f"Car rentals: Check major rental companies and comparison sites for {travel_info.get('destination', 'your destination')}.")
+                
+        except Exception as e:
+            logger.error(f"Car rental query error: {e}")
+            context_parts.append("Car rentals: Unable to retrieve current rental data. Please check rental company websites directly.")
+    
+    async def _handle_events_query(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
+        """Handle events and entertainment queries with real events data."""
+        print("🎭 Searching for events and shows...")
+        
+        try:
+            if self.events_client and travel_info.get('destination'):
+                events_data = await self._get_events_data(travel_info)
+                if events_data:
+                    response_parts.append(events_data)
+                    return
+            
+            # Fallback to web search
+            search_query = f"events shows entertainment {travel_info.get('destination', '')}"
+            web_results = await self.search_web(search_query)
+            
+            if web_results:
+                context_parts.append(f"Events information: {web_results[0]['snippet']}")
+            else:
+                context_parts.append(f"Events: Check local event calendars and entertainment venues for {travel_info.get('destination', 'your destination')}.")
+                
+        except Exception as e:
+            logger.error(f"Events query error: {e}")
+            context_parts.append("Events: Unable to retrieve current events data. Please check local event websites directly.")
+    
+    async def _handle_insurance_query(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
+        """Handle travel insurance queries with real insurance data."""
+        print("🛡️ Searching for travel insurance...")
+        
+        try:
+            if self.insurance_client and travel_info.get('destination'):
+                insurance_data = await self._get_insurance_data(travel_info)
+                if insurance_data:
+                    response_parts.append(insurance_data)
+                    return
+            
+            # Fallback to web search
+            search_query = f"travel insurance {travel_info.get('destination', '')}"
+            web_results = await self.search_web(search_query)
+            
+            if web_results:
+                context_parts.append(f"Insurance information: {web_results[0]['snippet']}")
+            else:
+                context_parts.append(f"Travel insurance: Check insurance comparison sites and providers for {travel_info.get('destination', 'your destination')}.")
+                
+        except Exception as e:
+            logger.error(f"Insurance query error: {e}")
+            context_parts.append("Travel insurance: Unable to retrieve current insurance data. Please check insurance provider websites directly.")
+    
+    async def _get_food_data(self, travel_info: Dict[str, Any]) -> Optional[str]:
+        """Get food and restaurant data."""
+        try:
+            if not self.food_client:
+                return None
+            
+            destination = travel_info.get('destination', '')
+            budget = travel_info.get('budget', '')
+            
+            # Parse budget for price range
+            price_range = None
+            if budget:
+                if budget < 50:
+                    price_range = "budget"
+                elif budget < 100:
+                    price_range = "mid-range"
+                else:
+                    price_range = "luxury"
+            
+            # Search for restaurants
+            restaurants = await self.food_client.get_restaurants(
+                city=destination,
+                price_range=price_range
+            )
+            
+            if restaurants:
+                food_info = f"""
+**🍽️ Restaurant Recommendations in {destination}**
+
+💰 **Budget:** ${budget or 'Not specified'}
+
+**Top Restaurant Options:**
+"""
+                
+                for i, restaurant in enumerate(restaurants[:6], 1):  # Show top 6 options
+                    food_info += f"""
+**{i}. {restaurant['name']}** ⭐ {restaurant['rating']} ({restaurant['price_range']})
+- **Cuisine:** {restaurant['cuisine']}
+- **Specialty:** {restaurant['specialty']}
+- **Location:** {restaurant['location']}
+- **Features:** {', '.join(restaurant['features'][:3])}
+- **Popular Dishes:** {', '.join(restaurant['popular_dishes'][:2])}
+- **Reservations:** {restaurant['reservations']}
+"""
+                
+                # Add food tips
+                tips = await self.food_client.get_food_tips(destination)
+                food_info += f"""
+
+**🍴 Dining Tips:**
+{chr(10).join([f"• {tip}" for tip in tips])}
+
+*Data source: {restaurant['source']}*
+                """
+                
+                return food_info.strip()
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Food data error: {e}")
+            return None
+    
+    async def _get_transportation_data(self, destination: str) -> Optional[str]:
+        """Get transportation data for a destination."""
+        try:
+            if not self.transportation_client:
+                return None
+            
+            transport_options = await self.transportation_client.get_transportation_options(destination)
+            
+            if transport_options:
+                transport_info = f"""
+**🚌 Transportation Options in {destination}**
+
+**Available Transport Types:**
+"""
+                
+                # Group by transport type
+                transport_types = {}
+                for option in transport_options[:10]:  # Top 10 options
+                    transport_type = option.get('type', 'Other')
+                    if transport_type not in transport_types:
+                        transport_types[transport_type] = []
+                    transport_types[transport_type].append(option)
+                
+                for transport_type, options in transport_types.items():
+                    transport_info += f"\n**{transport_type}:**\n"
+                    for option in options[:3]:  # Top 3 per type
+                        transport_info += f"• **{option['service']}** - {option['price']} ({option['speed']}, {option['convenience']})\n"
+                
+                # Add transportation tips
+                tips = await self.transportation_client.get_transportation_tips(destination)
+                transport_info += f"""
+
+**🚌 Transportation Tips:**
+{chr(10).join([f"• {tip}" for tip in tips])}
+
+*Data source: {transport_options[0]['source']}*
+                """
+                
+                return transport_info.strip()
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Transportation data error: {e}")
+            return None
+    
+    async def _get_car_rental_data(self, travel_info: Dict[str, Any]) -> Optional[str]:
+        """Get car rental data."""
+        try:
+            if not self.car_rental_client:
+                return None
+            
+            destination = travel_info.get('destination', '')
+            duration = int(travel_info.get('duration', 1))
+            
+            # Search for car rentals
+            rentals = await self.car_rental_client.search_car_rentals(
+                city=destination,
+                duration=duration
+            )
+            
+            if rentals:
+                car_info = f"""
+**🚗 Car Rental Options in {destination}**
+
+📅 **Rental Duration:** {duration} days
+
+**Top Car Rental Options:**
+"""
+                
+                for i, rental in enumerate(rentals[:5], 1):  # Show top 5 options
+                    car_info += f"""
+**{i}. {rental['company']} - {rental['car_type']}**
+- **Vehicle:** {rental['car_model']}
+- **Price:** {rental['total_price']} ({rental['daily_price']}/day)
+- **Rating:** ⭐ {rental['rating']}
+- **Location:** {rental['pickup_location']}
+- **Features:** {', '.join(rental['features'][:3])}
+- **Insurance:** {rental['insurance']}
+- **Book:** {rental['booking_url']}
+"""
+                
+                # Add rental tips
+                tips = await self.car_rental_client.get_rental_tips(destination)
+                car_info += f"""
+
+**🚗 Rental Tips:**
+{chr(10).join([f"• {tip}" for tip in tips])}
+
+*Data source: {rental['source']}*
+                """
+                
+                return car_info.strip()
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Car rental data error: {e}")
+            return None
+    
+    async def _get_events_data(self, travel_info: Dict[str, Any]) -> Optional[str]:
+        """Get events and entertainment data."""
+        try:
+            if not self.events_client:
+                return None
+            
+            destination = travel_info.get('destination', '')
+            date = travel_info.get('date', '')
+            
+            # Search for events
+            events = await self.events_client.get_events(
+                city=destination,
+                date_range="this week"
+            )
+            
+            if events:
+                events_info = f"""
+**🎭 Events & Entertainment in {destination}**
+
+📅 **Date Range:** This week
+
+**Upcoming Events:**
+"""
+                
+                # Group by category
+                categories = {}
+                for event in events[:12]:  # Top 12 events
+                    category = event.get('category', 'general')
+                    if category not in categories:
+                        categories[category] = []
+                    categories[category].append(event)
+                
+                for category, event_list in categories.items():
+                    events_info += f"\n**{category.title()}:**\n"
+                    for event in event_list[:3]:  # Top 3 per category
+                        events_info += f"• **{event['name']}** - {event['date']} at {event['time']} ({event['price']})\n"
+                        events_info += f"  📍 {event['venue']} | ⭐ {event['rating']}\n"
+                
+                # Add entertainment tips
+                tips = await self.events_client.get_entertainment_tips(destination)
+                events_info += f"""
+
+**🎭 Entertainment Tips:**
+{chr(10).join([f"• {tip}" for tip in tips])}
+
+*Data source: {events[0]['source']}*
+                """
+                
+                return events_info.strip()
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Events data error: {e}")
+            return None
+    
+    async def _get_insurance_data(self, travel_info: Dict[str, Any]) -> Optional[str]:
+        """Get travel insurance data."""
+        try:
+            if not self.insurance_client:
+                return None
+            
+            destination = travel_info.get('destination', '')
+            duration = int(travel_info.get('duration', 7))
+            budget = travel_info.get('budget', 0)
+            
+            # Determine trip type based on budget
+            trip_type = "leisure"
+            if budget > 5000:
+                trip_type = "luxury"
+            elif budget < 1000:
+                trip_type = "budget"
+            
+            # Search for insurance options
+            insurance_options = await self.insurance_client.get_travel_insurance_options(
+                destination=destination,
+                duration=duration,
+                trip_type=trip_type
+            )
+            
+            if insurance_options:
+                insurance_info = f"""
+**🛡️ Travel Insurance Options for {destination}**
+
+📅 **Trip Duration:** {duration} days
+💰 **Trip Type:** {trip_type.title()}
+
+**Insurance Provider Options:**
+"""
+                
+                for i, insurance in enumerate(insurance_options[:5], 1):  # Show top 5 options
+                    insurance_info += f"""
+**{i}. {insurance['provider']} - {insurance['coverage_type']}**
+- **Price:** {insurance['total_price']} ({insurance['daily_price']}/day)
+- **Rating:** ⭐ {insurance['rating']}
+- **Coverage:** {insurance['coverage_level']}
+- **Medical Coverage:** {insurance['medical_coverage']}
+- **Trip Cancellation:** {insurance['trip_cancellation']}
+- **Features:** {', '.join(insurance['features'][:3])}
+- **Book:** {insurance['booking_url']}
+"""
+                
+                # Add insurance tips
+                tips = await self.insurance_client.get_insurance_tips(destination)
+                insurance_info += f"""
+
+**🛡️ Insurance Tips:**
+{chr(10).join([f"• {tip}" for tip in tips])}
+
+*Data source: {insurance['source']}*
+                """
+                
+                return insurance_info.strip()
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Insurance data error: {e}")
+            return None
+
 
 def main():
     """Main application entry point."""

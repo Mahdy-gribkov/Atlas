@@ -54,3 +54,9 @@
 2025-10-13 02:13:34,554 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 500 Internal Server Error"
 2025-10-13 02:13:34,555 - ERROR - LLM call failed: model requires more system memory (5.6 GiB) than is available (2.8 GiB) (status code: 500)
 2025-10-13 02:13:34,556 - ERROR - Failed to save conversation: 'SecureDatabase' object has no attribute 'save_conversation'
+2025-10-13 04:27:38,391 - INFO - HTTP Request: GET http://127.0.0.1:11434/api/tags "HTTP/1.1 200 OK"
+2025-10-13 04:27:38,392 - INFO - Local LLM (llama3.1:8b) initialized
+2025-10-13 04:27:38,392 - INFO - Travel agent initialized successfully
+2025-10-13 04:27:53,270 - INFO - Processing query: hey, i want to teavel to the usa from tel aviv tommorow morning....
+2025-10-13 04:30:02,724 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
+2025-10-13 04:30:02,727 - ERROR - Failed to save conversation: 'SecureDatabase' object has no attribute 'save_conversation'
