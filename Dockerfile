@@ -61,7 +61,25 @@ RUN echo 'server { \
     \
     # Proxy API requests to backend \
     location /api/ { \
-        proxy_pass http://localhost:8000; \
+        proxy_pass http://localhost:8000/api/; \
+        proxy_set_header Host $host; \
+        proxy_set_header X-Real-IP $remote_addr; \
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
+        proxy_set_header X-Forwarded-Proto $scheme; \
+    } \
+    \
+    # Proxy root API requests \
+    location /chat { \
+        proxy_pass http://localhost:8000/chat; \
+        proxy_set_header Host $host; \
+        proxy_set_header X-Real-IP $remote_addr; \
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
+        proxy_set_header X-Forwarded-Proto $scheme; \
+    } \
+    \
+    # Proxy health check \
+    location /health { \
+        proxy_pass http://localhost:8000/health; \
         proxy_set_header Host $host; \
         proxy_set_header X-Real-IP $remote_addr; \
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
@@ -71,5 +89,9 @@ RUN echo 'server { \
 
 EXPOSE 80
 
+# Copy startup script
+COPY startup.sh /app/startup.sh
+RUN chmod +x /app/startup.sh
+
 # Perfect startup: Ollama + Backend + Frontend all in one
-CMD ["bash", "-c", "ollama serve & sleep 5 && python3 api.py & nginx -g 'daemon off;'"]
+CMD ["/app/startup.sh"]

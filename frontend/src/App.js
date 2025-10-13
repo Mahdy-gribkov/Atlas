@@ -37,7 +37,7 @@ function App() {
     setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
     try {
-      const response = await fetch('/chat', {
+      const response = await fetch('/chat-simple', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -49,43 +49,17 @@ function App() {
         throw new Error('Network response was not ok');
       }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let assistantContent = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              if (data.chunk) {
-                assistantContent += data.chunk + ' ';
-                // Update the last message (assistant message) with streaming content
-                setMessages(prev => {
-                  const newMessages = [...prev];
-                  newMessages[newMessages.length - 1] = {
-                    role: 'assistant',
-                    content: assistantContent.trim()
-                  };
-                  return newMessages;
-                });
-              }
-              if (data.done) {
-                setIsLoading(false);
-                return;
-              }
-            } catch (e) {
-              // Ignore parsing errors for incomplete chunks
-            }
-          }
-        }
-      }
+      const data = await response.json();
+      
+      // Update the last message (assistant message) with the response
+      setMessages(prev => {
+        const newMessages = [...prev];
+        newMessages[newMessages.length - 1] = {
+          role: 'assistant',
+          content: data.response
+        };
+        return newMessages;
+      });
 
     } catch (error) {
       console.error('Error:', error);
@@ -145,10 +119,27 @@ function App() {
               <p>Your intelligent travel planning companion</p>
             </div>
           </div>
-          <div className="header-badges">
-            <span className="badge">🔒 Privacy-First</span>
-            <span className="badge">🤖 Local AI</span>
-            <span className="badge">⚡ Real-time</span>
+          <div className="header-actions">
+            <div className="header-badges">
+              <span className="badge" title="Your data never leaves your device">🔒 Privacy-First</span>
+              <span className="badge" title="Powered by Llama 3.1:8b local AI">🤖 Local AI</span>
+              <span className="badge" title="Instant responses, no delays">⚡ Real-time</span>
+              <span className="badge" title="Voice recognition available">🎤 Voice</span>
+              <span className="badge" title="Multi-language support">🌍 Multi-lang</span>
+            </div>
+            <div className="quick-start-buttons">
+              {exampleQueries.slice(0, 3).map((query, index) => (
+                <button
+                  key={index}
+                  className="quick-header-button"
+                  onClick={() => setInput(query)}
+                  disabled={isLoading}
+                  title={query}
+                >
+                  {query.split(' ').slice(0, 2).join(' ')}...
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </header>
@@ -181,35 +172,6 @@ function App() {
       )}
 
       <div className="main-content">
-        <div className="sidebar">
-          <div className="travel-categories">
-            <h3>Travel Planning</h3>
-            {travelCategories.map((category, index) => (
-              <div key={index} className="category-card">
-                <div className="category-icon">{category.icon}</div>
-                <div className="category-info">
-                  <h4>{category.title}</h4>
-                  <p>{category.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="quick-actions">
-            <h3>Quick Start</h3>
-            {exampleQueries.map((query, index) => (
-              <button
-                key={index}
-                className="quick-action-button"
-                onClick={() => setInput(query)}
-                disabled={isLoading}
-              >
-                {query}
-              </button>
-            ))}
-          </div>
-        </div>
-
         <div className="chat-container">
           <div className="chat-header">
             <h3>Chat with Travel AI</h3>
@@ -252,6 +214,9 @@ function App() {
 
           <div className="input-area">
             <div className="input-container">
+              <button className="voice-button" title="Voice input (coming soon)">
+                🎤
+              </button>
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -273,6 +238,18 @@ function App() {
                   </svg>
                 )}
               </button>
+            </div>
+            <div className="quick-suggestions">
+              {exampleQueries.map((query, index) => (
+                <button
+                  key={index}
+                  className="suggestion-chip"
+                  onClick={() => setInput(query)}
+                  disabled={isLoading}
+                >
+                  {query}
+                </button>
+              ))}
             </div>
           </div>
         </div>
