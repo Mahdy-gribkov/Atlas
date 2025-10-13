@@ -358,25 +358,37 @@ class TravelAgent:
     
     def _classify_query_type(self, query: str) -> str:
         """Classify the type of travel query."""
-        if any(word in query for word in ['flight', 'airline', 'book', 'ticket']):
+        query_lower = query.lower()
+        
+        # Check for comprehensive travel planning first
+        if any(phrase in query_lower for phrase in ['full plan', 'complete plan', 'itinerary', 'travel to', 'trip to', 'visit']):
+            if any(word in query_lower for word in ['flight', 'fly', 'airline', 'airport']):
+                return 'flights'
+            elif any(word in query_lower for word in ['budget', 'cost', 'price', 'expensive', 'cheap']):
+                return 'budget'
+            else:
+                return 'flights'  # Default to flights for travel planning
+        
+        # Specific service queries
+        if any(word in query_lower for word in ['flight', 'airline', 'book', 'ticket', 'fly']):
             return 'flights'
-        elif any(word in query for word in ['hotel', 'accommodation', 'stay', 'room']):
+        elif any(word in query_lower for word in ['hotel', 'accommodation', 'stay', 'room']):
             return 'accommodation'
-        elif any(word in query for word in ['budget', 'cost', 'price', 'expensive', 'cheap']):
+        elif any(word in query_lower for word in ['budget', 'cost', 'price', 'expensive', 'cheap']):
             return 'budget'
-        elif any(word in query for word in ['weather', 'climate', 'temperature']):
+        elif any(word in query_lower for word in ['weather', 'climate', 'temperature']):
             return 'weather'
-        elif any(word in query for word in ['attraction', 'sightseeing', 'tour', 'visit']):
+        elif any(word in query_lower for word in ['attraction', 'sightseeing', 'tour', 'visit']):
             return 'attractions'
-        elif any(word in query for word in ['food', 'restaurant', 'cuisine', 'eat', 'dining']):
+        elif any(word in query_lower for word in ['food', 'restaurant', 'cuisine', 'eat', 'dining']):
             return 'food'
-        elif any(word in query for word in ['transport', 'bus', 'train', 'metro', 'taxi', 'uber', 'lyft']):
+        elif any(word in query_lower for word in ['transport', 'bus', 'train', 'metro', 'taxi', 'uber', 'lyft']):
             return 'transportation'
-        elif any(word in query for word in ['car', 'rental', 'vehicle', 'drive']):
+        elif any(word in query_lower for word in ['car', 'rental', 'vehicle', 'drive']):
             return 'car_rental'
-        elif any(word in query for word in ['event', 'show', 'concert', 'theater', 'entertainment']):
+        elif any(word in query_lower for word in ['event', 'show', 'concert', 'theater', 'entertainment']):
             return 'events'
-        elif any(word in query for word in ['insurance', 'coverage', 'protection', 'policy']):
+        elif any(word in query_lower for word in ['insurance', 'coverage', 'protection', 'policy']):
             return 'insurance'
         else:
             return 'general'
@@ -455,7 +467,7 @@ class TravelAgent:
     
     async def _handle_weather_query(self, query: str, response_parts: List[str], context_parts: List[str]):
         """Handle weather-related queries with real API data."""
-        print("🌤️ Getting weather information...")
+        logger.info("Getting weather information...")
         
         # Extract location from query
         location_match = re.search(r'(?:weather|climate)\s+(?:in|for|at)\s+([^?]+)', query.lower())
@@ -495,7 +507,7 @@ class TravelAgent:
     
     async def _handle_flight_query(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
         """Handle flight-related queries with real API data."""
-        print("✈️ Searching for flight information...")
+        logger.info("Searching for flight information...")
         
         try:
             # Try paid flight API first, then free flight API
@@ -721,7 +733,7 @@ class TravelAgent:
     
     async def _handle_accommodation_query(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
         """Handle accommodation queries with real hotel data."""
-        print("🏨 Searching for accommodation...")
+        logger.info("Searching for accommodation...")
         
         try:
             # Use hotel search client for real hotel data
@@ -808,7 +820,7 @@ class TravelAgent:
     
     async def _handle_budget_query(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
         """Handle budget planning queries with currency conversion."""
-        print("💰 Planning budget...")
+        logger.info("Planning budget...")
         
         try:
             # Use currency conversion for budget planning
@@ -898,7 +910,7 @@ class TravelAgent:
     async def _handle_destination_query(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
         """Handle destination-specific queries with attractions."""
         destination = travel_info['destination']
-        print(f"📍 Getting information about {destination}...")
+        logger.info(f"Getting information about {destination}...")
         
         try:
             # Get attractions for the destination
@@ -996,7 +1008,7 @@ class TravelAgent:
     
     async def _handle_general_query(self, query: str, response_parts: List[str], context_parts: List[str]):
         """Handle general travel queries."""
-        print("🔍 Searching for general information...")
+        logger.info("Searching for general information...")
         
         # Search the web for current information
         web_results = await self.search_web(query)
@@ -1114,7 +1126,7 @@ Privacy:
 
     async def _handle_attractions_query(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
         """Handle attractions queries with real attractions data."""
-        print("🎯 Searching for attractions...")
+        logger.info("Searching for attractions...")
         
         try:
             if self.attractions_client and travel_info.get('destination'):
@@ -1138,7 +1150,7 @@ Privacy:
     
     async def _handle_food_query(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
         """Handle food and restaurant queries with real restaurant data."""
-        print("🍽️ Searching for restaurants...")
+        logger.info("Searching for restaurants...")
         
         try:
             if self.food_client and travel_info.get('destination'):
@@ -1162,7 +1174,7 @@ Privacy:
     
     async def _handle_transportation_query(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
         """Handle transportation queries with real transport data."""
-        print("🚌 Searching for transportation options...")
+        logger.info("Searching for transportation options...")
         
         try:
             if self.transportation_client and travel_info.get('destination'):
@@ -1186,7 +1198,7 @@ Privacy:
     
     async def _handle_car_rental_query(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
         """Handle car rental queries with real rental data."""
-        print("🚗 Searching for car rentals...")
+        logger.info("Searching for car rentals...")
         
         try:
             if self.car_rental_client and travel_info.get('destination'):
@@ -1210,7 +1222,7 @@ Privacy:
     
     async def _handle_events_query(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
         """Handle events and entertainment queries with real events data."""
-        print("🎭 Searching for events and shows...")
+        logger.info("Searching for events and shows...")
         
         try:
             if self.events_client and travel_info.get('destination'):
@@ -1234,7 +1246,7 @@ Privacy:
     
     async def _handle_insurance_query(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
         """Handle travel insurance queries with real insurance data."""
-        print("🛡️ Searching for travel insurance...")
+        logger.info("Searching for travel insurance...")
         
         try:
             if self.insurance_client and travel_info.get('destination'):

@@ -60,3 +60,12 @@
 2025-10-13 04:27:53,270 - INFO - Processing query: hey, i want to teavel to the usa from tel aviv tommorow morning....
 2025-10-13 04:30:02,724 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
 2025-10-13 04:30:02,727 - ERROR - Failed to save conversation: 'SecureDatabase' object has no attribute 'save_conversation'
+2025-10-13 05:08:56,692 - INFO - Using free flight data sources
+2025-10-13 05:08:56,693 - INFO - Using free weather data sources
+2025-10-13 05:08:56,693 - INFO - Free APIs initialized: Weather (wttr.in, Open-Meteo), Flights, Currency, Hotels, Attractions, Car Rental, Events, Insurance, Transportation, Food
+2025-10-13 05:08:57,268 - INFO - HTTP Request: GET http://127.0.0.1:11434/api/tags "HTTP/1.1 200 OK"
+2025-10-13 05:08:57,269 - INFO - Local LLM (llama3.1:8b) initialized
+2025-10-13 05:08:57,269 - INFO - Travel agent initialized successfully
+2025-10-13 05:10:10,057 - INFO - Processing query: i want to travel to to a cheap place anywhere in the world from tel aviv in jan 26 (anytime in the m...
+2025-10-13 05:13:05,666 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
+2025-10-13 05:22:10,291 - INFO - Processing query: Cpython travel_agent.py...
