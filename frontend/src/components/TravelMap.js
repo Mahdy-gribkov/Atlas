@@ -178,18 +178,20 @@ const TravelMap = ({ currentLocation, destinationLocation, suggestedLocations })
 
   return (
     <div className="real-map-container">
-      {/* Map View Controls */}
+      {/* Map View Controls - Single Button */}
       <div className="map-controls">
         <div className="map-view-selector">
-          {Object.entries(mapViews).map(([key, view]) => (
-            <button
-              key={key}
-              className={`map-view-btn ${mapView === key ? 'active' : ''}`}
-              onClick={() => setMapView(key)}
-            >
-              {view.name}
-            </button>
-          ))}
+          <button
+            className="map-view-btn"
+            onClick={() => {
+              const viewKeys = Object.keys(mapViews);
+              const currentIndex = viewKeys.indexOf(mapView);
+              const nextIndex = (currentIndex + 1) % viewKeys.length;
+              setMapView(viewKeys[nextIndex]);
+            }}
+          >
+            {mapViews[mapView].name}
+          </button>
         </div>
       </div>
       

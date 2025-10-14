@@ -12,7 +12,6 @@ from datetime import datetime
 # Add src to path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
-from apis.weather_client import OpenWeatherClient
 from apis.flight_client import AviationStackClient
 from apis.free_weather_client import FreeWeatherClient
 from apis.food_client import FoodClient
@@ -45,7 +44,6 @@ async def main():
     print("=" * 50)
     
     # Initialize clients
-    weather_client = OpenWeatherClient()
     flight_client = AviationStackClient()
     free_weather_client = FreeWeatherClient()
     food_client = FoodClient()
@@ -61,11 +59,6 @@ async def main():
     results = []
     
     # Test weather APIs
-    results.append(await test_api(
-        weather_client, 
-        "OpenWeather (wttr.in)", 
-        lambda: weather_client.get_current_weather("London")
-    ))
     
     results.append(await test_api(
         free_weather_client, 

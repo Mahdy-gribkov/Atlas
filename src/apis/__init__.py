@@ -4,7 +4,6 @@ Provides comprehensive travel data through free and paid APIs.
 """
 
 # Core API clients
-from .weather_client import WeatherClient, OpenWeatherClient, FreeWeatherClient
 from .flight_client import AviationStackClient
 from .country_client import RestCountriesClient
 from .wikipedia_client import WikipediaClient
@@ -13,6 +12,7 @@ from .web_search_client import WebSearchClient
 from .rate_limiter import APIRateLimiter
 
 # Free API clients (no keys required)
+from .free_weather_client import FreeWeatherClient
 from .free_flight_client import FreeFlightClient
 from .open_meteo_client import OpenMeteoClient
 
@@ -28,9 +28,7 @@ from .food_client import FoodClient
 
 __all__ = [
     # Core clients
-    'WeatherClient',
     'OpenWeatherClient',
-    'FreeWeatherClient',
     'AviationStackClient',
     'RestCountriesClient',
     'WikipediaClient',
@@ -39,6 +37,7 @@ __all__ = [
     'APIRateLimiter',
     
     # Free clients
+    'FreeWeatherClient',
     'FreeFlightClient',
     'OpenMeteoClient',
     

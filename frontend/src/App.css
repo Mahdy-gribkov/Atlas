@@ -302,6 +302,177 @@ body {
   z-index: 1;
 }
 
+/* Map Panel - Responsive */
+.map-panel {
+  background: rgba(15, 23, 42, 0.4);
+  border-right: 1px solid rgba(99, 102, 241, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 1rem;
+  transition: width 0.3s ease;
+}
+
+.app.light .map-panel {
+  background: rgba(255, 255, 255, 0.4);
+  border-right-color: rgba(59, 130, 246, 0.2);
+}
+
+/* Map Title */
+.map-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin-bottom: 1rem;
+  margin-left: 1rem; /* Move title to the right */
+}
+
+.app.light .map-title {
+  color: #1e293b;
+}
+
+/* Draggable Resize Handle */
+.resize-handle {
+  width: 4px;
+  background: transparent;
+  cursor: col-resize;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 10;
+}
+
+.resize-handle:hover {
+  background: rgba(99, 102, 241, 0.2);
+}
+
+.resize-handle:hover::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 40px;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 10px;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.resize-handle:hover::after {
+  content: '⋮⋮';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(99, 102, 241, 0.6);
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+.app.light .resize-handle {
+  background: rgba(59, 130, 246, 0.3);
+}
+
+.app.light .resize-handle:hover {
+  background: rgba(59, 130, 246, 0.6);
+}
+
+.app.light .resize-handle::before {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.app.light .resize-handle::after {
+  color: rgba(59, 130, 246, 0.6);
+}
+
+/* Map Container - Smaller with margins */
+.map-container {
+  flex: 1;
+  margin: 0 1rem; /* Add margins on left and right */
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  background: #1e293b;
+}
+
+.app.light .map-container {
+  background: #f8fafc;
+}
+
+/* Travel Plan Tracker */
+.travel-plan-tracker {
+  margin-top: 1rem;
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.app.light .travel-plan-tracker {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.tracker-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin-bottom: 0.75rem;
+}
+
+.app.light .tracker-title {
+  color: #1e293b;
+}
+
+.tracker-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tracker-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+.tracker-item:last-child {
+  border-bottom: none;
+}
+
+.tracker-label {
+  font-size: 0.875rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.app.light .tracker-label {
+  color: #64748b;
+}
+
+.tracker-value {
+  font-size: 0.875rem;
+  color: #f1f5f9;
+  font-weight: 400;
+  text-align: right;
+  max-width: 60%;
+  word-wrap: break-word;
+}
+
+.app.light .tracker-value {
+  color: #1e293b;
+}
+
 /* Quick Examples Panel - Proper Size */
 .quick-examples-panel {
   width: 250px;
@@ -706,6 +877,8 @@ body {
   overflow: hidden;
   position: relative;
   z-index: 2;
+  min-width: 55%; /* Ensure chat is minimum 55% */
+  transition: width 0.3s ease;
 }
 
 .app.light .chat-container {
@@ -912,16 +1085,48 @@ div.app.light div.message.user div.message-text {
   margin-bottom: 0;
 }
 
+/* List formatting */
+.message-line.list-item.numbered {
+  margin-left: 1rem;
+  padding-left: 0.5rem;
+  border-left: 2px solid #6366f1;
+}
+
+.message-line.list-item.bullet {
+  margin-left: 1rem;
+  padding-left: 0.5rem;
+}
+
+/* Section headers */
+.message-line.section-header {
+  font-weight: 600;
+  font-size: 1.1em;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  color: #6366f1;
+}
+
+.app.light .message-line.section-header {
+  color: #3b82f6;
+}
+
+/* Highlighted lines */
 .message-line.highlight {
-  background: rgba(59, 130, 246, 0.1);
-  padding: 0.5rem 0.75rem;
+  background: rgba(99, 102, 241, 0.1);
+  padding: 0.5rem;
   border-radius: 0.5rem;
-  border-left: 3px solid #3b82f6;
   margin: 0.5rem 0;
+  border-left: 3px solid #6366f1;
 }
 
 .app.light .message-line.highlight {
-  background: rgba(59, 130, 246, 0.05);
+  background: rgba(59, 130, 246, 0.1);
+  border-left-color: #3b82f6;
+}
+
+/* Paragraphs */
+.message-line.paragraph {
+  margin-bottom: 0.75rem;
 }
 
 .message-line.list-item {

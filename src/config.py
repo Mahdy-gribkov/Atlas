@@ -17,13 +17,12 @@ class Config:
     # NO API KEYS REQUIRED - All services are completely free
     # This project uses only free APIs that don't require any keys
     
-    # LLM Settings - Free Cloud LLM (No API key required)
-    USE_LOCAL_LLM: bool = os.getenv('USE_LOCAL_LLM', 'false').lower() == 'true'
-    OLLAMA_MODEL: str = os.getenv('OLLAMA_MODEL', 'llama3.1:8b')
+    # LLM Settings - Free Cloud LLM Only (No API key required)
+    USE_LOCAL_LLM: bool = False  # Always use cloud LLM
     
     # Free Cloud LLM Settings - Completely free, no API key required
-    CLOUD_LLM_URL: str = os.getenv('CLOUD_LLM_URL', 'https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium')
-    CLOUD_LLM_MODEL: str = os.getenv('CLOUD_LLM_MODEL', 'microsoft/DialoGPT-medium')
+    CLOUD_LLM_URL: str = os.getenv('CLOUD_LLM_URL', 'https://api.llm7.io/v1/chat/completions')
+    CLOUD_LLM_MODEL: str = os.getenv('CLOUD_LLM_MODEL', 'LLM7.io (GPT-3.5-turbo)')
     # No API key needed - completely free service
     
     # LLM Performance Settings
@@ -74,7 +73,7 @@ class Config:
             'encryption': len(cls.ENCRYPTION_KEY) >= 32,
             'database_path': os.path.exists(os.path.dirname(cls.DATABASE_PATH)) or os.path.dirname(cls.DATABASE_PATH) == '',
             'free_apis': True,  # All APIs are free and always available
-            'llm_configured': cls.USE_LOCAL_LLM or cls.CLOUD_LLM_URL  # At least one LLM option configured
+            'llm_configured': True  # Always use cloud LLM
         }
         
         return validation_results

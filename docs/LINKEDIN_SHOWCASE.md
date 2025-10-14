@@ -7,7 +7,7 @@
 ## 🎯 **What I Built**
 
 A comprehensive travel planning application that combines:
-- **Local AI Integration** (Llama 3.1 8B via Ollama)
+- **AI Integration** (Free cloud LLM services)
 - **15+ Free API Integrations** (weather, flights, hotels, attractions)
 - **Real-time Streaming Chat** with React frontend
 - **Interactive Maps** with geocoding capabilities
@@ -20,7 +20,7 @@ A comprehensive travel planning application that combines:
 - **Python 3.11+** with FastAPI
 - **Async/Await** for non-blocking operations
 - **SQLite Database** with AES-256 encryption
-- **Ollama Integration** for local LLM processing
+- **Cloud LLM Integration** for AI processing
 - **Rate Limiting & Circuit Breakers** for reliability
 
 ### **Frontend**
@@ -99,7 +99,7 @@ A comprehensive travel planning application that combines:
 - ✅ API design and documentation
 
 ### **AI & Machine Learning**
-- ✅ Local LLM integration with Ollama
+- ✅ Cloud LLM integration with Hugging Face
 - ✅ Streaming response implementation
 - ✅ Conversation memory management
 - ✅ Context-aware AI responses
@@ -222,4 +222,4 @@ This project demonstrates:
 
 ## 🏷️ **Tags**
 
-#FullStackDevelopment #AI #React #Python #FastAPI #Docker #DevOps #TravelTech #PrivacyFirst #LocalLLM #Ollama #Maps #APIs #ProductionReady #Portfolio #Showcase
+#FullStackDevelopment #AI #React #Python #FastAPI #Docker #DevOps #TravelTech #PrivacyFirst #CloudLLM #Maps #APIs #ProductionReady #Portfolio #Showcase

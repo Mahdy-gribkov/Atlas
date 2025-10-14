@@ -13,7 +13,7 @@
 The Travel AI Agent is a comprehensive full-stack application that demonstrates advanced software engineering skills, AI integration, and modern development practices. Built with privacy-first principles, it provides intelligent travel planning without compromising user data.
 
 ### **Key Features**
-- 🤖 **Local AI Integration** - Uses Llama 3.1 8B model via Ollama
+- 🤖 **AI Integration** - Uses free cloud LLM services (no API keys required)
 - 🔒 **Privacy-First Design** - All data processed locally, no external data leakage
 - 🌐 **100% Free APIs** - 15+ completely free APIs, NO API keys required
 - 🗺️ **Interactive Maps** - React Leaflet integration with geocoding
@@ -61,7 +61,7 @@ open http://localhost:8000
 
 ### **Backend (Python/FastAPI)**
 - **Framework**: FastAPI with async/await support
-- **AI Integration**: Ollama with Llama 3.1 8B model
+- **AI Integration**: Free cloud LLM services (Hugging Face)
 - **Database**: Encrypted SQLite with automatic cleanup
 - **APIs**: 15+ free API integrations (weather, flights, hotels, etc.)
 - **Security**: AES-256 encryption, rate limiting, circuit breakers
@@ -81,7 +81,7 @@ open http://localhost:8000
 ## 📊 **Technical Highlights**
 
 ### **AI Integration**
-- **Local LLM**: Llama 3.1 8B model running via Ollama
+- **Cloud LLM**: Free Hugging Face models (DialoGPT, GPT-2)
 - **Conversation Memory**: Persistent chat history with encryption
 - **Streaming Responses**: Real-time AI responses with typing indicators
 - **Context Awareness**: Maintains conversation context across sessions
@@ -119,7 +119,7 @@ open http://localhost:8000
 - Python 3.11+
 - Node.js 18+
 - Docker (optional)
-- Ollama with Llama 3.1 8B model
+- Free cloud LLM services
 
 ### **Backend Development**
 ```bash

@@ -5,14 +5,9 @@ Uses multiple free flight data sources.
 
 import aiohttp
 import asyncio
-import logging
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 import json
-
-from .rate_limiter import APIRateLimiter
-
-logger = logging.getLogger(__name__)
 
 class FreeFlightClient:
     """
@@ -20,20 +15,8 @@ class FreeFlightClient:
     Provides flight data without requiring API keys.
     """
     
-    def __init__(self, rate_limiter: APIRateLimiter = None):
-        """
-        Initialize the free flight client.
-        
-        Args:
-            rate_limiter: Optional rate limiter instance
-        """
-        self.rate_limiter = rate_limiter or APIRateLimiter()
-        self.circuit_breaker = {
-            'aviationstack': {'failures': 0, 'last_failure': None, 'state': 'closed'},
-            'flightapi': {'failures': 0, 'last_failure': None, 'state': 'closed'}
-        }
-        self.max_failures = 3
-        self.timeout_seconds = 30
+    def __init__(self):
+        self.session = None
     
     async def search_flights(self, origin: str, destination: str, date: str = None) -> List[Dict[str, Any]]:
         """
@@ -63,37 +46,8 @@ class FreeFlightClient:
             return flights
             
         except Exception as e:
-            logger.error(f"Free flight API error: {e}")
+            print(f"Free flight API error: {e}")
             return []
-    
-    def _is_circuit_closed(self, service: str) -> bool:
-        """Check if circuit breaker is closed for a service."""
-        circuit = self.circuit_breaker.get(service, {})
-        if circuit.get('state') == 'open':
-            # Check if timeout has passed
-            last_failure = circuit.get('last_failure')
-            if last_failure and (datetime.now() - last_failure).seconds > self.timeout_seconds:
-                circuit['state'] = 'half-open'
-                return True
-            return False
-        return True
-    
-    def _record_failure(self, service: str):
-        """Record a failure for a service."""
-        circuit = self.circuit_breaker.get(service, {})
-        circuit['failures'] = circuit.get('failures', 0) + 1
-        circuit['last_failure'] = datetime.now()
-        
-        if circuit['failures'] >= self.max_failures:
-            circuit['state'] = 'open'
-            logger.warning(f"Circuit breaker opened for {service}")
-    
-    def _reset_circuit(self, service: str):
-        """Reset circuit breaker for a service."""
-        circuit = self.circuit_breaker.get(service, {})
-        circuit['failures'] = 0
-        circuit['last_failure'] = None
-        circuit['state'] = 'closed'
     
     async def _get_flight_info(self, origin: str, destination: str, date: str = None) -> List[Dict[str, Any]]:
         """Get flight information from free sources."""

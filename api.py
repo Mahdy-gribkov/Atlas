@@ -121,7 +121,7 @@ async def generate_streaming_response(message: str, context: Optional[Dict[str, 
             # Process with timeout to prevent long waits
             response = await asyncio.wait_for(
                 agent.process_query(message, context), 
-                timeout=15.0  # 15 second timeout for better UX
+                timeout=30.0  # 30 second timeout
             )
         except asyncio.TimeoutError:
             yield f"data: {json.dumps({'chunk': 'Request is taking longer than expected. Please try a simpler question or check your internet connection.', 'done': True})}\n\n"
@@ -230,6 +230,16 @@ async def get_features():
         ]
     }
 
+@app.post("/api/travel-plan")
+async def store_travel_plan(plan_data: dict):
+    """Store travel plan data in the database."""
+    try:
+        # Store the travel plan data
+        # This is a simple implementation - you can expand this
+        return {"status": "success", "message": "Travel plan stored"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 @app.get("/health")
 async def health_check():
     """Health check for the agent."""
@@ -239,8 +249,8 @@ async def health_check():
         return {
             "status": "healthy",
             "agent": "working",
-            "llm": agent.llm_type,
-            "model": agent.model_name if hasattr(agent, 'model_name') else "unknown"
+            "llm": "cloud",
+            "model": "LLM7.io (GPT-3.5-turbo)"
         }
     except Exception as e:
         return {

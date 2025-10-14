@@ -76,23 +76,14 @@ SECRET_KEY=your-production-secret-key-here
 CORS_ORIGINS=["https://your-domain.com"]
 
 # LLM Configuration
-LLM_TYPE=ollama
-OLLAMA_HOST=http://ollama:11434
-OLLAMA_MODEL=llama3.1:8b
+LLM_TYPE=cloud
+CLOUD_LLM_URL=https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium
+CLOUD_LLM_MODEL=microsoft/DialoGPT-medium
 ```
 
-### Optional: Local LLM with Ollama
+### Cloud LLM Configuration
 
-To use a local LLM, start the Ollama service:
-
-```bash
-docker-compose --profile llm up -d
-```
-
-This will start Ollama on port 11434. You can then pull and use local models:
-
-```bash
-docker exec -it travel_agent_ollama_1 ollama pull llama3.1:8b
+The application uses free cloud LLM services by default. No additional setup is required for AI functionality.
 ```
 
 ## 📊 Monitoring

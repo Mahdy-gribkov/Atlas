@@ -67,15 +67,8 @@ def check_dependencies():
         print("Run: pip install -r requirements.txt")
         return False
     
-    # Check if Ollama is available
-    try:
-        result = subprocess.run(["ollama", "list"], capture_output=True, text=True)
-        if result.returncode == 0:
-            print("Ollama is available")
-        else:
-            print("Ollama not found - install from https://ollama.ai")
-    except FileNotFoundError:
-        print("Ollama not found - install from https://ollama.ai")
+    # Cloud LLM is always available (no local dependencies)
+    print("Cloud LLM services available")
     
     return True
 

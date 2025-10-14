@@ -13,7 +13,7 @@
 The Travel AI Agent is a comprehensive full-stack application that demonstrates advanced software engineering skills, AI integration, and modern development practices. Built with privacy-first principles, it provides intelligent travel planning without compromising user data.
 
 ### **Key Features**
-- 🤖 **Local AI Integration** - Uses Llama 3.1 8B model via Ollama
+- 🤖 **AI Integration** - Uses free cloud LLM services
 - 🔒 **Privacy-First Design** - All data processed locally, no external data leakage
 - 🌐 **Comprehensive API Integration** - 15+ free APIs for real-time travel data
 - 🗺️ **Interactive Maps** - React Leaflet integration with geocoding
@@ -25,7 +25,7 @@ The Travel AI Agent is a comprehensive full-stack application that demonstrates 
 
 ### **Backend (Python/FastAPI)**
 - **Framework**: FastAPI with async/await support
-- **AI Integration**: Ollama with Llama 3.1 8B model
+- **AI Integration**: Free cloud LLM services (Hugging Face)
 - **Database**: Encrypted SQLite with automatic cleanup
 - **APIs**: 15+ free API integrations (weather, flights, hotels, etc.)
 - **Security**: AES-256 encryption, rate limiting, circuit breakers
@@ -70,7 +70,7 @@ open http://localhost:8000
 ## 📊 **Technical Highlights**
 
 ### **AI Integration**
-- **Local LLM**: Llama 3.1 8B model running via Ollama
+- **Cloud LLM**: Free Hugging Face models (DialoGPT, GPT-2)
 - **Conversation Memory**: Persistent chat history with encryption
 - **Streaming Responses**: Real-time AI responses with typing indicators
 - **Context Awareness**: Maintains conversation context across sessions
@@ -234,7 +234,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 **Acknowledgments**
 
-- **Ollama Team** for the amazing local LLM platform
+- **Hugging Face Team** for the amazing free AI models
 - **FastAPI Team** for the excellent web framework
 - **React Team** for the powerful frontend library
 - **OpenStreetMap** for free mapping data

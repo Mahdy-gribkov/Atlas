@@ -13,7 +13,6 @@ from datetime import datetime
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from apis.weather_client import OpenWeatherClient
 from apis.flight_client import AviationStackClient
 from apis.free_weather_client import FreeWeatherClient
 from apis.food_client import FoodClient

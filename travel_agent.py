@@ -48,9 +48,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from src.config import config
 from src.database.secure_database import SecureDatabase
+from src.utils.text_beautifier import TextBeautifier
 from src.apis import (
     RestCountriesClient, WikipediaClient, NominatimClient, WebSearchClient, 
-    AviationStackClient, WeatherClient, FreeFlightClient,
+    AviationStackClient, FreeWeatherClient, FreeFlightClient,
     OpenMeteoClient, CurrencyAPIClient, HotelSearchClient, AttractionsClient,
     CarRentalClient, EventsClient, InsuranceClient, TransportationClient, FoodClient
 )
@@ -117,7 +118,7 @@ class TravelAgent:
         
         # Free API clients (always available)
         self.free_flight_client = FreeFlightClient()
-        self.weather_client = WeatherClient()
+        self.free_weather_client = FreeWeatherClient()
         self.open_meteo_client = OpenMeteoClient()
         self.currency_client = CurrencyAPIClient()
         self.hotel_client = HotelSearchClient()
@@ -135,8 +136,11 @@ class TravelAgent:
         except Exception as e:
             logger.warning(f"Flight API not available: {e}")
         
-        # Weather client is already initialized above
-        logger.info("Free Weather API client initialized")
+        try:
+            self.weather_client = FreeWeatherClient()
+            logger.info("Free Weather API client initialized")
+        except Exception as e:
+            logger.warning(f"Weather API not available: {e}")
         
         # Log available free APIs
         logger.info("Free APIs initialized: Weather (wttr.in, Open-Meteo), Flights, Currency, Hotels, Attractions, Car Rental, Events, Insurance, Transportation, Food")
@@ -145,26 +149,14 @@ class TravelAgent:
         self.conversation_history = []
         self.user_preferences = {}
         
-        # Initialize LLM
-        if config.USE_LOCAL_LLM:
-            self._init_local_llm()
-        else:
-            self._init_cloud_llm()
+        # Initialize Cloud LLM (no local LLM)
+        self._init_cloud_llm()
+        
+        # Initialize text beautifier
+        self.text_beautifier = TextBeautifier()
         
         logger.info("Travel agent initialized successfully")
     
-    def _init_local_llm(self):
-        """Initialize local LLM using Ollama."""
-        try:
-            import ollama
-            # Test if Ollama is available
-            ollama.list()
-            self.llm_type = "local"
-            self.model_name = config.OLLAMA_MODEL
-            logger.info(f"Local LLM ({self.model_name}) initialized")
-        except Exception as e:
-            logger.error(f"Local LLM initialization failed: {e}")
-            raise
     
     def _init_cloud_llm(self):
         """Initialize free cloud LLM (no API key required)."""
@@ -173,14 +165,14 @@ class TravelAgent:
             self.model_name = config.CLOUD_LLM_MODEL
             self.cloud_llm_url = config.CLOUD_LLM_URL
             # No API key needed for free cloud LLM
-            logger.info(f"Free Cloud LLM ({self.model_name}) initialized")
+            logger.info(f"Free LLM (LLM7.io) ({self.model_name}) initialized")
         except Exception as e:
             logger.error(f"Cloud LLM initialization failed: {e}")
-            raise
+            # Don't raise, just log and continue with fallback
     
     def _call_llm(self, prompt: str, context: str = "") -> str:
         """
-        Call the LLM with optimized prompting for faster responses.
+        Call the cloud LLM with optimized prompting for faster responses.
         
         Args:
             prompt: Main prompt for the LLM
@@ -206,32 +198,8 @@ Instructions:
 
 Response:"""
             
-            if self.llm_type == "local":
-                import ollama
-                response = ollama.generate(
-                    model=self.model_name,
-                    prompt=enhanced_prompt,
-                    options={
-                        'temperature': config.LLM_TEMPERATURE,
-                        'top_p': config.LLM_TOP_P,
-                        'num_predict': config.LLM_MAX_TOKENS,
-                        'stop': ['\n\n', 'User:', 'Context:']
-                    }
-                )
-                return response['response']
-            
-            elif self.llm_type == "cloud":
-                # Use ApiFreeLLM for intelligent responses
-                return self._call_cloud_llm_sync(enhanced_prompt)
-            
-            elif self.llm_type == "openai":
-                import openai
-                response = openai.ChatCompletion.create(
-                    model="gpt-3.5-turbo",
-                    messages=[{"role": "user", "content": enhanced_prompt}],
-                    temperature=0.7
-                )
-                return response.choices[0].message.content
+            # Always use cloud LLM
+            return self._call_cloud_llm_sync(enhanced_prompt)
             
         except Exception as e:
             logger.error(f"LLM call failed: {e}")
@@ -243,47 +211,46 @@ Response:"""
             import requests
             import json
             
-            # Use only completely free LLM services that don't require API keys
-            free_llm_services = [
-                {
-                    'url': 'https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium',
-                    'payload': {'inputs': prompt},
-                    'headers': {'Content-Type': 'application/json'}
-                },
-                {
-                    'url': 'https://api-inference.huggingface.co/models/gpt2',
-                    'payload': {'inputs': prompt, 'parameters': {'max_length': 200}},
-                    'headers': {'Content-Type': 'application/json'}
-                }
-            ]
+            # Use LLM7.io - completely free LLM service that doesn't require API keys
+            llm7_payload = {
+                'model': 'gpt-3.5-turbo',
+                'messages': [
+                    {
+                        'role': 'system',
+                        'content': 'You are a helpful travel planning assistant. Provide concise, practical travel advice and recommendations.'
+                    },
+                    {
+                        'role': 'user',
+                        'content': prompt
+                    }
+                ],
+                'max_tokens': 300,
+                'temperature': 0.7
+            }
             
-            for service in free_llm_services:
-                try:
-                    response = requests.post(
-                        service['url'],
-                        json=service['payload'],
-                        headers=service['headers'],
-                        timeout=15
-                    )
+            try:
+                response = requests.post(
+                    'https://api.llm7.io/v1/chat/completions',
+                    json=llm7_payload,
+                    headers={'Content-Type': 'application/json'},
+                    timeout=15
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if 'choices' in data and len(data['choices']) > 0:
+                        content = data['choices'][0]['message']['content']
+                        logger.info("Successfully received LLM response from LLM7.io")
+                        return content.strip()
+                    else:
+                        logger.warning("LLM7.io returned unexpected response format")
+                else:
+                    logger.warning(f"LLM7.io returned status code: {response.status_code}")
                     
-                    if response.status_code == 200:
-                        data = response.json()
-                        if isinstance(data, list) and len(data) > 0:
-                            # Handle Hugging Face API response format
-                            if 'generated_text' in data[0]:
-                                return data[0]['generated_text']
-                            elif 'text' in data[0]:
-                                return data[0]['text']
-                        elif isinstance(data, dict):
-                            if 'generated_text' in data:
-                                return data['generated_text']
-                            elif 'text' in data:
-                                return data['text']
-                except Exception as e:
-                    logger.warning(f"Free LLM service failed: {e}")
-                    continue
+            except Exception as e:
+                logger.warning(f"LLM7.io service failed: {e}")
             
-            # If all services fail, use intelligent fallback
+            # If LLM7.io fails, use intelligent fallback
             logger.info("Using intelligent fallback response")
             return self._get_fallback_response(prompt)
                 
@@ -291,61 +258,73 @@ Response:"""
             logger.error(f"Free LLM call failed: {e}")
             return self._get_fallback_response(prompt)
     
+    def _format_llm_response(self, response: str) -> str:
+        """Format LLM response using the text beautifier service."""
+        if not response:
+            return response
+            
+        try:
+            # Aggressively clean HTML tags and markdown
+            cleaned_response = re.sub(r'<[^>]*>', '', response)
+            cleaned_response = re.sub(r'\*\*(.*?)\*\*', r'\1', cleaned_response)
+            cleaned_response = re.sub(r'\*(.*?)\*', r'\1', cleaned_response)
+            
+            # Clean up any remaining HTML entities
+            cleaned_response = cleaned_response.replace('&nbsp;', ' ')
+            cleaned_response = cleaned_response.replace('&bull;', '•')
+            cleaned_response = cleaned_response.replace('&amp;', '&')
+            cleaned_response = cleaned_response.replace('&lt;', '<')
+            cleaned_response = cleaned_response.replace('&gt;', '>')
+            
+            # Use the text beautifier service
+            beautified = self.text_beautifier.beautify_response(cleaned_response)
+            
+            # Final cleanup - remove any remaining HTML tags
+            final_response = re.sub(r'<[^>]*>', '', beautified)
+            final_response = re.sub(r'\*\*(.*?)\*\*', r'\1', final_response)
+            final_response = re.sub(r'\*(.*?)\*', r'\1', final_response)
+            
+            return final_response
+        except Exception as e:
+            logger.error(f"Text beautification failed: {e}")
+            # Fallback to simple cleaning
+            return re.sub(r'<[^>]*>', '', response.strip())
+    
     def _get_fallback_response(self, prompt: str) -> str:
         """Get intelligent fallback responses for common travel queries."""
         prompt_lower = prompt.lower()
-        
-        # Extract destination and context
-        destination = self._extract_destination_from_prompt(prompt_lower)
-        travel_type = self._classify_travel_query(prompt_lower)
         
         # Rome trip planning
         if "rome" in prompt_lower and ("israel" in prompt_lower or "from" in prompt_lower):
             return self._generate_rome_trip_plan()
         
-        # Destination-specific responses
-        elif destination:
-            return self._generate_destination_response(destination, travel_type, prompt_lower)
+        # General trip planning
+        elif any(word in prompt_lower for word in ["trip", "travel", "plan", "itinerary"]):
+            return self._generate_generic_trip_plan(prompt)
         
         # Weather queries
         elif "weather" in prompt_lower:
-            return "🌤️ I can help you check weather for your destination. Please specify which city you'd like weather information for, and I'll provide current conditions and forecasts."
+            return "I can help you check weather for your destination. Please specify which city you'd like weather information for."
         
         # Flight queries
         elif "flight" in prompt_lower:
-            return "✈️ I can help you find flights. Please provide:\n• Your departure city\n• Destination city\n• Travel dates\n• Number of passengers\n\nI'll search for the best flight options for you."
+            return "I can help you find flights. Please provide your departure city, destination, and travel dates."
         
         # Hotel queries
-        elif "hotel" in prompt_lower or "accommodation" in prompt_lower:
-            return "🏨 I can help you find hotels and accommodations. Please specify:\n• Your destination city\n• Check-in and check-out dates\n• Number of guests\n• Budget range\n\nI'll provide hotel recommendations with prices and amenities."
+        elif "hotel" in prompt_lower:
+            return "I can help you find hotels. Please specify your destination city and travel dates."
         
         # Attractions queries
-        elif "attraction" in prompt_lower or "things to do" in prompt_lower or "sightseeing" in prompt_lower:
-            return "🎯 I can help you find attractions and activities. Please specify which city you're interested in, and I'll provide:\n• Top tourist attractions\n• Local activities\n• Cultural sites\n• Entertainment options"
-        
-        # Budget queries
-        elif "budget" in prompt_lower or "cost" in prompt_lower or "price" in prompt_lower:
-            return "💰 I can help you plan your travel budget. Please provide:\n• Your destination\n• Trip duration\n• Travel style (budget/mid-range/luxury)\n• Number of travelers\n\nI'll create a detailed budget breakdown for you."
-        
-        # Transportation queries
-        elif any(word in prompt_lower for word in ["transport", "bus", "train", "metro", "taxi", "uber"]):
-            return "🚌 I can help you with transportation options. Please specify:\n• Your destination city\n• Areas you'll be traveling between\n• Preferred transportation type\n\nI'll provide public transit, taxi, and ride-sharing options."
-        
-        # Food queries
-        elif any(word in prompt_lower for word in ["food", "restaurant", "cuisine", "eat", "dining"]):
-            return "🍽️ I can help you find great restaurants and local cuisine. Please specify:\n• Your destination city\n• Food preferences or dietary restrictions\n• Budget range\n• Cuisine type\n\nI'll recommend the best local restaurants and dishes to try."
-        
-        # General trip planning
-        elif any(word in prompt_lower for word in ["trip", "travel", "plan", "itinerary", "visit"]):
-            return self._generate_generic_trip_plan(prompt)
+        elif "attraction" in prompt_lower or "things to do" in prompt_lower:
+            return "I can help you find attractions and activities. Please specify which city you're interested in."
         
         # General greeting
         elif any(word in prompt_lower for word in ["hello", "hi", "hey", "help"]):
-            return "🌍 Welcome! I'm your travel planning assistant. I can help you with:\n\n• 🗺️ Trip planning and itineraries\n• ✈️ Flight information and booking\n• 🏨 Hotel recommendations\n• 🌤️ Weather forecasts\n• 💰 Budget planning and cost estimates\n• 🎯 Attractions and activities\n• 🍽️ Restaurant recommendations\n• 🚌 Transportation options\n• 🛡️ Travel insurance\n• 📍 Destination information\n\nWhat would you like help with today?"
+            return "I'm your travel planning assistant! I can help you with:\n• Trip planning and itineraries\n• Flight information\n• Hotel recommendations\n• Weather forecasts\n• Budget planning\n• Destination information\n\nWhat would you like help with?"
         
         # Default response
         else:
-            return "🌍 I'm your travel planning assistant! I can help you with comprehensive travel planning including flights, hotels, weather, attractions, and more. Please let me know what you'd like to plan or ask about your next trip!"
+            return "I'm a travel assistant. I can help you plan trips, find flights, hotels, and provide travel information. How can I assist you today?"
     
     def _process_travel_request(self, prompt: str) -> str:
         """Process travel requests with structured responses."""
@@ -369,61 +348,6 @@ Response:"""
         except Exception as e:
             logger.error(f"Travel request processing failed: {e}")
             return "I'm a travel assistant. I can help you plan trips, find flights, hotels, and provide travel information. How can I assist you today?"
-    
-    def _extract_destination_from_prompt(self, prompt_lower: str) -> Optional[str]:
-        """Extract destination from user prompt."""
-        destinations = [
-            'tokyo', 'japan', 'paris', 'france', 'london', 'england', 'uk', 'rome', 'italy',
-            'new york', 'nyc', 'usa', 'america', 'bangkok', 'thailand', 'sydney', 'australia',
-            'berlin', 'germany', 'madrid', 'spain', 'amsterdam', 'netherlands', 'vienna', 'austria',
-            'prague', 'czech republic', 'budapest', 'hungary', 'lisbon', 'portugal', 'athens', 'greece',
-            'istanbul', 'turkey', 'cairo', 'egypt', 'dubai', 'uae', 'singapore', 'hong kong', 'china',
-            'seoul', 'south korea', 'mumbai', 'delhi', 'india', 'rio de janeiro', 'sao paulo', 'brazil',
-            'buenos aires', 'argentina', 'mexico city', 'mexico', 'toronto', 'vancouver', 'canada',
-            'peru', 'lima', 'chile', 'santiago', 'colombia', 'bogota', 'morocco', 'casablanca',
-            'south africa', 'cape town', 'johannesburg', 'kenya', 'nairobi', 'tanzania', 'zanzibar'
-        ]
-        
-        for dest in destinations:
-            if dest in prompt_lower:
-                return dest.title()
-        return None
-    
-    def _classify_travel_query(self, prompt_lower: str) -> str:
-        """Classify the type of travel query."""
-        if any(word in prompt_lower for word in ['weather', 'temperature', 'climate']):
-            return 'weather'
-        elif any(word in prompt_lower for word in ['flight', 'airline', 'fly']):
-            return 'flights'
-        elif any(word in prompt_lower for word in ['hotel', 'accommodation', 'stay']):
-            return 'accommodation'
-        elif any(word in prompt_lower for word in ['attraction', 'sightseeing', 'things to do']):
-            return 'attractions'
-        elif any(word in prompt_lower for word in ['food', 'restaurant', 'cuisine', 'eat']):
-            return 'food'
-        elif any(word in prompt_lower for word in ['budget', 'cost', 'price', 'expensive']):
-            return 'budget'
-        elif any(word in prompt_lower for word in ['transport', 'bus', 'train', 'metro']):
-            return 'transportation'
-        else:
-            return 'general'
-    
-    def _generate_destination_response(self, destination: str, travel_type: str, prompt_lower: str) -> str:
-        """Generate destination-specific response."""
-        if travel_type == 'weather':
-            return f"🌤️ I can help you check the weather in {destination}. Let me get current conditions and forecasts for you."
-        elif travel_type == 'flights':
-            return f"✈️ I can help you find flights to {destination}. Please provide your departure city and travel dates."
-        elif travel_type == 'accommodation':
-            return f"🏨 I can help you find hotels in {destination}. Please specify your check-in/check-out dates and number of guests."
-        elif travel_type == 'attractions':
-            return f"🎯 I can help you find the best attractions and activities in {destination}. Let me search for top tourist spots and local experiences."
-        elif travel_type == 'food':
-            return f"🍽️ I can help you find great restaurants and local cuisine in {destination}. What type of food are you interested in?"
-        elif travel_type == 'budget':
-            return f"💰 I can help you plan your budget for {destination}. Please let me know your trip duration and travel style."
-        else:
-            return f"🌍 I can help you plan your trip to {destination}! I can assist with flights, hotels, weather, attractions, and more. What would you like to know about {destination}?"
     
     def _generate_rome_trip_plan(self) -> str:
         """Generate a specific trip plan for Rome from Israel."""
@@ -476,42 +400,6 @@ Once you provide these details, I can create a detailed itinerary with:
 
 What destination are you most interested in?"""
     
-    async def _call_cloud_llm_async(self, prompt: str) -> str:
-        """Call ApiFreeLLM asynchronously."""
-        try:
-            import aiohttp
-            
-            headers = {
-                'Content-Type': 'application/json',
-            }
-            
-            # ApiFreeLLM API format
-            payload = {
-                'message': prompt
-            }
-            
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    self.cloud_llm_url,
-                    headers=headers,
-                    json=payload,
-                    timeout=aiohttp.ClientTimeout(total=config.LLM_TIMEOUT)
-                ) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        if 'response' in data:
-                            return data['response']
-                        elif 'message' in data:
-                            return data['message']
-                        else:
-                            return str(data)
-                    else:
-                        error_text = await response.text()
-                        raise Exception(f"ApiFreeLLM API error: {response.status} - {error_text}")
-                        
-        except Exception as e:
-            logger.error(f"Cloud LLM call failed: {e}")
-            return self._get_fallback_response(prompt)
     
     async def get_country_info(self, country_name: str) -> Dict[str, Any]:
         """Get comprehensive country information."""
@@ -763,6 +651,10 @@ What destination are you most interested in?"""
         if response_parts:
             # We have structured data, enhance it with LLM intelligence
             structured_data = "\n\n".join(response_parts)
+            # Clean up any HTML tags from structured data
+            structured_data = re.sub(r'<[^>]*>', '', structured_data)
+            structured_data = re.sub(r'\*\*(.*?)\*\*', r'\1', structured_data)
+            structured_data = re.sub(r'\*(.*?)\*', r'\1', structured_data)
             context = "\n".join(context_parts) if context_parts else "No additional context available."
             
             # Create enhanced prompt for LLM to analyze and improve the structured data
@@ -788,7 +680,8 @@ Keep your response concise but helpful, focusing on actionable advice."""
                 llm_insights = self._call_llm(enhanced_prompt, "")
                 # Clean up the LLM response to avoid duplication
                 if llm_insights and not llm_insights.startswith("I'm a travel assistant"):
-                    final_response = f"{structured_data}\n\n🤖 **AI Travel Insights:**\n{llm_insights}"
+                    formatted_insights = self._format_llm_response(llm_insights)
+                    final_response = f"{structured_data}\n\n🤖 AI Travel Insights:\n{formatted_insights}"
                 else:
                     final_response = structured_data
             except Exception as e:
@@ -801,19 +694,33 @@ Keep your response concise but helpful, focusing on actionable advice."""
             # Create intelligent prompt based on user context
             if context and isinstance(context, dict) and context.get('departureLocation'):
                 intelligent_prompt = f"""You are a professional travel assistant. The user is traveling from {context['departureLocation']}. 
-                
+
 User Query: {query}
 
-Please provide a helpful, specific response. If they're asking about destinations, suggest specific places and activities. 
-If they're asking about planning, provide concrete next steps. Be conversational and helpful, not generic."""
+Structure your response with:
+1. Brief introduction
+2. Key information in numbered sections
+3. Specific recommendations with bullet points
+4. Next steps for planning
+5. Questions to help plan further
+
+IMPORTANT: Use only plain text formatting. Do NOT use HTML tags, markdown formatting, or any special characters like ** or *. Just use regular text with line breaks and simple formatting."""
             else:
                 intelligent_prompt = f"""You are a professional travel assistant. 
 
 User Query: {query}
 
-Please provide a helpful, specific response. Be conversational and provide actionable advice."""
+Structure your response with:
+1. Brief introduction
+2. Key information in numbered sections  
+3. Specific recommendations with bullet points
+4. Next steps for planning
+5. Questions to help plan further
+
+IMPORTANT: Use only plain text formatting. Do NOT use HTML tags, markdown formatting, or any special characters like ** or *. Just use regular text with line breaks and simple formatting."""
             
-            final_response = self._call_llm(intelligent_prompt, context_text)
+            raw_response = self._call_llm(intelligent_prompt, context_text)
+            final_response = self._format_llm_response(raw_response)
         
         # Store response in conversation history
         self.conversation_history.append({
@@ -845,9 +752,9 @@ Please provide a helpful, specific response. Be conversational and provide actio
                 if not weather_data and self.open_meteo_client:
                     weather_data = await self._get_open_meteo_weather(location)
                 
-                # Try consolidated weather client (free, reliable)
-                if not weather_data and self.weather_client:
-                    weather_data = await self._get_weather_data(location)
+                # Try wttr.in (free, reliable)
+                if not weather_data and self.free_weather_client:
+                    weather_data = await self._get_free_weather_data(location)
                 
                 if weather_data:
                     response_parts.append(weather_data)
@@ -966,13 +873,13 @@ Please provide a helpful, specific response. Be conversational and provide actio
             logger.error(f"Real weather data error: {e}")
             return None
     
-    async def _get_weather_data(self, location: str) -> Optional[str]:
+    async def _get_free_weather_data(self, location: str) -> Optional[str]:
         """Get weather data from free APIs."""
         try:
-            if not self.weather_client:
+            if not self.free_weather_client:
                 return None
             
-            weather_data = await self.weather_client.get_current_weather(location)
+            weather_data = await self.free_weather_client.get_current_weather(location)
             
             if weather_data:
                 weather_info = f"""
@@ -1290,7 +1197,7 @@ Please provide a helpful, specific response. Be conversational and provide actio
             population = country_info.get('population', 'Unknown')
             currency = country_info.get('currencies', {}).get('USD', {}).get('name', 'Unknown') if country_info.get('currencies') else 'Unknown'
             
-            response_parts.append(f"**{destination}**")
+            response_parts.append(f"{destination}")
             response_parts.append(f"Capital: {capital}")
             response_parts.append(f"Population: {population:,}" if isinstance(population, int) else f"Population: {population}")
             response_parts.append(f"Currency: {currency}")

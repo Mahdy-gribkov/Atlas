@@ -181,8 +181,10 @@ class CacheManager:
         """Start the cleanup task for expired entries."""
         try:
             if self._cleanup_task is None or self._cleanup_task.done():
-                self._cleanup_task = asyncio.create_task(self._cleanup_loop())
-                self._cleanup_started = True
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    self._cleanup_task = asyncio.create_task(self._cleanup_loop())
+                    self._cleanup_started = True
         except RuntimeError:
             # No event loop running yet, will start later
             pass

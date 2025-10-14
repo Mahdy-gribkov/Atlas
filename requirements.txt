@@ -13,13 +13,11 @@ cryptography>=41.0.0
 # Data Processing
 python-dateutil>=2.8.0
 pytz>=2023.0
-aiosqlite>=0.19.0
 
 # Environment Management
 python-dotenv>=1.0.0
 
-# Local LLM (Optional)
-ollama>=0.1.0
+# No local LLM dependencies - using free cloud LLM only
 
 # Development (Optional)
 pytest>=7.0.0
