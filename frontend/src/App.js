@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './App.css';
 import TravelMap from './components/TravelMap';
 import { mapService } from './services/mapService';
@@ -13,16 +13,15 @@ function App() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [userLocation, setUserLocation] = useState('');
-  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
+  const [showLocationPrompt, setShowLocationPrompt] = useState(true);
   const [isListening, setIsListening] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [showExamples, setShowExamples] = useState(true);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [destinationLocation, setDestinationLocation] = useState(null);
-  const [suggestedLocations, setSuggestedLocations] = useState([]);
+  const [suggestedLocations] = useState([]);
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
-  const [isMapLoading, setIsMapLoading] = useState(false);
   const [isLocationLoading, setIsLocationLoading] = useState(false);
+  const [showExamples, setShowExamples] = useState(true);
   const [userContext, setUserContext] = useState({
     departureLocation: null,
     destination: null,
@@ -66,10 +65,10 @@ function App() {
     }
     
     // Format questions to be on separate lines
-    formatted = formatted.replace(/\•\s*([^•]+?):\s*([^•]+?)(?=\•|$)/g, '• $1:\n  $2');
+    formatted = formatted.replace(/•\s*([^•]+?):\s*([^•]+?)(?=•|$)/g, '• $1:\n  $2');
     
     // Format bullet points better
-    formatted = formatted.replace(/\•\s*/g, '• ');
+    formatted = formatted.replace(/•\s*/g, '• ');
     
     // Clean up extra whitespace
     formatted = formatted.replace(/\n\s*\n\s*\n/g, '\n\n').trim();
@@ -150,7 +149,7 @@ function App() {
     }
   };
 
-  const sendMessage = async () => {
+  const sendMessage = useCallback(async () => {
     if (!input.trim() || isLoading) return;
 
     const userMessage = input.trim();
@@ -160,7 +159,8 @@ function App() {
     // Add user message
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
 
-    // Don't add empty message - we'll show loading indicator separately
+    // Add placeholder for assistant response
+    setMessages(prev => [...prev, { role: 'assistant', content: '', isStreaming: true }]);
 
     try {
       const response = await fetch('/chat', {
@@ -265,7 +265,7 @@ function App() {
       }]);
       setIsLoading(false);
     }
-  };
+  }, [input, isLoading, userContext]);
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
