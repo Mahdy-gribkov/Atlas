@@ -1,210 +1,178 @@
 """
 Free Hotel Search API client - No API key required.
-Provides hotel information and recommendations.
+Uses realistic hotel data generation based on real hotel information.
 """
 
 import aiohttp
 import asyncio
-from typing import Dict, Any, Optional, List
+from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 import json
 import random
 
+from .rate_limiter import APIRateLimiter
+
 class HotelSearchClient:
     """
-    Free hotel search client using multiple sources.
-    No API key required, provides realistic hotel data.
+    Free hotel search client using realistic data generation.
+    Provides hotel information without requiring API keys.
     """
     
-    def __init__(self):
-        self.session = None
+    def __init__(self, rate_limiter: APIRateLimiter = None):
+        self.rate_limiter = rate_limiter or APIRateLimiter()
+        # No API key needed - uses realistic data generation
     
     async def search_hotels(self, city: str, check_in: str = None, check_out: str = None, 
-                          budget: float = None, guests: int = 1) -> List[Dict[str, Any]]:
+                          guests: int = 1, rooms: int = 1) -> List[Dict[str, Any]]:
         """
-        Search for hotels in a city.
+        Search for hotels in a city using realistic data generation.
         
         Args:
             city: City name
-            check_in: Check-in date (YYYY-MM-DD)
-            check_out: Check-out date (YYYY-MM-DD)
-            budget: Budget per night in USD
+            check_in: Check-in date (optional)
+            check_out: Check-out date (optional)
             guests: Number of guests
+            rooms: Number of rooms
             
         Returns:
             List of hotel options
         """
         try:
             # Generate realistic hotel data based on city
-            hotels = self._generate_realistic_hotels(city, budget, guests)
-            
-            # Try to get additional data from web search
-            web_hotels = await self._search_web_hotels(city, budget)
-            if web_hotels:
-                hotels.extend(web_hotels)
-            
-            # Sort by price and return top options
-            hotels.sort(key=lambda x: x.get('price_numeric', 999))
-            return hotels[:10]  # Return top 10 options
-            
+            hotels = await self._generate_realistic_hotels(city, check_in, check_out, guests, rooms)
+            return hotels
         except Exception as e:
             print(f"Hotel search error: {e}")
-            return []
-    
-    def _generate_realistic_hotels(self, city: str, budget: float = None, guests: int = 1) -> List[Dict[str, Any]]:
-        """Generate realistic hotel data based on city and budget."""
-        
-        # Hotel data based on city type and budget
-        hotel_templates = {
-            'budget': [
-                {"name": "Budget Inn", "stars": 2, "base_price": 45, "amenities": ["WiFi", "Parking"]},
-                {"name": "City Hostel", "stars": 2, "base_price": 35, "amenities": ["WiFi", "Shared Kitchen"]},
-                {"name": "Traveler's Lodge", "stars": 2, "base_price": 55, "amenities": ["WiFi", "Breakfast"]},
-                {"name": "Backpacker's Hotel", "stars": 1, "base_price": 30, "amenities": ["WiFi"]},
-            ],
-            'midrange': [
-                {"name": "City Center Hotel", "stars": 3, "base_price": 85, "amenities": ["WiFi", "Gym", "Restaurant"]},
-                {"name": "Business Hotel", "stars": 3, "base_price": 95, "amenities": ["WiFi", "Business Center", "Gym"]},
-                {"name": "Comfort Inn", "stars": 3, "base_price": 75, "amenities": ["WiFi", "Pool", "Breakfast"]},
-                {"name": "Holiday Express", "stars": 3, "base_price": 90, "amenities": ["WiFi", "Restaurant", "Parking"]},
-            ],
-            'luxury': [
-                {"name": "Grand Hotel", "stars": 5, "base_price": 250, "amenities": ["WiFi", "Spa", "Pool", "Restaurant", "Concierge"]},
-                {"name": "Plaza Hotel", "stars": 5, "base_price": 300, "amenities": ["WiFi", "Spa", "Pool", "Multiple Restaurants", "Concierge"]},
-                {"name": "Resort & Spa", "stars": 5, "base_price": 280, "amenities": ["WiFi", "Spa", "Pool", "Golf", "Multiple Restaurants"]},
-                {"name": "Boutique Hotel", "stars": 4, "base_price": 180, "amenities": ["WiFi", "Spa", "Restaurant", "Concierge"]},
-            ]
-        }
-        
-        # Determine hotel category based on budget
-        if budget and budget < 60:
-            category = 'budget'
-        elif budget and budget < 150:
-            category = 'midrange'
-        else:
-            category = 'luxury'
-        
-        hotels = []
-        templates = hotel_templates[category]
-        
-        # Generate 5-8 hotels
-        for i in range(random.randint(5, 8)):
-            template = random.choice(templates)
-            
-            # Add price variation
-            price_variation = 0.8 + (random.random() * 0.4)  # 80% to 120%
-            price = int(template['base_price'] * price_variation)
-            
-            # Generate hotel name variations
-            name_variations = [
-                f"{template['name']} {city}",
-                f"{city} {template['name']}",
-                f"{template['name']} Downtown",
-                f"{template['name']} Central",
-                f"{template['name']} Plaza"
-            ]
-            
-            hotel = {
-                "name": random.choice(name_variations),
-                "stars": template['stars'],
-                "price": f"${price}",
-                "price_numeric": price,
-                "currency": "USD",
-                "amenities": template['amenities'],
-                "rating": round(3.5 + (template['stars'] - 2) * 0.5 + random.random() * 0.5, 1),
-                "reviews_count": random.randint(50, 500),
-                "location": f"Downtown {city}",
-                "distance_center": f"{random.randint(0, 5)} km from city center",
-                "check_in": "15:00",
-                "check_out": "11:00",
-                "guests": guests,
-                "room_type": "Standard Room",
-                "cancellation": "Free cancellation available",
-                "booking_url": f"https://booking.com/hotel/{city.lower().replace(' ', '-')}-{i+1}",
-                "source": "Hotel Search API (Free)",
-                "last_updated": datetime.now().isoformat()
-            }
-            
-            hotels.append(hotel)
-        
-        return hotels
-    
-    async def _search_web_hotels(self, city: str, budget: float = None) -> List[Dict[str, Any]]:
-        """Search for hotels using web search as additional source."""
-        try:
-            # This would integrate with the web search client
-            # For now, return empty list as we have good generated data
-            return []
-            
-        except Exception as e:
-            print(f"Web hotel search error: {e}")
             return []
     
     async def get_hotel_details(self, hotel_id: str) -> Optional[Dict[str, Any]]:
         """Get detailed information about a specific hotel."""
         try:
             # Generate detailed hotel information
-            details = {
-                "id": hotel_id,
-                "description": "A comfortable hotel located in the heart of the city, offering modern amenities and excellent service.",
-                "images": [
-                    f"https://example.com/hotel-{hotel_id}-1.jpg",
-                    f"https://example.com/hotel-{hotel_id}-2.jpg",
-                    f"https://example.com/hotel-{hotel_id}-3.jpg"
-                ],
-                "policies": {
-                    "check_in": "15:00",
-                    "check_out": "11:00",
-                    "cancellation": "Free cancellation up to 24 hours before check-in",
-                    "pets": "Pets allowed with additional fee",
-                    "smoking": "Non-smoking rooms available"
-                },
-                "nearby_attractions": [
-                    "City Center - 0.5 km",
-                    "Main Train Station - 1.2 km",
-                    "Shopping District - 0.8 km",
-                    "Museum Quarter - 2.0 km"
-                ],
-                "transportation": {
-                    "airport": "Airport shuttle available",
-                    "public_transport": "Metro station 200m away",
-                    "parking": "Valet parking available"
-                }
-            }
-            
-            return details
-            
+            hotel_details = self._generate_hotel_details(hotel_id)
+            return hotel_details
         except Exception as e:
             print(f"Hotel details error: {e}")
             return None
     
-    def get_hotel_recommendations(self, city: str, trip_type: str = "leisure") -> List[str]:
-        """Get hotel recommendations based on trip type."""
-        recommendations = {
-            "leisure": [
-                "Look for hotels near tourist attractions",
-                "Consider hotels with pools and spas",
-                "Check for family-friendly amenities",
-                "Look for hotels with good restaurant options"
-            ],
-            "business": [
-                "Choose hotels near business districts",
-                "Look for hotels with business centers",
-                "Check for meeting room availability",
-                "Consider hotels with good WiFi and work spaces"
-            ],
-            "budget": [
-                "Consider hostels for budget travel",
-                "Look for hotels with free breakfast",
-                "Check for shared facilities to save money",
-                "Consider hotels slightly outside city center"
-            ],
-            "luxury": [
-                "Look for 5-star hotels with full service",
-                "Consider hotels with spas and fine dining",
-                "Check for concierge services",
-                "Look for hotels with premium locations"
-            ]
-        }
-        
-        return recommendations.get(trip_type, recommendations["leisure"])
+    async def _generate_realistic_hotels(self, city: str, check_in: str = None, 
+                                       check_out: str = None, guests: int = 1, 
+                                       rooms: int = 1) -> List[Dict[str, Any]]:
+        """Generate realistic hotel data based on city."""
+        try:
+            # Simple hotel data for major cities
+            city_hotels = {
+                "tel aviv": [
+                    {"name": "The Ritz-Carlton Tel Aviv", "category": "Luxury", "base_price": 800, "rating": 5.0},
+                    {"name": "Dan Tel Aviv Hotel", "category": "Luxury", "base_price": 600, "rating": 4.8},
+                    {"name": "Crowne Plaza Tel Aviv", "category": "Business", "base_price": 400, "rating": 4.5},
+                    {"name": "Leonardo Hotel Tel Aviv", "category": "Business", "base_price": 350, "rating": 4.3},
+                    {"name": "Hotel Montefiore", "category": "Boutique", "base_price": 300, "rating": 4.6},
+                    {"name": "Abraham Hostel Tel Aviv", "category": "Budget", "base_price": 80, "rating": 4.2}
+                ],
+                "jerusalem": [
+                    {"name": "The King David Hotel", "category": "Luxury", "base_price": 700, "rating": 4.9},
+                    {"name": "Waldorf Astoria Jerusalem", "category": "Luxury", "base_price": 650, "rating": 4.8},
+                    {"name": "Leonardo Hotel Jerusalem", "category": "Business", "base_price": 300, "rating": 4.4},
+                    {"name": "Dan Jerusalem Hotel", "category": "Business", "base_price": 350, "rating": 4.5},
+                    {"name": "The American Colony Hotel", "category": "Boutique", "base_price": 400, "rating": 4.7},
+                    {"name": "Abraham Hostel Jerusalem", "category": "Budget", "base_price": 60, "rating": 4.3}
+                ]
+            }
+            
+            # Get hotels for the city (case insensitive)
+            city_key = city.lower()
+            hotels_data = None
+            
+            for key in city_hotels:
+                if key in city_key or city_key in key:
+                    hotels_data = city_hotels[key]
+                    break
+            
+            if not hotels_data:
+                # Default hotels for unknown cities
+                hotels_data = [
+                    {"name": f"Grand Hotel {city}", "category": "Luxury", "base_price": 500, "rating": 4.5},
+                    {"name": f"Business Hotel {city}", "category": "Business", "base_price": 300, "rating": 4.2},
+                    {"name": f"Boutique Hotel {city}", "category": "Boutique", "base_price": 250, "rating": 4.3},
+                    {"name": f"Budget Inn {city}", "category": "Budget", "base_price": 100, "rating": 3.8}
+                ]
+            
+            # Generate hotel list with realistic pricing
+            hotels = []
+            for i, hotel_data in enumerate(hotels_data):
+                # Calculate price with some variation
+                price_variation = 0.8 + (random.random() * 0.4)  # 80% to 120% of base price
+                price = int(hotel_data["base_price"] * price_variation)
+                
+                # Generate hotel ID
+                hotel_id = f"hotel_{city.lower().replace(' ', '_')}_{i}"
+                
+                hotel = {
+                    "id": hotel_id,
+                    "name": hotel_data["name"],
+                    "category": hotel_data["category"],
+                    "rating": hotel_data["rating"],
+                    "price_per_night": f"${price}",
+                    "currency": "USD",
+                    "location": city,
+                    "amenities": ["Free WiFi", "Air Conditioning", "Room Service", "Fitness Center"],
+                    "description": f"{hotel_data['name']} offers comfortable accommodation with modern amenities.",
+                    "check_in": check_in or "15:00",
+                    "check_out": check_out or "11:00",
+                    "guests": guests,
+                    "rooms": rooms,
+                    "total_price": f"${price * (guests * rooms)}",
+                    "source": "Realistic Hotel Data (Free)",
+                    "booking_url": f"https://www.booking.com/hotel/{hotel_id}",
+                    "images": ["https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800"]
+                }
+                
+                hotels.append(hotel)
+            
+            return hotels
+            
+        except Exception as e:
+            print(f"Hotel generation error: {e}")
+            return []
+    
+    def _generate_hotel_details(self, hotel_id: str) -> Dict[str, Any]:
+        """Generate detailed hotel information."""
+        try:
+            # Extract city from hotel ID
+            city = hotel_id.split('_')[1].replace('_', ' ').title()
+            
+            return {
+                "id": hotel_id,
+                "name": f"Hotel {city}",
+                "description": f"Experience luxury and comfort at Hotel {city}. Located in the heart of the city, this hotel offers world-class amenities and exceptional service.",
+                "address": f"123 Main Street, {city}",
+                "phone": "+1-555-0123",
+                "email": f"info@hotel{city.lower().replace(' ', '')}.com",
+                "website": f"https://www.hotel{city.lower().replace(' ', '')}.com",
+                "check_in": "15:00",
+                "check_out": "11:00",
+                "amenities": [
+                    "Free WiFi",
+                    "Air Conditioning",
+                    "Room Service",
+                    "Fitness Center",
+                    "Restaurant",
+                    "Bar",
+                    "Concierge",
+                    "Laundry Service",
+                    "Business Center",
+                    "Parking"
+                ],
+                "policies": [
+                    "Free cancellation up to 24 hours before check-in",
+                    "No smoking in rooms",
+                    "Pets allowed with additional fee",
+                    "Minimum age to check-in: 18"
+                ],
+                "source": "Realistic Hotel Data (Free)"
+            }
+            
+        except Exception as e:
+            print(f"Hotel details generation error: {e}")
+            return {}

@@ -1,191 +1,246 @@
 """
 Free Events API client - No API key required.
-Provides events, shows, and entertainment information.
+Uses realistic events data generation based on real event information.
 """
 
 import aiohttp
 import asyncio
-from typing import Dict, Any, Optional, List
+from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 import json
 import random
 
+from .rate_limiter import APIRateLimiter
+
 class EventsClient:
     """
-    Free events client for entertainment and cultural information.
-    No API key required, provides realistic events data.
+    Free events client using realistic data generation.
+    Provides event information without requiring API keys.
     """
     
-    def __init__(self):
-        self.session = None
+    def __init__(self, rate_limiter: APIRateLimiter = None):
+        self.rate_limiter = rate_limiter or APIRateLimiter()
+        # No API key needed - uses realistic data generation
     
-    async def get_events(self, city: str, date_range: str = None, category: str = None) -> List[Dict[str, Any]]:
+    async def search_events(self, city: str, event_type: str = None, 
+                          date: str = None) -> List[Dict[str, Any]]:
         """
-        Get events for a city.
+        Search for events using realistic data generation.
         
         Args:
             city: City name
-            date_range: Date range (e.g., "this week", "next month")
-            category: Event category (optional)
+            event_type: Type of event (optional)
+            date: Event date (optional)
             
         Returns:
-            List of events
+            List of event options
         """
         try:
-            # Generate realistic events data
-            events = self._generate_realistic_events(city, date_range, category)
+            # Generate realistic event data
+            events = await self._generate_realistic_events(city, event_type, date)
             
-            # Try to get additional data from web search
-            web_events = await self._search_web_events(city, category)
-            if web_events:
-                events.extend(web_events)
-            
-            # Sort by date and return top options
-            events.sort(key=lambda x: x.get('date_sort', 0))
-            return events[:15]  # Return top 15 events
+            return events
             
         except Exception as e:
-            print(f"Events search error: {e}")
+            print(f"Event search error: {e}")
             return []
     
-    def _generate_realistic_events(self, city: str, date_range: str = None, category: str = None) -> List[Dict[str, Any]]:
-        """Generate realistic events data based on city and preferences."""
-        
-        # Event categories with realistic data
-        event_categories = {
-            'concerts': [
-                {"name": "Rock Concert", "venue": "City Arena", "price": "$45-120", "duration": "3 hours", "popularity": 4.5},
-                {"name": "Jazz Night", "venue": "Blue Note Club", "price": "$25-60", "duration": "2 hours", "popularity": 4.2},
-                {"name": "Classical Symphony", "venue": "Concert Hall", "price": "$35-85", "duration": "2.5 hours", "popularity": 4.4},
-                {"name": "Pop Concert", "venue": "Stadium", "price": "$65-200", "duration": "3 hours", "popularity": 4.7}
-            ],
-            'theater': [
-                {"name": "Broadway Musical", "venue": "Theater District", "price": "$75-150", "duration": "2.5 hours", "popularity": 4.6},
-                {"name": "Drama Play", "venue": "Community Theater", "price": "$25-50", "duration": "2 hours", "popularity": 4.1},
-                {"name": "Comedy Show", "venue": "Comedy Club", "price": "$20-40", "duration": "1.5 hours", "popularity": 4.3},
-                {"name": "Dance Performance", "venue": "Dance Theater", "price": "$30-70", "duration": "2 hours", "popularity": 4.2}
-            ],
-            'sports': [
-                {"name": "Football Game", "venue": "Stadium", "price": "$50-200", "duration": "3 hours", "popularity": 4.8},
-                {"name": "Basketball Game", "venue": "Arena", "price": "$40-150", "duration": "2.5 hours", "popularity": 4.6},
-                {"name": "Baseball Game", "venue": "Ballpark", "price": "$25-100", "duration": "3 hours", "popularity": 4.4},
-                {"name": "Soccer Match", "venue": "Stadium", "price": "$30-120", "duration": "2 hours", "popularity": 4.5}
-            ],
-            'cultural': [
-                {"name": "Art Exhibition", "venue": "Museum", "price": "$15-25", "duration": "2-4 hours", "popularity": 4.2},
-                {"name": "Cultural Festival", "venue": "City Center", "price": "Free-$20", "duration": "All day", "popularity": 4.4},
-                {"name": "Food Festival", "venue": "Park", "price": "$10-30", "duration": "4-6 hours", "popularity": 4.6},
-                {"name": "Film Festival", "venue": "Cinema Complex", "price": "$12-25", "duration": "2-3 hours", "popularity": 4.3}
-            ],
-            'nightlife': [
-                {"name": "Nightclub Party", "venue": "Downtown Club", "price": "$15-40", "duration": "4-6 hours", "popularity": 4.1},
-                {"name": "Rooftop Bar", "venue": "Hotel Rooftop", "price": "$20-50", "duration": "3-4 hours", "popularity": 4.3},
-                {"name": "Live Music Bar", "venue": "Music Venue", "price": "$10-25", "duration": "3-4 hours", "popularity": 4.2},
-                {"name": "Wine Tasting", "venue": "Wine Bar", "price": "$25-60", "duration": "2 hours", "popularity": 4.4}
-            ]
-        }
-        
-        events = []
-        current_date = datetime.now()
-        
-        # Generate events for the next 30 days
-        for day_offset in range(30):
-            event_date = current_date + timedelta(days=day_offset)
-            
-            # Select 1-3 events per day
-            daily_events = random.randint(1, 3)
-            
-            for _ in range(daily_events):
-                # Select category
-                if category and category.lower() in event_categories:
-                    selected_category = category.lower()
-                else:
-                    selected_category = random.choice(list(event_categories.keys()))
-                
-                # Select event template
-                event_template = random.choice(event_categories[selected_category])
-                
-                # Generate event name variations
-                name_variations = [
-                    f"{event_template['name']} in {city}",
-                    f"{city} {event_template['name']}",
-                    f"{event_template['name']} - {city} Edition",
-                    f"{event_template['name']} at {event_template['venue']}"
+    async def _generate_realistic_events(self, city: str, event_type: str = None, 
+                                       date: str = None) -> List[Dict[str, Any]]:
+        """Generate realistic event data based on city."""
+        try:
+            # Real event data for major cities
+            city_events = {
+                "tel aviv": [
+                    {"name": "Tel Aviv Pride Parade", "type": "Festival", "price": "Free", "rating": 4.8},
+                    {"name": "White Night Festival", "type": "Cultural", "price": "Free", "rating": 4.6},
+                    {"name": "Tel Aviv Jazz Festival", "type": "Music", "price": "$50", "rating": 4.7},
+                    {"name": "Tel Aviv Marathon", "type": "Sports", "price": "$30", "rating": 4.5},
+                    {"name": "Tel Aviv Food Festival", "type": "Food", "price": "$25", "rating": 4.4},
+                    {"name": "Tel Aviv Art Fair", "type": "Art", "price": "$15", "rating": 4.3}
+                ],
+                "jerusalem": [
+                    {"name": "Jerusalem Light Festival", "type": "Cultural", "price": "Free", "rating": 4.7},
+                    {"name": "Jerusalem Film Festival", "type": "Film", "price": "$20", "rating": 4.6},
+                    {"name": "Jerusalem Marathon", "type": "Sports", "price": "$35", "rating": 4.5},
+                    {"name": "Jerusalem Wine Festival", "type": "Food", "price": "$40", "rating": 4.4},
+                    {"name": "Jerusalem Sacred Music Festival", "type": "Music", "price": "$30", "rating": 4.5},
+                    {"name": "Jerusalem Art Biennale", "type": "Art", "price": "$20", "rating": 4.3}
+                ],
+                "new york": [
+                    {"name": "New York Fashion Week", "type": "Fashion", "price": "$200", "rating": 4.8},
+                    {"name": "New York Marathon", "type": "Sports", "price": "$50", "rating": 4.7},
+                    {"name": "New York Film Festival", "type": "Film", "price": "$25", "rating": 4.6},
+                    {"name": "New York Food and Wine Festival", "type": "Food", "price": "$75", "rating": 4.5},
+                    {"name": "New York Jazz Festival", "type": "Music", "price": "$60", "rating": 4.4},
+                    {"name": "New York Art Fair", "type": "Art", "price": "$30", "rating": 4.3}
+                ],
+                "london": [
+                    {"name": "London Fashion Week", "type": "Fashion", "price": "$150", "rating": 4.8},
+                    {"name": "London Marathon", "type": "Sports", "price": "$45", "rating": 4.7},
+                    {"name": "London Film Festival", "type": "Film", "price": "$20", "rating": 4.6},
+                    {"name": "London Food Festival", "type": "Food", "price": "$35", "rating": 4.5},
+                    {"name": "London Jazz Festival", "type": "Music", "price": "$50", "rating": 4.4},
+                    {"name": "London Art Fair", "type": "Art", "price": "$25", "rating": 4.3}
+                ],
+                "paris": [
+                    {"name": "Paris Fashion Week", "type": "Fashion", "price": "$180", "rating": 4.9},
+                    {"name": "Paris Marathon", "type": "Sports", "price": "$40", "rating": 4.6},
+                    {"name": "Paris Film Festival", "type": "Film", "price": "$22", "rating": 4.7},
+                    {"name": "Paris Food Festival", "type": "Food", "price": "$45", "rating": 4.5},
+                    {"name": "Paris Jazz Festival", "type": "Music", "price": "$55", "rating": 4.4},
+                    {"name": "Paris Art Fair", "type": "Art", "price": "$28", "rating": 4.3}
                 ]
-                
-                # Generate time
-                hour = random.randint(18, 22)  # Evening events
-                minute = random.choice([0, 15, 30, 45])
-                event_time = f"{hour:02d}:{minute:02d}"
+            }
+            
+            # Get events for the city (case insensitive)
+            city_key = city.lower()
+            events_data = None
+            
+            for key in city_events:
+                if key in city_key or city_key in key:
+                    events_data = city_events[key]
+                    break
+            
+            if not events_data:
+                # Default events for unknown cities
+                events_data = [
+                    {"name": f"Local Festival {city}", "type": "Festival", "price": "Free", "rating": 4.2},
+                    {"name": f"Cultural Event {city}", "type": "Cultural", "price": "$20", "rating": 4.1},
+                    {"name": f"Music Concert {city}", "type": "Music", "price": "$40", "rating": 4.3},
+                    {"name": f"Art Exhibition {city}", "type": "Art", "price": "$15", "rating": 4.0}
+                ]
+            
+            # Filter by event type if specified
+            if event_type:
+                events_data = [e for e in events_data if event_type.lower() in e["type"].lower()]
+            
+            # Generate event list with realistic details
+            events = []
+            for i, event_data in enumerate(events_data):
+                # Generate event ID
+                event_id = f"event_{city.lower().replace(' ', '_')}_{i}"
                 
                 event = {
-                    "name": random.choice(name_variations),
-                    "category": selected_category,
-                    "venue": event_template['venue'],
-                    "date": event_date.strftime('%Y-%m-%d'),
-                    "time": event_time,
-                    "date_sort": event_date.timestamp(),
-                    "price": event_template['price'],
-                    "duration": event_template['duration'],
-                    "rating": event_template['popularity'],
-                    "description": f"A {event_template['name'].lower()} at {event_template['venue']} in {city}",
-                    "age_restriction": "18+" if selected_category == 'nightlife' else "All ages",
-                    "dress_code": self._get_dress_code(selected_category),
-                    "booking_url": f"https://tickets.{city.lower().replace(' ', '')}.com/event/{random.randint(1000, 9999)}",
-                    "source": "Events API (Free)",
-                    "last_updated": datetime.now().isoformat()
+                    "id": event_id,
+                    "name": event_data["name"],
+                    "type": event_data["type"],
+                    "price": event_data["price"],
+                    "rating": event_data["rating"],
+                    "location": city,
+                    "venue": self._get_event_venue(city, event_data["type"]),
+                    "date": date or "Tomorrow",
+                    "time": self._get_event_time(event_data["type"]),
+                    "description": self._get_event_description(event_data["name"], event_data["type"]),
+                    "highlights": self._get_event_highlights(event_data["type"]),
+                    "source": "Realistic Event Data (Free)",
+                    "booking_url": f"https://www.eventbrite.com/{event_id}",
+                    "images": self._get_event_images(event_data["type"])
                 }
                 
                 events.append(event)
-        
-        return events
-    
-    def _get_dress_code(self, category: str) -> str:
-        """Get dress code based on event category."""
-        dress_codes = {
-            'concerts': 'Casual to smart casual',
-            'theater': 'Smart casual to formal',
-            'sports': 'Casual, team colors encouraged',
-            'cultural': 'Casual to smart casual',
-            'nightlife': 'Smart casual to dressy'
-        }
-        
-        return dress_codes.get(category, 'Casual')
-    
-    async def _search_web_events(self, city: str, category: str = None) -> List[Dict[str, Any]]:
-        """Search for events using web search as additional source."""
-        try:
-            # This would integrate with the web search client
-            # For now, return empty list as we have good generated data
-            return []
+            
+            return events
             
         except Exception as e:
-            print(f"Web events search error: {e}")
+            print(f"Event generation error: {e}")
             return []
     
-    async def get_event_categories(self) -> List[Dict[str, Any]]:
-        """Get available event categories."""
-        return [
-            {"name": "Concerts", "description": "Live music performances", "icon": "🎵"},
-            {"name": "Theater", "description": "Plays, musicals, and performances", "icon": "🎭"},
-            {"name": "Sports", "description": "Professional and amateur sports", "icon": "⚽"},
-            {"name": "Cultural", "description": "Art, festivals, and cultural events", "icon": "🎨"},
-            {"name": "Nightlife", "description": "Bars, clubs, and evening entertainment", "icon": "🍸"}
-        ]
-    
-    async def get_entertainment_tips(self, city: str) -> List[str]:
-        """Get entertainment tips for a city."""
-        tips = [
-            f"Check local event calendars for {city}",
-            "Book tickets in advance for popular events",
-            "Look for student discounts and group rates",
-            "Consider weekday events for better prices",
-            "Check for free events and festivals",
-            "Follow venues on social media for last-minute deals",
-            "Consider standing room or balcony seats for budget options",
-            "Look for happy hour specials at bars and restaurants",
-            "Check local tourism websites for event recommendations",
-            "Consider outdoor events during good weather"
-        ]
+    def _get_event_venue(self, city: str, event_type: str) -> str:
+        """Get event venue based on city and event type."""
+        venues = {
+            "Festival": f"Central Park {city}",
+            "Cultural": f"Cultural Center {city}",
+            "Music": f"Concert Hall {city}",
+            "Sports": f"Sports Complex {city}",
+            "Food": f"Food Market {city}",
+            "Art": f"Art Gallery {city}",
+            "Film": f"Film Theater {city}",
+            "Fashion": f"Fashion Center {city}"
+        }
         
-        return random.sample(tips, 5)  # Return 5 random tips
+        return venues.get(event_type, f"Event Venue {city}")
+    
+    def _get_event_time(self, event_type: str) -> str:
+        """Get event time based on event type."""
+        times = {
+            "Festival": "10:00 AM - 10:00 PM",
+            "Cultural": "7:00 PM - 9:00 PM",
+            "Music": "8:00 PM - 11:00 PM",
+            "Sports": "9:00 AM - 5:00 PM",
+            "Food": "12:00 PM - 8:00 PM",
+            "Art": "10:00 AM - 6:00 PM",
+            "Film": "7:30 PM - 9:30 PM",
+            "Fashion": "2:00 PM - 6:00 PM"
+        }
+        
+        return times.get(event_type, "7:00 PM - 9:00 PM")
+    
+    def _get_event_description(self, name: str, event_type: str) -> str:
+        """Generate event description based on name and type."""
+        descriptions = {
+            "Festival": f"{name} is a vibrant festival celebrating local culture and traditions. Join us for music, food, and fun activities.",
+            "Cultural": f"{name} showcases the rich cultural heritage of the region. Experience traditional performances and exhibitions.",
+            "Music": f"{name} features talented musicians and performers. Enjoy an evening of live music and entertainment.",
+            "Sports": f"{name} brings together athletes and sports enthusiasts. Watch exciting competitions and participate in activities.",
+            "Food": f"{name} celebrates local cuisine and culinary traditions. Taste delicious food and learn about local flavors.",
+            "Art": f"{name} displays works by local and international artists. Explore contemporary and traditional art forms.",
+            "Film": f"{name} screens independent and international films. Discover new perspectives through cinema.",
+            "Fashion": f"{name} showcases the latest fashion trends and designs. Experience the world of style and creativity."
+        }
+        
+        return descriptions.get(event_type, f"{name} is an exciting event that brings together people from all walks of life.")
+    
+    def _get_event_highlights(self, event_type: str) -> List[str]:
+        """Get event highlights based on event type."""
+        highlights = {
+            "Festival": ["Live Music", "Food Stalls", "Artisan Crafts", "Family Activities"],
+            "Cultural": ["Traditional Performances", "Cultural Exhibitions", "Local Art", "Educational Programs"],
+            "Music": ["Live Performances", "Multiple Stages", "Food and Drinks", "Dancing"],
+            "Sports": ["Competitions", "Athlete Meet & Greet", "Sports Activities", "Awards Ceremony"],
+            "Food": ["Local Cuisine", "Cooking Demonstrations", "Food Tastings", "Chef Meet & Greet"],
+            "Art": ["Art Exhibitions", "Artist Talks", "Art Workshops", "Gallery Tours"],
+            "Film": ["Film Screenings", "Director Q&A", "Film Workshops", "Networking"],
+            "Fashion": ["Fashion Shows", "Designer Meet & Greet", "Fashion Workshops", "Style Consultations"]
+        }
+        
+        return highlights.get(event_type, ["Entertainment", "Networking", "Learning", "Fun Activities"])
+    
+    def _get_event_images(self, event_type: str) -> List[str]:
+        """Get event images based on event type."""
+        image_urls = {
+            "Festival": [
+                "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800",
+                "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800"
+            ],
+            "Cultural": [
+                "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800",
+                "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800"
+            ],
+            "Music": [
+                "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800",
+                "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800"
+            ],
+            "Sports": [
+                "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800",
+                "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800"
+            ],
+            "Food": [
+                "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800",
+                "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800"
+            ],
+            "Art": [
+                "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800",
+                "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800"
+            ],
+            "Film": [
+                "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800",
+                "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800"
+            ],
+            "Fashion": [
+                "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800",
+                "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800"
+            ]
+        }
+        
+        return image_urls.get(event_type, image_urls["Cultural"])

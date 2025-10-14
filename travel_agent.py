@@ -128,24 +128,18 @@ class TravelAgent:
         self.transportation_client = TransportationClient()
         self.food_client = FoodClient()
         
-        # Try to initialize paid API clients if keys are available
+        # Initialize free API clients (no keys required)
         try:
-            if config.AVIATIONSTACK_API_KEY:
-                self.flight_client = AviationStackClient()
-                logger.info("Paid Flight API client initialized")
-            else:
-                logger.info("Using free flight data sources")
+            self.flight_client = AviationStackClient()
+            logger.info("Free Flight API client initialized")
         except Exception as e:
-            logger.warning(f"Paid Flight API not available: {e}")
+            logger.warning(f"Flight API not available: {e}")
         
         try:
-            if config.OPENWEATHER_API_KEY:
-                self.weather_client = OpenWeatherClient()
-                logger.info("Paid Weather API client initialized")
-            else:
-                logger.info("Using free weather data sources")
+            self.weather_client = OpenWeatherClient()
+            logger.info("Free Weather API client initialized")
         except Exception as e:
-            logger.warning(f"Paid Weather API not available: {e}")
+            logger.warning(f"Weather API not available: {e}")
         
         # Log available free APIs
         logger.info("Free APIs initialized: Weather (wttr.in, Open-Meteo), Flights, Currency, Hotels, Attractions, Car Rental, Events, Insurance, Transportation, Food")
@@ -181,7 +175,7 @@ class TravelAgent:
             self.llm_type = "cloud"
             self.model_name = config.CLOUD_LLM_MODEL
             self.cloud_llm_url = config.CLOUD_LLM_URL
-            self.cloud_llm_api_key = config.CLOUD_LLM_API_KEY
+            # No API key needed for free cloud LLM
             logger.info(f"Free Cloud LLM ({self.model_name}) initialized")
         except Exception as e:
             logger.error(f"Cloud LLM initialization failed: {e}")

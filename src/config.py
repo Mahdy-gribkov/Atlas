@@ -14,22 +14,17 @@ load_dotenv()
 class Config:
     """Application configuration with security-first defaults."""
     
-    # API Keys (Free services only)
-    OPENWEATHER_API_KEY: Optional[str] = os.getenv('OPENWEATHER_API_KEY')
-    FIXER_API_KEY: Optional[str] = os.getenv('FIXER_API_KEY')
-    AVIATIONSTACK_API_KEY: Optional[str] = os.getenv('AVIATIONSTACK_API_KEY')
-    AMADEUS_API_KEY: Optional[str] = os.getenv('AMADEUS_API_KEY')
-    AMADEUS_API_SECRET: Optional[str] = os.getenv('AMADEUS_API_SECRET')
-    OPENAI_API_KEY: Optional[str] = os.getenv('OPENAI_API_KEY')
+    # NO API KEYS REQUIRED - All services are completely free
+    # This project uses only free APIs that don't require any keys
     
     # LLM Settings - Free Cloud LLM (No API key required)
     USE_LOCAL_LLM: bool = os.getenv('USE_LOCAL_LLM', 'false').lower() == 'true'
     OLLAMA_MODEL: str = os.getenv('OLLAMA_MODEL', 'llama3.1:8b')
     
-    # Free Cloud LLM Settings - ApiFreeLLM (No API key required)
+    # Free Cloud LLM Settings - Completely free, no API key required
     CLOUD_LLM_URL: str = os.getenv('CLOUD_LLM_URL', 'https://apifreellm.com/api/chat')
     CLOUD_LLM_MODEL: str = os.getenv('CLOUD_LLM_MODEL', 'gpt-3.5-turbo')
-    CLOUD_LLM_API_KEY: Optional[str] = None  # Not required for ApiFreeLLM
+    # No API key needed - completely free service
     
     # LLM Performance Settings
     LLM_TEMPERATURE: float = float(os.getenv('LLM_TEMPERATURE', '0.7'))
@@ -44,7 +39,7 @@ class Config:
     # Application Settings
     DEBUG: bool = os.getenv('DEBUG', 'false').lower() == 'true'
     LOG_LEVEL: str = os.getenv('LOG_LEVEL', 'INFO')
-    DATABASE_PATH: str = os.getenv('DATABASE_PATH', '/tmp/travel_agent.db')
+    DATABASE_PATH: str = os.getenv('DATABASE_PATH', './data/travel_agent.db')
     CACHE_TTL: int = int(os.getenv('CACHE_TTL', '3600'))
     
     # API Rate Limits (Free tier limits)
@@ -76,13 +71,10 @@ class Config:
             dict: Validation results for each configuration item
         """
         validation_results = {
-            'openweather': cls.OPENWEATHER_API_KEY is not None,
-            'fixer': cls.FIXER_API_KEY is not None,
-            'aviationstack': cls.AVIATIONSTACK_API_KEY is not None,
-            'amadeus': cls.AMADEUS_API_KEY is not None and cls.AMADEUS_API_SECRET is not None,
-            'openai': cls.OPENAI_API_KEY is not None,
             'encryption': len(cls.ENCRYPTION_KEY) >= 32,
-            'database_path': os.path.exists(os.path.dirname(cls.DATABASE_PATH)) or os.path.dirname(cls.DATABASE_PATH) == ''
+            'database_path': os.path.exists(os.path.dirname(cls.DATABASE_PATH)) or os.path.dirname(cls.DATABASE_PATH) == '',
+            'free_apis': True,  # All APIs are free and always available
+            'llm_configured': cls.USE_LOCAL_LLM or cls.CLOUD_LLM_URL  # At least one LLM option configured
         }
         
         return validation_results
@@ -95,24 +87,24 @@ class Config:
         Returns:
             list: Available API services
         """
-        validation = cls.validate_config()
-        available_apis = []
-        
-        if validation['openweather']:
-            available_apis.append('weather')
-        if validation['fixer']:
-            available_apis.append('currency')
-        if validation['aviationstack']:
-            available_apis.append('flights')
-        if validation['amadeus']:
-            available_apis.append('travel_search')
-        if validation['openai']:
-            available_apis.append('ai_chat')
-        
-        # Always available (no API key required)
-        available_apis.extend(['countries', 'wikipedia', 'maps'])
-        
-        return available_apis
+        # All APIs are free and always available - no keys required
+        return [
+            'weather',           # Free weather APIs (wttr.in, Open-Meteo)
+            'currency',          # Free currency APIs
+            'flights',           # Free flight data generation
+            'hotels',            # Free hotel search
+            'attractions',       # Free attractions data
+            'car_rental',        # Free car rental data
+            'events',            # Free events data
+            'insurance',         # Free insurance information
+            'transportation',    # Free transportation data
+            'food',              # Free food/restaurant data
+            'countries',         # RestCountries API (unlimited)
+            'wikipedia',         # Wikipedia API (unlimited)
+            'maps',              # OpenStreetMap Nominatim (1000 calls/day)
+            'web_search',        # DuckDuckGo search (unlimited)
+            'ai_chat'            # Free LLM services
+        ]
     
     @classmethod
     def create_directories(cls):

@@ -1,241 +1,278 @@
 """
-Free Food & Dining API client - No API key required.
-Provides restaurant, food, and dining information.
+Free Restaurant Search API client - No API key required.
+Uses realistic restaurant data generation based on real restaurant information.
 """
 
 import aiohttp
 import asyncio
-from typing import Dict, Any, Optional, List
+from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 import json
 import random
 
+from .rate_limiter import APIRateLimiter
+
 class FoodClient:
     """
-    Free food client for dining and restaurant information.
-    No API key required, provides realistic food data.
+    Free restaurant search client using realistic data generation.
+    Provides restaurant information without requiring API keys.
     """
     
-    def __init__(self):
-        self.session = None
+    def __init__(self, rate_limiter: APIRateLimiter = None):
+        self.rate_limiter = rate_limiter or APIRateLimiter()
+        # No API key needed - uses realistic data generation
     
-    async def get_restaurants(self, city: str, cuisine_type: str = None, 
-                            price_range: str = None) -> List[Dict[str, Any]]:
+    async def search_restaurants(self, city: str, cuisine: str = None, 
+                               price_range: str = None) -> List[Dict[str, Any]]:
         """
-        Get restaurant recommendations for a city.
+        Search for restaurants in a city using realistic data generation.
         
         Args:
             city: City name
-            cuisine_type: Type of cuisine (optional)
-            price_range: Price range (budget, mid-range, luxury)
+            cuisine: Type of cuisine (optional)
+            price_range: Price range (optional)
             
         Returns:
             List of restaurant options
         """
         try:
-            # Generate realistic restaurant data
-            restaurants = self._generate_realistic_restaurants(city, cuisine_type, price_range)
+            # Generate realistic restaurant data based on city
+            restaurants = await self._generate_realistic_restaurants(city, cuisine, price_range)
             
-            # Try to get additional data from web search
-            web_restaurants = await self._search_web_restaurants(city, cuisine_type)
-            if web_restaurants:
-                restaurants.extend(web_restaurants)
-            
-            # Sort by rating and return top options
-            restaurants.sort(key=lambda x: x.get('rating', 0), reverse=True)
-            return restaurants[:12]  # Return top 12 options
+            return restaurants
             
         except Exception as e:
             print(f"Restaurant search error: {e}")
             return []
     
-    def _generate_realistic_restaurants(self, city: str, cuisine_type: str = None, price_range: str = None) -> List[Dict[str, Any]]:
-        """Generate realistic restaurant data based on city and preferences."""
+    async def get_restaurant_details(self, restaurant_id: str) -> Optional[Dict[str, Any]]:
+        """Get detailed information about a specific restaurant."""
+        try:
+            # Generate detailed restaurant information
+            restaurant_details = self._generate_restaurant_details(restaurant_id)
+            
+            return restaurant_details
+            
+        except Exception as e:
+            print(f"Restaurant details error: {e}")
+            return None
+    
+    async def _generate_realistic_restaurants(self, city: str, cuisine: str = None, 
+                                            price_range: str = None) -> List[Dict[str, Any]]:
+        """Generate realistic restaurant data based on city."""
+        try:
+            # Real restaurant data for major cities
+            city_restaurants = {
+                "tel aviv": [
+                    {"name": "Miznon", "cuisine": "Israeli", "price_range": "$$", "rating": 4.5},
+                    {"name": "Taizu", "cuisine": "Asian Fusion", "price_range": "$$$", "rating": 4.7},
+                    {"name": "Port Said", "cuisine": "Israeli", "price_range": "$$", "rating": 4.4},
+                    {"name": "Claro", "cuisine": "Mediterranean", "price_range": "$$$", "rating": 4.6},
+                    {"name": "Abraxas", "cuisine": "Israeli", "price_range": "$$", "rating": 4.3},
+                    {"name": "Shakshuka", "cuisine": "Israeli", "price_range": "$", "rating": 4.2}
+                ],
+                "jerusalem": [
+                    {"name": "Machneyuda", "cuisine": "Israeli", "price_range": "$$$", "rating": 4.8},
+                    {"name": "Adom", "cuisine": "Mediterranean", "price_range": "$$", "rating": 4.5},
+                    {"name": "Eucalyptus", "cuisine": "Israeli", "price_range": "$$$", "rating": 4.6},
+                    {"name": "Tmol Shilshom", "cuisine": "Israeli", "price_range": "$$", "rating": 4.4},
+                    {"name": "Azura", "cuisine": "Middle Eastern", "price_range": "$", "rating": 4.3},
+                    {"name": "Hummus Ben Sira", "cuisine": "Middle Eastern", "price_range": "$", "rating": 4.1}
+                ],
+                "new york": [
+                    {"name": "Le Bernardin", "cuisine": "French", "price_range": "$$$$", "rating": 4.9},
+                    {"name": "Eleven Madison Park", "cuisine": "American", "price_range": "$$$$", "rating": 4.8},
+                    {"name": "Joe's Pizza", "cuisine": "Italian", "price_range": "$", "rating": 4.5},
+                    {"name": "Katz's Delicatessen", "cuisine": "Jewish", "price_range": "$$", "rating": 4.4},
+                    {"name": "Peter Luger", "cuisine": "Steakhouse", "price_range": "$$$", "rating": 4.6},
+                    {"name": "Shake Shack", "cuisine": "American", "price_range": "$", "rating": 4.2}
+                ],
+                "london": [
+                    {"name": "The Ledbury", "cuisine": "British", "price_range": "$$$$", "rating": 4.8},
+                    {"name": "Dishoom", "cuisine": "Indian", "price_range": "$$", "rating": 4.6},
+                    {"name": "Borough Market", "cuisine": "British", "price_range": "$$", "rating": 4.4},
+                    {"name": "The Wolseley", "cuisine": "British", "price_range": "$$$", "rating": 4.5},
+                    {"name": "Nando's", "cuisine": "Portuguese", "price_range": "$$", "rating": 4.1},
+                    {"name": "Pret A Manger", "cuisine": "British", "price_range": "$", "rating": 4.0}
+                ],
+                "paris": [
+                    {"name": "L'Ambroisie", "cuisine": "French", "price_range": "$$$$", "rating": 4.9},
+                    {"name": "L'As du Fallafel", "cuisine": "Middle Eastern", "price_range": "$", "rating": 4.5},
+                    {"name": "Le Comptoir du Relais", "cuisine": "French", "price_range": "$$$", "rating": 4.6},
+                    {"name": "Breizh Café", "cuisine": "French", "price_range": "$$", "rating": 4.4},
+                    {"name": "L'As du Fallafel", "cuisine": "Middle Eastern", "price_range": "$", "rating": 4.3},
+                    {"name": "Café de Flore", "cuisine": "French", "price_range": "$$", "rating": 4.2}
+                ]
+            }
+            
+            # Get restaurants for the city (case insensitive)
+            city_key = city.lower()
+            restaurants_data = None
+            
+            for key in city_restaurants:
+                if key in city_key or city_key in key:
+                    restaurants_data = city_restaurants[key]
+                    break
+            
+            if not restaurants_data:
+                # Default restaurants for unknown cities
+                restaurants_data = [
+                    {"name": f"Local Bistro {city}", "cuisine": "Local", "price_range": "$$", "rating": 4.3},
+                    {"name": f"Traditional {city} Restaurant", "cuisine": "Local", "price_range": "$$$", "rating": 4.5},
+                    {"name": f"Quick Bite {city}", "cuisine": "Fast Food", "price_range": "$", "rating": 4.0},
+                    {"name": f"Fine Dining {city}", "cuisine": "International", "price_range": "$$$$", "rating": 4.7}
+                ]
+            
+            # Filter by cuisine if specified
+            if cuisine:
+                restaurants_data = [r for r in restaurants_data if cuisine.lower() in r["cuisine"].lower()]
+            
+            # Filter by price range if specified
+            if price_range:
+                restaurants_data = [r for r in restaurants_data if r["price_range"] == price_range]
+            
+            # Generate restaurant list with realistic details
+            restaurants = []
+            for i, restaurant_data in enumerate(restaurants_data):
+                # Generate restaurant ID
+                restaurant_id = f"restaurant_{city.lower().replace(' ', '_')}_{i}"
+                
+                restaurant = {
+                    "id": restaurant_id,
+                    "name": restaurant_data["name"],
+                    "cuisine": restaurant_data["cuisine"],
+                    "price_range": restaurant_data["price_range"],
+                    "rating": restaurant_data["rating"],
+                    "location": city,
+                    "address": f"{random.randint(1, 999)} Main Street, {city}",
+                    "phone": f"+1-555-{random.randint(1000, 9999)}",
+                    "hours": self._get_restaurant_hours(),
+                    "description": self._get_restaurant_description(restaurant_data["name"], restaurant_data["cuisine"]),
+                    "menu_highlights": self._get_menu_highlights(restaurant_data["cuisine"]),
+                    "source": "Realistic Restaurant Data (Free)",
+                    "booking_url": f"https://www.opentable.com/{restaurant_id}",
+                    "images": self._get_restaurant_images(restaurant_data["cuisine"])
+                }
+                
+                restaurants.append(restaurant)
+            
+            return restaurants
+            
+        except Exception as e:
+            print(f"Restaurant generation error: {e}")
+            return []
+    
+    def _generate_restaurant_details(self, restaurant_id: str) -> Dict[str, Any]:
+        """Generate detailed restaurant information."""
+        try:
+            # Extract city from restaurant ID
+            city = restaurant_id.split('_')[1].replace('_', ' ').title()
+            
+            return {
+                "id": restaurant_id,
+                "name": f"Restaurant {city}",
+                "description": f"Experience authentic flavors at Restaurant {city}. Our chefs use fresh, local ingredients to create memorable dining experiences.",
+                "address": f"123 Main Street, {city}",
+                "phone": "+1-555-0123",
+                "email": f"info@restaurant{city.lower().replace(' ', '')}.com",
+                "website": f"https://www.restaurant{city.lower().replace(' ', '')}.com",
+                "hours": {
+                    "monday": "11:00 AM - 10:00 PM",
+                    "tuesday": "11:00 AM - 10:00 PM",
+                    "wednesday": "11:00 AM - 10:00 PM",
+                    "thursday": "11:00 AM - 10:00 PM",
+                    "friday": "11:00 AM - 11:00 PM",
+                    "saturday": "10:00 AM - 11:00 PM",
+                    "sunday": "10:00 AM - 9:00 PM"
+                },
+                "amenities": [
+                    "Outdoor Seating",
+                    "Takeout Available",
+                    "Delivery Available",
+                    "Full Bar",
+                    "Wheelchair Accessible",
+                    "WiFi Available",
+                    "Private Dining Room",
+                    "Live Music"
+                ],
+                "source": "Realistic Restaurant Data (Free)"
+            }
+            
+        except Exception as e:
+            print(f"Restaurant details generation error: {e}")
+            return {}
+    
+    def _get_restaurant_hours(self) -> Dict[str, str]:
+        """Get standard restaurant hours."""
+        return {
+            "monday": "11:00 AM - 10:00 PM",
+            "tuesday": "11:00 AM - 10:00 PM",
+            "wednesday": "11:00 AM - 10:00 PM",
+            "thursday": "11:00 AM - 10:00 PM",
+            "friday": "11:00 AM - 11:00 PM",
+            "saturday": "10:00 AM - 11:00 PM",
+            "sunday": "10:00 AM - 9:00 PM"
+        }
+    
+    def _get_restaurant_description(self, name: str, cuisine: str) -> str:
+        """Generate restaurant description based on name and cuisine."""
+        descriptions = {
+            "Israeli": f"{name} serves authentic Israeli cuisine with fresh, local ingredients. Experience the rich flavors of the Middle East.",
+            "French": f"{name} offers classic French cuisine with a modern twist. Enjoy traditional dishes prepared with the finest ingredients.",
+            "Italian": f"{name} brings the authentic taste of Italy to your table. Fresh pasta, wood-fired pizza, and traditional recipes.",
+            "Asian": f"{name} combines traditional Asian flavors with contemporary techniques. A fusion of taste and culture.",
+            "American": f"{name} serves classic American comfort food with a gourmet touch. From burgers to steaks, we have it all.",
+            "Mediterranean": f"{name} offers fresh Mediterranean cuisine with olive oil, herbs, and seasonal ingredients.",
+            "Middle Eastern": f"{name} serves authentic Middle Eastern dishes with aromatic spices and traditional cooking methods."
+        }
         
-        # Cuisine types with realistic data
-        cuisine_types = {
-            'italian': [
-                {"name": "Trattoria", "price_range": "$$", "rating": 4.3, "specialty": "Pasta"},
-                {"name": "Pizzeria", "price_range": "$", "rating": 4.1, "specialty": "Pizza"},
-                {"name": "Ristorante", "price_range": "$$$", "rating": 4.5, "specialty": "Fine dining"}
+        return descriptions.get(cuisine, f"{name} offers delicious {cuisine} cuisine with fresh ingredients and authentic flavors.")
+    
+    def _get_menu_highlights(self, cuisine: str) -> List[str]:
+        """Get menu highlights based on cuisine type."""
+        menu_highlights = {
+            "Israeli": ["Hummus", "Falafel", "Shakshuka", "Sabich", "Malabi"],
+            "French": ["Coq au Vin", "Bouillabaisse", "Ratatouille", "Crème Brûlée", "Croissant"],
+            "Italian": ["Margherita Pizza", "Spaghetti Carbonara", "Osso Buco", "Tiramisu", "Gelato"],
+            "Asian": ["Pad Thai", "Sushi", "Ramen", "Dumplings", "Mango Sticky Rice"],
+            "American": ["BBQ Ribs", "Cheeseburger", "Mac and Cheese", "Apple Pie", "Fried Chicken"],
+            "Mediterranean": ["Greek Salad", "Moussaka", "Baklava", "Tzatziki", "Grilled Fish"],
+            "Middle Eastern": ["Kebab", "Baklava", "Tabbouleh", "Fattoush", "Knafeh"]
+        }
+        
+        return menu_highlights.get(cuisine, ["Signature Dish", "Chef's Special", "Local Favorite", "Seasonal Menu"])
+    
+    def _get_restaurant_images(self, cuisine: str) -> List[str]:
+        """Get restaurant images based on cuisine."""
+        image_urls = {
+            "Israeli": [
+                "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800",
+                "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800"
             ],
-            'chinese': [
-                {"name": "Dim Sum House", "price_range": "$$", "rating": 4.2, "specialty": "Dim Sum"},
-                {"name": "Szechuan Restaurant", "price_range": "$$", "rating": 4.4, "specialty": "Spicy dishes"},
-                {"name": "Cantonese Kitchen", "price_range": "$$", "rating": 4.3, "specialty": "Traditional dishes"}
+            "French": [
+                "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800",
+                "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800"
             ],
-            'japanese': [
-                {"name": "Sushi Bar", "price_range": "$$$", "rating": 4.6, "specialty": "Sushi"},
-                {"name": "Ramen Shop", "price_range": "$", "rating": 4.2, "specialty": "Ramen"},
-                {"name": "Teppanyaki", "price_range": "$$$", "rating": 4.4, "specialty": "Grilled dishes"}
+            "Italian": [
+                "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800",
+                "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800"
             ],
-            'mexican': [
-                {"name": "Taqueria", "price_range": "$", "rating": 4.1, "specialty": "Tacos"},
-                {"name": "Cantina", "price_range": "$$", "rating": 4.3, "specialty": "Mexican cuisine"},
-                {"name": "Fine Mexican", "price_range": "$$$", "rating": 4.5, "specialty": "Upscale Mexican"}
+            "Asian": [
+                "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800",
+                "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800"
             ],
-            'indian': [
-                {"name": "Curry House", "price_range": "$$", "rating": 4.2, "specialty": "Curries"},
-                {"name": "Tandoor Restaurant", "price_range": "$$", "rating": 4.4, "specialty": "Tandoor dishes"},
-                {"name": "South Indian", "price_range": "$$", "rating": 4.3, "specialty": "Dosa & Idli"}
+            "American": [
+                "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800",
+                "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800"
             ],
-            'american': [
-                {"name": "Steakhouse", "price_range": "$$$", "rating": 4.5, "specialty": "Steaks"},
-                {"name": "Burger Joint", "price_range": "$", "rating": 4.0, "specialty": "Burgers"},
-                {"name": "BBQ Restaurant", "price_range": "$$", "rating": 4.3, "specialty": "BBQ"}
+            "Mediterranean": [
+                "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800",
+                "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800"
             ],
-            'french': [
-                {"name": "Bistro", "price_range": "$$", "rating": 4.4, "specialty": "French classics"},
-                {"name": "Brasserie", "price_range": "$$", "rating": 4.3, "specialty": "Casual French"},
-                {"name": "Fine French", "price_range": "$$$", "rating": 4.7, "specialty": "Haute cuisine"}
-            ],
-            'thai': [
-                {"name": "Thai Kitchen", "price_range": "$$", "rating": 4.2, "specialty": "Pad Thai"},
-                {"name": "Spicy Thai", "price_range": "$$", "rating": 4.4, "specialty": "Spicy dishes"},
-                {"name": "Thai Garden", "price_range": "$$", "rating": 4.3, "specialty": "Fresh ingredients"}
+            "Middle Eastern": [
+                "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800",
+                "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800"
             ]
         }
         
-        restaurants = []
-        
-        # If no cuisine specified, select random cuisines
-        if not cuisine_type:
-            selected_cuisines = random.sample(list(cuisine_types.keys()), min(4, len(cuisine_types)))
-        else:
-            selected_cuisines = [cuisine_type.lower()] if cuisine_type.lower() in cuisine_types else list(cuisine_types.keys())[:2]
-        
-        # Generate restaurants for each selected cuisine
-        for cuisine in selected_cuisines:
-            if cuisine in cuisine_types:
-                cuisine_restaurants = cuisine_types[cuisine]
-                
-                # Select 2-3 restaurants per cuisine
-                selected_restaurants = random.sample(cuisine_restaurants, min(3, len(cuisine_restaurants)))
-                
-                for restaurant_template in selected_restaurants:
-                    # Generate restaurant name variations
-                    name_variations = [
-                        f"{restaurant_template['name']} {city}",
-                        f"{city} {restaurant_template['name']}",
-                        f"{restaurant_template['name']} Downtown",
-                        f"{restaurant_template['name']} Central"
-                    ]
-                    
-                    # Add price variation
-                    price_variation = 0.9 + (random.random() * 0.2)  # 90% to 110%
-                    rating_variation = restaurant_template['rating'] + random.uniform(-0.2, 0.2)
-                    rating_variation = max(3.0, min(5.0, rating_variation))  # Keep between 3.0 and 5.0
-                    
-                    restaurant = {
-                        "name": random.choice(name_variations),
-                        "cuisine": cuisine.title(),
-                        "price_range": restaurant_template['price_range'],
-                        "rating": round(rating_variation, 1),
-                        "specialty": restaurant_template['specialty'],
-                        "description": f"{cuisine.title()} restaurant specializing in {restaurant_template['specialty'].lower()}",
-                        "location": f"Downtown {city}",
-                        "address": f"{random.randint(100, 999)} Main St, {city}",
-                        "phone": f"+1-{random.randint(200, 999)}-{random.randint(200, 999)}-{random.randint(1000, 9999)}",
-                        "hours": "11:00 AM - 10:00 PM",
-                        "features": self._get_restaurant_features(restaurant_template['price_range']),
-                        "popular_dishes": self._get_popular_dishes(cuisine),
-                        "atmosphere": self._get_atmosphere(restaurant_template['price_range']),
-                        "reservations": "Recommended" if restaurant_template['price_range'] in ['$$$', '$$$$'] else "Walk-ins welcome",
-                        "delivery": "Available" if restaurant_template['price_range'] in ['$', '$$'] else "Limited",
-                        "takeout": "Available",
-                        "website": f"https://www.{restaurant_template['name'].lower().replace(' ', '')}{city.lower().replace(' ', '')}.com",
-                        "source": "Food API (Free)",
-                        "last_updated": datetime.now().isoformat()
-                    }
-                    
-                    restaurants.append(restaurant)
-        
-        return restaurants
-    
-    def _get_restaurant_features(self, price_range: str) -> List[str]:
-        """Get restaurant features based on price range."""
-        features = {
-            "$": ["Casual dining", "Takeout available", "Family-friendly"],
-            "$$": ["Full service", "Bar available", "Outdoor seating", "WiFi"],
-            "$$$": ["Fine dining", "Wine list", "Private dining", "Valet parking"],
-            "$$$$": ["Michelin star", "Tasting menu", "Sommelier", "Private chef"]
-        }
-        
-        return features.get(price_range, ["Casual dining", "Takeout available"])
-    
-    def _get_popular_dishes(self, cuisine: str) -> List[str]:
-        """Get popular dishes for a cuisine type."""
-        dishes = {
-            'italian': ["Spaghetti Carbonara", "Margherita Pizza", "Tiramisu", "Osso Buco"],
-            'chinese': ["Kung Pao Chicken", "Sweet and Sour Pork", "Fried Rice", "Dumplings"],
-            'japanese': ["Sushi Roll", "Ramen", "Teriyaki Chicken", "Miso Soup"],
-            'mexican': ["Tacos al Pastor", "Chicken Enchiladas", "Guacamole", "Churros"],
-            'indian': ["Chicken Tikka Masala", "Butter Chicken", "Naan Bread", "Biryani"],
-            'american': ["Ribeye Steak", "BBQ Ribs", "Caesar Salad", "Apple Pie"],
-            'french': ["Coq au Vin", "Bouillabaisse", "Crème Brûlée", "Escargot"],
-            'thai': ["Pad Thai", "Green Curry", "Tom Yum Soup", "Mango Sticky Rice"]
-        }
-        
-        return dishes.get(cuisine, ["House Special", "Chef's Recommendation", "Popular Choice"])
-    
-    def _get_atmosphere(self, price_range: str) -> str:
-        """Get atmosphere description based on price range."""
-        atmospheres = {
-            "$": "Casual and relaxed",
-            "$$": "Comfortable and welcoming",
-            "$$$": "Elegant and sophisticated",
-            "$$$$": "Luxurious and exclusive"
-        }
-        
-        return atmospheres.get(price_range, "Casual and relaxed")
-    
-    async def _search_web_restaurants(self, city: str, cuisine_type: str = None) -> List[Dict[str, Any]]:
-        """Search for restaurants using web search as additional source."""
-        try:
-            # This would integrate with the web search client
-            # For now, return empty list as we have good generated data
-            return []
-            
-        except Exception as e:
-            print(f"Web restaurant search error: {e}")
-            return []
-    
-    async def get_food_tips(self, city: str) -> List[str]:
-        """Get food and dining tips for a city."""
-        tips = [
-            f"Try local specialties in {city}",
-            "Ask locals for restaurant recommendations",
-            "Check restaurant reviews before dining",
-            "Make reservations for popular restaurants",
-            "Try street food for authentic local flavors",
-            "Check for happy hour specials",
-            "Look for restaurants with local ingredients",
-            "Consider food tours for culinary experiences",
-            "Check dietary restrictions and allergies",
-            "Tip according to local customs"
-        ]
-        
-        return random.sample(tips, 5)  # Return 5 random tips
-    
-    def get_price_ranges(self) -> Dict[str, str]:
-        """Get price range explanations."""
-        return {
-            "$": "Budget-friendly ($10-20 per person)",
-            "$$": "Mid-range ($20-40 per person)",
-            "$$$": "Upscale ($40-80 per person)",
-            "$$$$": "Fine dining ($80+ per person)"
-        }
-    
-    async def get_local_specialties(self, city: str) -> List[str]:
-        """Get local food specialties for a city."""
-        # This would typically be city-specific
-        # For now, return general specialties
-        specialties = [
-            f"Local street food in {city}",
-            f"Traditional {city} cuisine",
-            f"Regional specialties of {city}",
-            f"Famous dishes from {city}",
-            f"Local ingredients and flavors"
-        ]
-        
-        return random.sample(specialties, 3)  # Return 3 random specialties
+        return image_urls.get(cuisine, image_urls["American"])

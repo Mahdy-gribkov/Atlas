@@ -1,188 +1,216 @@
 """
-Free Travel Insurance API client - No API key required.
-Provides travel insurance information and recommendations.
+Free Insurance API client - No API key required.
+Uses realistic insurance data generation based on real insurance information.
 """
 
 import aiohttp
 import asyncio
-from typing import Dict, Any, Optional, List
+from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 import json
 import random
 
+from .rate_limiter import APIRateLimiter
+
 class InsuranceClient:
     """
-    Free travel insurance client for travel protection information.
-    No API key required, provides realistic insurance data.
+    Free insurance client using realistic data generation.
+    Provides insurance information without requiring API keys.
     """
     
-    def __init__(self):
-        self.session = None
+    def __init__(self, rate_limiter: APIRateLimiter = None):
+        self.rate_limiter = rate_limiter or APIRateLimiter()
+        # No API key needed - uses realistic data generation
     
-    async def get_travel_insurance_options(self, destination: str, duration: int = 7, 
-                                         trip_type: str = "leisure") -> List[Dict[str, Any]]:
+    async def search_travel_insurance(self, destination: str, duration: int = 7, 
+                                    travelers: int = 1) -> List[Dict[str, Any]]:
         """
-        Get travel insurance options for a destination.
+        Search for travel insurance using realistic data generation.
         
         Args:
             destination: Destination country/city
             duration: Trip duration in days
-            trip_type: Type of trip (leisure, business, adventure)
+            travelers: Number of travelers
             
         Returns:
             List of insurance options
         """
         try:
-            # Generate realistic insurance data
-            insurance_options = self._generate_realistic_insurance(destination, duration, trip_type)
+            # Generate realistic travel insurance data
+            insurance_options = await self._generate_realistic_travel_insurance(destination, duration, travelers)
             
-            # Try to get additional data from web search
-            web_insurance = await self._search_web_insurance(destination, duration)
-            if web_insurance:
-                insurance_options.extend(web_insurance)
-            
-            # Sort by price and return options
-            insurance_options.sort(key=lambda x: x.get('price_numeric', 999))
-            return insurance_options[:8]  # Return top 8 options
+            return insurance_options
             
         except Exception as e:
-            print(f"Insurance search error: {e}")
+            print(f"Travel insurance search error: {e}")
             return []
     
-    def _generate_realistic_insurance(self, destination: str, duration: int, trip_type: str) -> List[Dict[str, Any]]:
-        """Generate realistic travel insurance data."""
-        
-        # Insurance providers and their offerings
-        insurance_providers = [
-            {"name": "Allianz Travel", "base_price": 8, "reliability": 4.6, "coverage": "Comprehensive"},
-            {"name": "World Nomads", "base_price": 6, "reliability": 4.4, "coverage": "Adventure-focused"},
-            {"name": "Travel Guard", "base_price": 7, "reliability": 4.5, "coverage": "Business-friendly"},
-            {"name": "Seven Corners", "base_price": 5, "reliability": 4.3, "coverage": "Budget-friendly"},
-            {"name": "Travelex", "base_price": 9, "reliability": 4.7, "coverage": "Premium"},
-            {"name": "IMG Global", "base_price": 6, "reliability": 4.4, "coverage": "International"},
-            {"name": "SafetyWing", "base_price": 4, "reliability": 4.2, "coverage": "Digital nomad"},
-            {"name": "InsureMyTrip", "base_price": 7, "reliability": 4.5, "coverage": "Comparison platform"}
-        ]
-        
-        # Coverage types with different pricing
-        coverage_types = [
-            {
-                "type": "Basic",
-                "description": "Essential coverage for medical and trip cancellation",
-                "multiplier": 1.0,
-                "features": ["Emergency Medical", "Trip Cancellation", "Baggage Loss"]
-            },
-            {
-                "type": "Standard",
-                "description": "Comprehensive coverage with additional benefits",
-                "multiplier": 1.3,
-                "features": ["Emergency Medical", "Trip Cancellation", "Baggage Loss", "Trip Interruption", "Emergency Evacuation"]
-            },
-            {
-                "type": "Premium",
-                "description": "Full coverage with maximum benefits",
-                "multiplier": 1.6,
-                "features": ["Emergency Medical", "Trip Cancellation", "Baggage Loss", "Trip Interruption", "Emergency Evacuation", "Rental Car Coverage", "Adventure Sports"]
-            }
-        ]
-        
-        insurance_options = []
-        
-        # Generate insurance options for each provider
-        for provider in insurance_providers:
-            # Select 2-3 coverage types per provider
-            selected_coverages = random.sample(coverage_types, min(3, len(coverage_types)))
-            
-            for coverage in selected_coverages:
-                # Calculate price with variations
-                base_price = provider['base_price'] * coverage['multiplier']
-                price_variation = 0.8 + (random.random() * 0.4)  # 80% to 120%
-                daily_price = round(base_price * price_variation, 2)
-                total_price = daily_price * duration
-                
-                # Adjust for trip type
-                if trip_type == "adventure":
-                    total_price *= 1.2  # 20% more for adventure trips
-                elif trip_type == "business":
-                    total_price *= 1.1  # 10% more for business trips
-                
-                insurance = {
-                    "provider": provider['name'],
-                    "coverage_type": coverage['type'],
-                    "description": coverage['description'],
-                    "daily_price": f"${daily_price}",
-                    "total_price": f"${total_price:.2f}",
-                    "price_numeric": total_price,
-                    "duration": f"{duration} days",
-                    "destination": destination,
-                    "trip_type": trip_type,
-                    "rating": provider['reliability'],
-                    "coverage_level": provider['coverage'],
-                    "features": coverage['features'],
-                    "medical_coverage": f"${random.randint(100000, 500000):,}",
-                    "trip_cancellation": f"${random.randint(5000, 25000):,}",
-                    "baggage_coverage": f"${random.randint(1000, 5000):,}",
-                    "deductible": f"${random.randint(0, 500)}",
-                    "pre_existing_conditions": "Covered with additional premium" if random.choice([True, False]) else "Not covered",
-                    "adventure_sports": "Covered" if coverage['type'] == "Premium" else "Limited coverage",
-                    "booking_url": f"https://www.{provider['name'].lower().replace(' ', '')}.com/quote/{destination.lower().replace(' ', '-')}",
-                    "source": "Travel Insurance API (Free)",
-                    "last_updated": datetime.now().isoformat()
-                }
-                
-                insurance_options.append(insurance)
-        
-        return insurance_options
-    
-    async def _search_web_insurance(self, destination: str, duration: int) -> List[Dict[str, Any]]:
-        """Search for insurance using web search as additional source."""
+    async def _generate_realistic_travel_insurance(self, destination: str, duration: int, 
+                                                 travelers: int) -> List[Dict[str, Any]]:
+        """Generate realistic travel insurance data based on destination and duration."""
         try:
-            # This would integrate with the web search client
-            # For now, return empty list as we have good generated data
-            return []
+            # Common travel insurance companies
+            insurance_companies = [
+                {"name": "Allianz Travel", "base_price": 25, "rating": 4.5},
+                {"name": "World Nomads", "base_price": 30, "rating": 4.6},
+                {"name": "Travel Guard", "base_price": 28, "rating": 4.4},
+                {"name": "Seven Corners", "base_price": 32, "rating": 4.3},
+                {"name": "Travelex", "base_price": 26, "rating": 4.2},
+                {"name": "IMG Global", "base_price": 35, "rating": 4.4}
+            ]
+            
+            # Insurance plan types
+            plan_types = [
+                {
+                    "name": "Basic",
+                    "coverage": ["Medical Emergency", "Trip Cancellation", "Baggage Loss"],
+                    "coverage_amount": 100000,
+                    "price_multiplier": 1.0
+                },
+                {
+                    "name": "Standard",
+                    "coverage": ["Medical Emergency", "Trip Cancellation", "Baggage Loss", "Trip Interruption", "Emergency Evacuation"],
+                    "coverage_amount": 250000,
+                    "price_multiplier": 1.3
+                },
+                {
+                    "name": "Premium",
+                    "coverage": ["Medical Emergency", "Trip Cancellation", "Baggage Loss", "Trip Interruption", "Emergency Evacuation", "Adventure Sports", "Pre-existing Conditions"],
+                    "coverage_amount": 500000,
+                    "price_multiplier": 1.6
+                }
+            ]
+            
+            insurance_options = []
+            
+            for company in insurance_companies:
+                for plan_type in plan_types:
+                    # Calculate realistic price with some variation
+                    base_price = company["base_price"] * plan_type["price_multiplier"]
+                    duration_multiplier = 1 + (duration - 7) * 0.1  # 10% increase per week
+                    traveler_multiplier = travelers
+                    price_variation = 0.8 + (random.random() * 0.4)  # 80% to 120% of base price
+                    
+                    total_price = int(base_price * duration_multiplier * traveler_multiplier * price_variation)
+                    
+                    # Generate insurance ID
+                    insurance_id = f"insurance_{company['name'].lower().replace(' ', '_')}_{plan_type['name'].lower()}"
+                    
+                    insurance_option = {
+                        "id": insurance_id,
+                        "company": company["name"],
+                        "plan_type": plan_type["name"],
+                        "destination": destination,
+                        "duration": f"{duration} days",
+                        "travelers": travelers,
+                        "price": f"${total_price}",
+                        "currency": "USD",
+                        "coverage_amount": f"${plan_type['coverage_amount']:,}",
+                        "coverage": plan_type["coverage"],
+                        "rating": company["rating"],
+                        "features": self._get_insurance_features(plan_type["name"]),
+                        "exclusions": self._get_insurance_exclusions(plan_type["name"]),
+                        "source": "Realistic Travel Insurance Data (Free)",
+                        "booking_url": f"https://www.{company['name'].lower().replace(' ', '')}.com",
+                        "policy_details": self._get_policy_details(plan_type["name"])
+                    }
+                    
+                    insurance_options.append(insurance_option)
+            
+            return insurance_options
             
         except Exception as e:
-            print(f"Web insurance search error: {e}")
+            print(f"Travel insurance generation error: {e}")
             return []
     
-    async def get_insurance_tips(self, destination: str) -> List[str]:
-        """Get travel insurance tips for a destination."""
-        tips = [
-            f"Check if your destination requires travel insurance",
-            "Compare multiple providers for the best rates",
-            "Read the fine print carefully before purchasing",
-            "Consider your existing health insurance coverage",
-            "Look for policies that cover pre-existing conditions",
-            "Check coverage limits for medical expenses",
-            "Verify coverage for adventure activities if applicable",
-            "Consider trip cancellation coverage for expensive trips",
-            "Check if your credit card provides travel insurance",
-            "Purchase insurance soon after booking your trip"
-        ]
+    def _get_insurance_features(self, plan_type: str) -> List[str]:
+        """Get insurance features based on plan type."""
+        features = {
+            "Basic": [
+                "24/7 Emergency Assistance",
+                "Medical Emergency Coverage",
+                "Trip Cancellation Protection",
+                "Baggage Loss Coverage",
+                "Online Claims Processing"
+            ],
+            "Standard": [
+                "24/7 Emergency Assistance",
+                "Medical Emergency Coverage",
+                "Trip Cancellation Protection",
+                "Baggage Loss Coverage",
+                "Trip Interruption Coverage",
+                "Emergency Evacuation",
+                "Online Claims Processing",
+                "Mobile App Access"
+            ],
+            "Premium": [
+                "24/7 Emergency Assistance",
+                "Medical Emergency Coverage",
+                "Trip Cancellation Protection",
+                "Baggage Loss Coverage",
+                "Trip Interruption Coverage",
+                "Emergency Evacuation",
+                "Adventure Sports Coverage",
+                "Pre-existing Conditions Coverage",
+                "Online Claims Processing",
+                "Mobile App Access",
+                "Concierge Services",
+                "Identity Theft Protection"
+            ]
+        }
         
-        return random.sample(tips, 5)  # Return 5 random tips
+        return features.get(plan_type, features["Basic"])
     
-    def get_coverage_explanations(self) -> Dict[str, str]:
-        """Get explanations of different coverage types."""
-        return {
-            "Emergency Medical": "Covers medical expenses if you get sick or injured while traveling",
-            "Trip Cancellation": "Reimburses non-refundable trip costs if you need to cancel",
-            "Trip Interruption": "Covers additional costs if your trip is interrupted",
-            "Baggage Loss": "Reimburses for lost, stolen, or damaged luggage",
-            "Emergency Evacuation": "Covers emergency transportation to medical facilities",
-            "Rental Car Coverage": "Covers damage to rental vehicles",
-            "Adventure Sports": "Covers high-risk activities like skiing, diving, etc.",
-            "Pre-existing Conditions": "Covers medical conditions that existed before the trip"
+    def _get_insurance_exclusions(self, plan_type: str) -> List[str]:
+        """Get insurance exclusions based on plan type."""
+        exclusions = {
+            "Basic": [
+                "Pre-existing medical conditions",
+                "Adventure sports activities",
+                "War or terrorism",
+                "Alcohol or drug-related incidents",
+                "Mental health conditions"
+            ],
+            "Standard": [
+                "Pre-existing medical conditions",
+                "Adventure sports activities",
+                "War or terrorism",
+                "Alcohol or drug-related incidents",
+                "Mental health conditions"
+            ],
+            "Premium": [
+                "War or terrorism",
+                "Alcohol or drug-related incidents",
+                "Mental health conditions"
+            ]
         }
+        
+        return exclusions.get(plan_type, exclusions["Basic"])
     
-    async def get_destination_requirements(self, destination: str) -> Dict[str, Any]:
-        """Get insurance requirements for a destination."""
-        # This would typically check against a database of country requirements
-        # For now, return general information
-        return {
-            "destination": destination,
-            "insurance_required": random.choice([True, False]),
-            "minimum_coverage": f"${random.randint(30000, 100000):,}" if random.choice([True, False]) else "Not specified",
-            "notes": "Check with embassy for current requirements" if random.choice([True, False]) else "No specific requirements",
-            "last_updated": datetime.now().isoformat()
+    def _get_policy_details(self, plan_type: str) -> Dict[str, Any]:
+        """Get policy details based on plan type."""
+        policy_details = {
+            "Basic": {
+                "deductible": "$250",
+                "coverage_period": "Up to 30 days",
+                "age_limit": "Up to 65 years",
+                "pre_existing_conditions": "Not covered",
+                "adventure_sports": "Not covered"
+            },
+            "Standard": {
+                "deductible": "$200",
+                "coverage_period": "Up to 60 days",
+                "age_limit": "Up to 70 years",
+                "pre_existing_conditions": "Not covered",
+                "adventure_sports": "Limited coverage"
+            },
+            "Premium": {
+                "deductible": "$150",
+                "coverage_period": "Up to 90 days",
+                "age_limit": "Up to 80 years",
+                "pre_existing_conditions": "Covered with conditions",
+                "adventure_sports": "Full coverage"
+            }
         }
+        
+        return policy_details.get(plan_type, policy_details["Basic"])

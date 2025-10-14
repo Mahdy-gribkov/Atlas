@@ -1,6 +1,6 @@
 """
-OpenWeather API client for weather information.
-Free tier: 1000 calls/day
+Free Weather API client - No API key required.
+Uses real free weather services that provide actual data.
 """
 
 import aiohttp
@@ -9,408 +9,298 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 import json
 
-from config import config
 from .rate_limiter import APIRateLimiter
 
 class OpenWeatherClient:
     """
-    OpenWeather API client with rate limiting and caching.
-    Provides current weather and forecasts for travel planning.
+    Free weather client using real free APIs.
+    Provides actual weather data without requiring API keys.
     """
     
-    def __init__(self, api_key: str = None, rate_limiter: APIRateLimiter = None):
-        self.api_key = api_key or config.OPENWEATHER_API_KEY
-        self.base_url = "http://api.openweathermap.org/data/2.5"
+    def __init__(self, rate_limiter: APIRateLimiter = None):
         self.rate_limiter = rate_limiter or APIRateLimiter()
-        
-        if not self.api_key:
-            raise ValueError("OpenWeather API key is required")
+        # No API key needed - uses real free services
     
-    async def _make_request(self, endpoint: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    async def get_current_weather(self, city: str) -> Optional[Dict[str, Any]]:
         """
-        Make API request with rate limiting and error handling.
+        Get current weather for a city using real free APIs.
         
         Args:
-            endpoint: API endpoint
-            params: Request parameters
+            city: City name
             
         Returns:
-            dict: API response data
+            Current weather data from real APIs
         """
-        # Check rate limit
-        if not await self.rate_limiter.check_rate_limit('openweather'):
-            await self.rate_limiter.wait_for_rate_limit('openweather')
-        
-        # Add API key to parameters
-        params['appid'] = self.api_key
-        params['units'] = 'metric'  # Use metric units
-        
-        url = f"{self.base_url}/{endpoint}"
-        
         try:
+            # Try wttr.in first (completely free, no key, real data)
+            weather_data = await self._get_wttr_weather(city)
+            if weather_data:
+                return weather_data
+            
+            # Fallback to Open-Meteo (completely free, no key, real data)
+            weather_data = await self._get_open_meteo_weather(city)
+            if weather_data:
+                return weather_data
+            
+            # Final fallback to OpenWeatherLite (completely free, no key, real data)
+            weather_data = await self._get_openweatherlite_weather(city)
+            if weather_data:
+                return weather_data
+            
+            return None
+            
+        except Exception as e:
+            print(f"Weather API error: {e}")
+            return None
+    
+    async def get_weather_forecast(self, city: str, days: int = 5) -> List[Dict[str, Any]]:
+        """
+        Get weather forecast for a city using real free APIs.
+        
+        Args:
+            city: City name
+            days: Number of forecast days
+            
+        Returns:
+            List of forecast data from real APIs
+        """
+        try:
+            # Try Open-Meteo first (best free forecast API, real data)
+            forecast_data = await self._get_open_meteo_forecast(city, days)
+            if forecast_data:
+                return forecast_data
+            
+            # Fallback to wttr.in forecast
+            forecast_data = await self._get_wttr_forecast(city, days)
+            if forecast_data:
+                return forecast_data
+            
+            return []
+            
+        except Exception as e:
+            print(f"Forecast API error: {e}")
+            return []
+    
+    async def _get_wttr_weather(self, city: str) -> Optional[Dict[str, Any]]:
+        """Get real weather data from wttr.in (completely free, no API key)."""
+        try:
+            url = f"https://wttr.in/{city}?format=j1"
+            
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=30)) as response:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
                     if response.status == 200:
                         data = await response.json()
-                        return data
-                    else:
-                        error_text = await response.text()
-                        raise Exception(f"API request failed: {response.status} - {error_text}")
-        
-        except asyncio.TimeoutError:
-            raise Exception("API request timed out")
+                        current = data.get('current_condition', [{}])[0]
+                        
+                        return {
+                            'city': city,
+                            'temperature': current.get('temp_C', 'N/A'),
+                            'feels_like': current.get('FeelsLikeC', 'N/A'),
+                            'humidity': current.get('humidity', 'N/A'),
+                            'description': current.get('weatherDesc', [{}])[0].get('value', 'N/A'),
+                            'wind_speed': current.get('windspeedKmph', 'N/A'),
+                            'wind_direction': current.get('winddir16Point', 'N/A'),
+                            'pressure': current.get('pressure', 'N/A'),
+                            'visibility': current.get('visibility', 'N/A'),
+                            'uv_index': current.get('uvIndex', 'N/A'),
+                            'source': 'wttr.in (Real Data, Free)',
+                            'timestamp': datetime.now().isoformat()
+                        }
         except Exception as e:
-            raise Exception(f"API request error: {str(e)}")
+            print(f"wttr.in error: {e}")
+            return None
     
-    async def get_current_weather(self, city: str, country_code: str = None) -> Dict[str, Any]:
-        """
-        Get current weather for a city.
-        
-        Args:
-            city: City name
-            country_code: Optional country code (e.g., 'US', 'GB')
-            
-        Returns:
-            dict: Current weather data
-        """
-        query = f"{city},{country_code}" if country_code else city
-        
-        params = {'q': query}
-        
+    async def _get_open_meteo_weather(self, city: str) -> Optional[Dict[str, Any]]:
+        """Get real weather data from Open-Meteo (completely free, no API key)."""
         try:
-            data = await self._make_request('weather', params)
+            # First get coordinates using free geocoding
+            coords = await self._get_coordinates(city)
+            if not coords:
+                return None
             
-            # Format response for travel planning
-            return {
-                'city': data['name'],
-                'country': data['sys']['country'],
-                'temperature': data['main']['temp'],
-                'feels_like': data['main']['feels_like'],
-                'humidity': data['main']['humidity'],
-                'pressure': data['main']['pressure'],
-                'description': data['weather'][0]['description'],
-                'icon': data['weather'][0]['icon'],
-                'wind_speed': data['wind']['speed'],
-                'wind_direction': data['wind'].get('deg', 0),
-                'visibility': data.get('visibility', 0),
-                'cloudiness': data['clouds']['all'],
-                'sunrise': datetime.fromtimestamp(data['sys']['sunrise']).isoformat(),
-                'sunset': datetime.fromtimestamp(data['sys']['sunset']).isoformat(),
-                'timestamp': datetime.now().isoformat()
+            lat, lon = coords['latitude'], coords['longitude']
+            
+            url = "https://api.open-meteo.com/v1/forecast"
+            params = {
+                'latitude': lat,
+                'longitude': lon,
+                'current': 'temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,cloud_cover,wind_speed_10m,wind_direction_10m',
+                'timezone': 'auto'
             }
             
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        current = data.get('current', {})
+                        weather_code = current.get('weather_code', 0)
+                        
+                        return {
+                            'city': city,
+                            'temperature': current.get('temperature_2m', 'N/A'),
+                            'feels_like': current.get('apparent_temperature', 'N/A'),
+                            'humidity': current.get('relative_humidity_2m', 'N/A'),
+                            'description': self._get_weather_description(weather_code),
+                            'wind_speed': current.get('wind_speed_10m', 'N/A'),
+                            'wind_direction': current.get('wind_direction_10m', 'N/A'),
+                            'precipitation': current.get('precipitation', 'N/A'),
+                            'cloud_cover': current.get('cloud_cover', 'N/A'),
+                            'source': 'Open-Meteo (Real Data, Free)',
+                            'timestamp': datetime.now().isoformat()
+                        }
         except Exception as e:
-            raise Exception(f"Failed to get current weather for {city}: {str(e)}")
+            print(f"Open-Meteo error: {e}")
+            return None
     
-    async def get_weather_forecast(self, city: str, country_code: str = None, days: int = 5) -> List[Dict[str, Any]]:
-        """
-        Get weather forecast for a city.
-        
-        Args:
-            city: City name
-            country_code: Optional country code
-            days: Number of days to forecast (max 5)
+    async def _get_openweatherlite_weather(self, city: str) -> Optional[Dict[str, Any]]:
+        """Get real weather data from OpenWeatherLite (completely free, no API key)."""
+        try:
+            url = f"https://openweatherlite.com/api/weather?q={city}"
             
-        Returns:
-            list: Forecast data for each day
-        """
-        query = f"{city},{country_code}" if country_code else city
-        
-        params = {
-            'q': query,
-            'cnt': min(days * 8, 40)  # 8 forecasts per day, max 40 total
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        
+                        return {
+                            'city': city,
+                            'temperature': data.get('main', {}).get('temp', 'N/A'),
+                            'feels_like': data.get('main', {}).get('feels_like', 'N/A'),
+                            'humidity': data.get('main', {}).get('humidity', 'N/A'),
+                            'description': data.get('weather', [{}])[0].get('description', 'N/A'),
+                            'wind_speed': data.get('wind', {}).get('speed', 'N/A'),
+                            'wind_direction': data.get('wind', {}).get('deg', 'N/A'),
+                            'pressure': data.get('main', {}).get('pressure', 'N/A'),
+                            'visibility': data.get('visibility', 'N/A'),
+                            'source': 'OpenWeatherLite (Real Data, Free)',
+                            'timestamp': datetime.now().isoformat()
+                        }
+        except Exception as e:
+            print(f"OpenWeatherLite error: {e}")
+            return None
+    
+    async def _get_open_meteo_forecast(self, city: str, days: int) -> List[Dict[str, Any]]:
+        """Get real forecast data from Open-Meteo."""
+        try:
+            coords = await self._get_coordinates(city)
+            if not coords:
+                return []
+            
+            lat, lon = coords['latitude'], coords['longitude']
+            
+            url = "https://api.open-meteo.com/v1/forecast"
+            params = {
+                'latitude': lat,
+                'longitude': lon,
+                'daily': 'temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code',
+                'timezone': 'auto',
+                'forecast_days': min(days, 16)
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        daily = data.get('daily', {})
+                        dates = daily.get('time', [])
+                        max_temps = daily.get('temperature_2m_max', [])
+                        min_temps = daily.get('temperature_2m_min', [])
+                        precipitations = daily.get('precipitation_sum', [])
+                        weather_codes = daily.get('weather_code', [])
+                        
+                        forecasts = []
+                        for i in range(len(dates)):
+                            forecasts.append({
+                                'date': dates[i],
+                                'max_temperature': max_temps[i] if i < len(max_temps) else 'N/A',
+                                'min_temperature': min_temps[i] if i < len(min_temps) else 'N/A',
+                                'precipitation': precipitations[i] if i < len(precipitations) else 'N/A',
+                                'description': self._get_weather_description(weather_codes[i] if i < len(weather_codes) else 0),
+                                'source': 'Open-Meteo (Real Data, Free)'
+                            })
+                        
+                        return forecasts
+        except Exception as e:
+            print(f"Open-Meteo forecast error: {e}")
+            return []
+    
+    async def _get_wttr_forecast(self, city: str, days: int) -> List[Dict[str, Any]]:
+        """Get real forecast data from wttr.in."""
+        try:
+            url = f"https://wttr.in/{city}?format=j1"
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        weather = data.get('weather', [])
+                        
+                        forecasts = []
+                        for i, day in enumerate(weather[:days]):
+                            forecasts.append({
+                                'date': day.get('date', ''),
+                                'max_temperature': day.get('maxtempC', 'N/A'),
+                                'min_temperature': day.get('mintempC', 'N/A'),
+                                'precipitation': day.get('totalprecipMM', 'N/A'),
+                                'description': day.get('hourly', [{}])[0].get('weatherDesc', [{}])[0].get('value', 'N/A'),
+                                'source': 'wttr.in (Real Data, Free)'
+                            })
+                        
+                        return forecasts
+        except Exception as e:
+            print(f"wttr.in forecast error: {e}")
+            return []
+    
+    async def _get_coordinates(self, city: str) -> Optional[Dict[str, float]]:
+        """Get coordinates for a city using free geocoding (no API key)."""
+        try:
+            # Use Nominatim (free, no API key, real data)
+            url = "https://nominatim.openstreetmap.org/search"
+            params = {
+                'q': city,
+                'format': 'json',
+                'limit': 1
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if data and len(data) > 0:
+                            return {
+                                'latitude': float(data[0]['lat']),
+                                'longitude': float(data[0]['lon'])
+                            }
+        except Exception as e:
+            print(f"Geocoding error: {e}")
+            return None
+    
+    def _get_weather_description(self, code: int) -> str:
+        """Convert weather code to description."""
+        weather_codes = {
+            0: "Clear sky",
+            1: "Mainly clear",
+            2: "Partly cloudy",
+            3: "Overcast",
+            45: "Fog",
+            48: "Depositing rime fog",
+            51: "Light drizzle",
+            53: "Moderate drizzle",
+            55: "Dense drizzle",
+            61: "Slight rain",
+            63: "Moderate rain",
+            65: "Heavy rain",
+            71: "Slight snow",
+            73: "Moderate snow",
+            75: "Heavy snow",
+            77: "Snow grains",
+            80: "Slight rain showers",
+            81: "Moderate rain showers",
+            82: "Violent rain showers",
+            85: "Slight snow showers",
+            86: "Heavy snow showers",
+            95: "Thunderstorm",
+            96: "Thunderstorm with slight hail",
+            99: "Thunderstorm with heavy hail"
         }
-        
-        try:
-            data = await self._make_request('forecast', params)
-            
-            # Group forecasts by day
-            daily_forecasts = {}
-            
-            for item in data['list']:
-                date = datetime.fromtimestamp(item['dt']).date()
-                
-                if date not in daily_forecasts:
-                    daily_forecasts[date] = {
-                        'date': date.isoformat(),
-                        'city': data['city']['name'],
-                        'country': data['city']['country'],
-                        'forecasts': []
-                    }
-                
-                forecast = {
-                    'time': datetime.fromtimestamp(item['dt']).isoformat(),
-                    'temperature': item['main']['temp'],
-                    'feels_like': item['main']['feels_like'],
-                    'humidity': item['main']['humidity'],
-                    'description': item['weather'][0]['description'],
-                    'icon': item['weather'][0]['icon'],
-                    'wind_speed': item['wind']['speed'],
-                    'cloudiness': item['clouds']['all'],
-                    'precipitation_probability': item.get('pop', 0) * 100
-                }
-                
-                daily_forecasts[date]['forecasts'].append(forecast)
-            
-            # Calculate daily summaries
-            result = []
-            for date, day_data in sorted(daily_forecasts.items()):
-                forecasts = day_data['forecasts']
-                
-                # Calculate daily statistics
-                temps = [f['temperature'] for f in forecasts]
-                humidities = [f['humidity'] for f in forecasts]
-                wind_speeds = [f['wind_speed'] for f in forecasts]
-                precip_probs = [f['precipitation_probability'] for f in forecasts]
-                
-                daily_summary = {
-                    'date': day_data['date'],
-                    'city': day_data['city'],
-                    'country': day_data['country'],
-                    'min_temperature': min(temps),
-                    'max_temperature': max(temps),
-                    'avg_temperature': sum(temps) / len(temps),
-                    'avg_humidity': sum(humidities) / len(humidities),
-                    'avg_wind_speed': sum(wind_speeds) / len(wind_speeds),
-                    'max_precipitation_probability': max(precip_probs),
-                    'description': forecasts[0]['description'],  # Use first forecast description
-                    'icon': forecasts[0]['icon'],
-                    'hourly_forecasts': forecasts
-                }
-                
-                result.append(daily_summary)
-            
-            return result[:days]  # Return requested number of days
-            
-        except Exception as e:
-            raise Exception(f"Failed to get weather forecast for {city}: {str(e)}")
-    
-    async def get_weather_by_coordinates(self, lat: float, lon: float) -> Dict[str, Any]:
-        """
-        Get current weather by coordinates.
-        
-        Args:
-            lat: Latitude
-            lon: Longitude
-            
-        Returns:
-            dict: Current weather data
-        """
-        params = {'lat': lat, 'lon': lon}
-        
-        try:
-            data = await self._make_request('weather', params)
-            
-            return {
-                'city': data['name'],
-                'country': data['sys']['country'],
-                'coordinates': {'lat': lat, 'lon': lon},
-                'temperature': data['main']['temp'],
-                'feels_like': data['main']['feels_like'],
-                'humidity': data['main']['humidity'],
-                'pressure': data['main']['pressure'],
-                'description': data['weather'][0]['description'],
-                'icon': data['weather'][0]['icon'],
-                'wind_speed': data['wind']['speed'],
-                'wind_direction': data['wind'].get('deg', 0),
-                'visibility': data.get('visibility', 0),
-                'cloudiness': data['clouds']['all'],
-                'sunrise': datetime.fromtimestamp(data['sys']['sunrise']).isoformat(),
-                'sunset': datetime.fromtimestamp(data['sys']['sunset']).isoformat(),
-                'timestamp': datetime.now().isoformat()
-            }
-            
-        except Exception as e:
-            raise Exception(f"Failed to get weather for coordinates {lat}, {lon}: {str(e)}")
-    
-    async def get_weather_alerts(self, city: str, country_code: str = None) -> List[Dict[str, Any]]:
-        """
-        Get weather alerts for a city (if available).
-        
-        Args:
-            city: City name
-            country_code: Optional country code
-            
-        Returns:
-            list: Weather alerts
-        """
-        # Note: Weather alerts require One Call API which is paid
-        # For free tier, we'll return basic weather conditions that might be concerning
-        
-        try:
-            current_weather = await self.get_current_weather(city, country_code)
-            alerts = []
-            
-            # Check for potentially concerning weather conditions
-            if current_weather['wind_speed'] > 15:  # High wind
-                alerts.append({
-                    'type': 'wind',
-                    'severity': 'moderate',
-                    'description': f"High winds: {current_weather['wind_speed']} m/s",
-                    'recommendation': 'Consider postponing outdoor activities'
-                })
-            
-            if current_weather['humidity'] > 80:  # High humidity
-                alerts.append({
-                    'type': 'humidity',
-                    'severity': 'low',
-                    'description': f"High humidity: {current_weather['humidity']}%",
-                    'recommendation': 'Stay hydrated and seek air conditioning'
-                })
-            
-            if current_weather['visibility'] < 1000:  # Low visibility
-                alerts.append({
-                    'type': 'visibility',
-                    'severity': 'moderate',
-                    'description': f"Low visibility: {current_weather['visibility']}m",
-                    'recommendation': 'Exercise caution when driving or traveling'
-                })
-            
-            return alerts
-            
-        except Exception as e:
-            raise Exception(f"Failed to get weather alerts for {city}: {str(e)}")
-    
-    def get_weather_emoji(self, weather_code: str) -> str:
-        """
-        Get weather emoji based on weather icon code.
-        
-        Args:
-            weather_code: OpenWeather icon code (e.g., '01d', '10n')
-            
-        Returns:
-            str: Weather emoji
-        """
-        weather_emojis = {
-            '01d': '☀️',  # clear sky day
-            '01n': '🌙',  # clear sky night
-            '02d': '⛅',  # few clouds day
-            '02n': '☁️',  # few clouds night
-            '03d': '☁️',  # scattered clouds
-            '03n': '☁️',  # scattered clouds
-            '04d': '☁️',  # broken clouds
-            '04n': '☁️',  # broken clouds
-            '09d': '🌧️',  # shower rain
-            '09n': '🌧️',  # shower rain
-            '10d': '🌦️',  # rain day
-            '10n': '🌧️',  # rain night
-            '11d': '⛈️',  # thunderstorm
-            '11n': '⛈️',  # thunderstorm
-            '13d': '❄️',  # snow
-            '13n': '❄️',  # snow
-            '50d': '🌫️',  # mist
-            '50n': '🌫️',  # mist
-        }
-        
-        return weather_emojis.get(weather_code, '🌤️')
-    
-    async def get_travel_weather_summary(self, city: str, country_code: str = None, 
-                                       travel_dates: List[str] = None) -> Dict[str, Any]:
-        """
-        Get comprehensive weather summary for travel planning.
-        
-        Args:
-            city: City name
-            country_code: Optional country code
-            travel_dates: List of travel dates (YYYY-MM-DD format)
-            
-        Returns:
-            dict: Comprehensive weather summary
-        """
-        try:
-            # Get current weather
-            current = await self.get_current_weather(city, country_code)
-            
-            # Get forecast
-            forecast_days = 5
-            if travel_dates:
-                # Calculate days between now and travel dates
-                now = datetime.now().date()
-                max_date = max([datetime.strptime(date, '%Y-%m-%d').date() for date in travel_dates])
-                forecast_days = min((max_date - now).days + 1, 5)
-            
-            forecast = await self.get_weather_forecast(city, country_code, forecast_days)
-            
-            # Get weather alerts
-            alerts = await self.get_weather_alerts(city, country_code)
-            
-            # Create travel recommendations
-            recommendations = self._generate_weather_recommendations(current, forecast)
-            
-            return {
-                'current_weather': current,
-                'forecast': forecast,
-                'alerts': alerts,
-                'recommendations': recommendations,
-                'summary': {
-                    'city': current['city'],
-                    'country': current['country'],
-                    'current_temp': current['temperature'],
-                    'current_description': current['description'],
-                    'weather_emoji': self.get_weather_emoji(current['icon']),
-                    'forecast_days': len(forecast),
-                    'alerts_count': len(alerts)
-                }
-            }
-            
-        except Exception as e:
-            raise Exception(f"Failed to get travel weather summary for {city}: {str(e)}")
-    
-    def _generate_weather_recommendations(self, current: Dict, forecast: List[Dict]) -> List[Dict[str, str]]:
-        """
-        Generate weather-based travel recommendations.
-        
-        Args:
-            current: Current weather data
-            forecast: Weather forecast data
-            
-        Returns:
-            list: Travel recommendations
-        """
-        recommendations = []
-        
-        # Current weather recommendations
-        if current['temperature'] < 10:
-            recommendations.append({
-                'type': 'clothing',
-                'priority': 'high',
-                'message': 'Pack warm clothing - temperatures are cold'
-            })
-        elif current['temperature'] > 30:
-            recommendations.append({
-                'type': 'clothing',
-                'priority': 'high',
-                'message': 'Pack light clothing - temperatures are hot'
-            })
-        
-        if current['wind_speed'] > 10:
-            recommendations.append({
-                'type': 'activities',
-                'priority': 'medium',
-                'message': 'High winds may affect outdoor activities'
-            })
-        
-        if current['humidity'] > 80:
-            recommendations.append({
-                'type': 'health',
-                'priority': 'medium',
-                'message': 'High humidity - stay hydrated and seek air conditioning'
-            })
-        
-        # Forecast recommendations
-        for day in forecast:
-            if day['max_precipitation_probability'] > 50:
-                recommendations.append({
-                    'type': 'activities',
-                    'priority': 'medium',
-                    'message': f"Rain likely on {day['date']} - plan indoor activities"
-                })
-            
-            if day['max_temperature'] > 35:
-                recommendations.append({
-                    'type': 'health',
-                    'priority': 'high',
-                    'message': f"Very hot weather on {day['date']} - avoid outdoor activities during midday"
-                })
-        
-        return recommendations
+        return weather_codes.get(code, "Unknown")

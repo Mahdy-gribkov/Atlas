@@ -146,3 +146,8 @@
 2025-10-14 05:29:34,213 - INFO - Free APIs initialized: Weather (wttr.in, Open-Meteo), Flights, Currency, Hotels, Attractions, Car Rental, Events, Insurance, Transportation, Food
 2025-10-14 05:29:34,213 - INFO - Free Cloud LLM (gpt-3.5-turbo) initialized
 2025-10-14 05:29:34,214 - INFO - Travel agent initialized successfully
+2025-10-14 23:09:49,058 - INFO - Free Flight API client initialized
+2025-10-14 23:09:49,059 - INFO - Free Weather API client initialized
+2025-10-14 23:09:49,060 - INFO - Free APIs initialized: Weather (wttr.in, Open-Meteo), Flights, Currency, Hotels, Attractions, Car Rental, Events, Insurance, Transportation, Food
+2025-10-14 23:09:49,060 - INFO - Free Cloud LLM (gpt-3.5-turbo) initialized
+2025-10-14 23:09:49,060 - INFO - Travel agent initialized successfully

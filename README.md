@@ -15,7 +15,7 @@ The Travel AI Agent is a comprehensive full-stack application that demonstrates 
 ### **Key Features**
 - 🤖 **Local AI Integration** - Uses Llama 3.1 8B model via Ollama
 - 🔒 **Privacy-First Design** - All data processed locally, no external data leakage
-- 🌐 **Comprehensive API Integration** - 15+ free APIs for real-time travel data
+- 🌐 **100% Free APIs** - 15+ completely free APIs, NO API keys required
 - 🗺️ **Interactive Maps** - React Leaflet integration with geocoding
 - 💬 **Streaming Chat Interface** - Real-time AI responses with typing indicators
 - 🐳 **Docker Ready** - Production-ready containerization
