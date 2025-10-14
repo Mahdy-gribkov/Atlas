@@ -296,9 +296,9 @@ body {
   z-index: 1;
 }
 
-/* Quick Examples Panel - Very Compact */
+/* Quick Examples Panel - Proper Size */
 .quick-examples-panel {
-  width: 120px;
+  width: 250px;
   background: rgba(15, 23, 42, 0.4);
   border-right: 1px solid rgba(51, 65, 85, 0.5);
   padding: 1.5rem;
@@ -408,7 +408,7 @@ body {
   overflow: hidden;
   border: 1px solid rgba(51, 65, 85, 0.5);
   background: rgba(15, 23, 42, 0.3);
-  height: 300px;
+  height: 400px;
   position: relative;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(15px);
@@ -1163,7 +1163,7 @@ div.app.light div.message.user div.message-text {
 /* Responsive Design */
 @media (max-width: 1024px) {
   .quick-examples-panel {
-    width: 80px;
+    width: 200px;
   }
   
   .messages {

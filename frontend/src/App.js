@@ -13,7 +13,7 @@ function App() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [userLocation, setUserLocation] = useState('');
-  const [showLocationPrompt, setShowLocationPrompt] = useState(true);
+  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showExamples, setShowExamples] = useState(true);
@@ -207,7 +207,8 @@ function App() {
                       newMessages[newMessages.length - 1] = {
                         role: 'assistant',
                         content: assistantMessage.trim(),
-                        isTyping: false
+                        isTyping: false,
+                        isStreaming: false
                       };
                     }
                     return newMessages;
@@ -224,31 +225,26 @@ function App() {
                 
                 assistantMessage += data.chunk + ' ';
                 
-                // Add or update the assistant message
+                // Add new assistant message for streaming
                 setMessages(prev => {
                   const newMessages = [...prev];
-                  // Find the last assistant message or add a new one
-                  let assistantIndex = -1;
-                  for (let i = newMessages.length - 1; i >= 0; i--) {
-                    if (newMessages[i].role === 'assistant') {
-                      assistantIndex = i;
-                      break;
-                    }
-                  }
-                  
-                  if (assistantIndex >= 0) {
-                    // Update existing assistant message
-                    newMessages[assistantIndex] = {
+                  // Check if we already have a streaming message
+                  const lastMessage = newMessages[newMessages.length - 1];
+                  if (lastMessage && lastMessage.role === 'assistant' && lastMessage.isStreaming) {
+                    // Update existing streaming message
+                    newMessages[newMessages.length - 1] = {
                       role: 'assistant',
                       content: assistantMessage,
-                      isTyping: false
+                      isTyping: false,
+                      isStreaming: true
                     };
                   } else {
-                    // Add new assistant message
+                    // Add new streaming message
                     newMessages.push({
                       role: 'assistant',
                       content: assistantMessage,
-                      isTyping: false
+                      isTyping: false,
+                      isStreaming: true
                     });
                   }
                   return newMessages;
