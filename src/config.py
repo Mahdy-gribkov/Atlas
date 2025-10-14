@@ -22,9 +22,15 @@ class Config:
     AMADEUS_API_SECRET: Optional[str] = os.getenv('AMADEUS_API_SECRET')
     OPENAI_API_KEY: Optional[str] = os.getenv('OPENAI_API_KEY')
     
-    # Local LLM Settings (Free)
+    # Local LLM Settings (Free) - Optimized for performance
     OLLAMA_MODEL: str = os.getenv('OLLAMA_MODEL', 'llama3.1:8b')
     USE_LOCAL_LLM: bool = os.getenv('USE_LOCAL_LLM', 'true').lower() == 'true'
+    
+    # LLM Performance Settings
+    LLM_TEMPERATURE: float = float(os.getenv('LLM_TEMPERATURE', '0.7'))
+    LLM_MAX_TOKENS: int = int(os.getenv('LLM_MAX_TOKENS', '512'))
+    LLM_TOP_P: float = float(os.getenv('LLM_TOP_P', '0.9'))
+    LLM_TIMEOUT: int = int(os.getenv('LLM_TIMEOUT', '30'))
     
     # Security Settings
     ENCRYPTION_KEY: str = os.getenv('ENCRYPTION_KEY', Fernet.generate_key().decode())

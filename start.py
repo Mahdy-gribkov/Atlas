@@ -13,48 +13,57 @@ from pathlib import Path
 
 def run_backend():
     """Start the FastAPI backend."""
-    print("🚀 Starting Travel AI Agent Backend...")
+    print("Starting Travel AI Agent Backend...")
     try:
         subprocess.run([sys.executable, "api.py"], check=True)
     except KeyboardInterrupt:
-        print("\n🛑 Backend stopped by user")
+        print("\nBackend stopped by user")
     except Exception as e:
-        print(f"❌ Backend error: {e}")
+        print(f"Backend error: {e}")
 
 def run_frontend():
     """Start the React frontend."""
-    print("🎨 Starting Travel AI Agent Frontend...")
+    print("Starting Travel AI Agent Frontend...")
     frontend_dir = Path("frontend")
     
     if not frontend_dir.exists():
-        print("❌ Frontend directory not found!")
+        print("Frontend directory not found!")
         return
     
     try:
         # Check if node_modules exists
         if not (frontend_dir / "node_modules").exists():
-            print("📦 Installing frontend dependencies...")
+            print("Installing frontend dependencies...")
             subprocess.run(["npm", "install"], cwd=frontend_dir, check=True)
         
         # Start the frontend
-        subprocess.run(["npm", "start"], cwd=frontend_dir, check=True)
+        # Try different npm commands for Windows compatibility
+        npm_commands = ["npm", "npm.cmd", "npx"]
+        for npm_cmd in npm_commands:
+            try:
+                subprocess.run([npm_cmd, "start"], cwd=frontend_dir, check=True)
+                break
+            except (FileNotFoundError, subprocess.CalledProcessError):
+                continue
+        else:
+            print("Could not find npm. Please install Node.js from https://nodejs.org")
     except KeyboardInterrupt:
-        print("\n🛑 Frontend stopped by user")
+        print("\nFrontend stopped by user")
     except Exception as e:
-        print(f"❌ Frontend error: {e}")
+        print(f"Frontend error: {e}")
 
 def check_dependencies():
     """Check if required dependencies are installed."""
-    print("🔍 Checking dependencies...")
+    print("Checking dependencies...")
     
     # Check Python dependencies
     try:
         import fastapi
         import uvicorn
         import aiohttp
-        print("✅ Python dependencies OK")
+        print("Python dependencies OK")
     except ImportError as e:
-        print(f"❌ Missing Python dependency: {e}")
+        print(f"Missing Python dependency: {e}")
         print("Run: pip install -r requirements.txt")
         return False
     
@@ -62,23 +71,23 @@ def check_dependencies():
     try:
         result = subprocess.run(["ollama", "list"], capture_output=True, text=True)
         if result.returncode == 0:
-            print("✅ Ollama is available")
+            print("Ollama is available")
         else:
-            print("⚠️  Ollama not found - install from https://ollama.ai")
+            print("Ollama not found - install from https://ollama.ai")
     except FileNotFoundError:
-        print("⚠️  Ollama not found - install from https://ollama.ai")
+        print("Ollama not found - install from https://ollama.ai")
     
     return True
 
 def main():
     """Main startup function."""
-    print("🌍 Travel AI Agent - Starting...")
+    print("Travel AI Agent - Starting...")
     print("=" * 50)
     
     if not check_dependencies():
         sys.exit(1)
     
-    print("\n🚀 Starting services...")
+    print("\nStarting services...")
     print("Backend will be available at: http://localhost:8000")
     print("Frontend will be available at: http://localhost:3000")
     print("Press Ctrl+C to stop all services")
@@ -96,9 +105,9 @@ def main():
         run_frontend()
         
     except KeyboardInterrupt:
-        print("\n👋 Travel AI Agent stopped. Goodbye!")
+        print("\nTravel AI Agent stopped. Goodbye!")
     except Exception as e:
-        print(f"❌ Startup error: {e}")
+        print(f"Startup error: {e}")
 
 if __name__ == "__main__":
     main()

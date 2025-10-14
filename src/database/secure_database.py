@@ -6,6 +6,7 @@ Provides privacy-first data storage for the Travel AI Agent.
 import sqlite3
 import os
 import hashlib
+import asyncio
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 from cryptography.fernet import Fernet
@@ -30,6 +31,7 @@ class SecureDatabase:
         
         self.fernet = Fernet(self.encryption_key.encode())
         self.conn: Optional[sqlite3.Connection] = None
+        self._connection_lock = asyncio.Lock()
         
         # Create database directory if it doesn't exist
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
@@ -160,6 +162,26 @@ class SecureDatabase:
         
         self.conn.commit()
     
+    async def _ensure_connection(self):
+        """Ensure database connection is available and thread-safe."""
+        async with self._connection_lock:
+            if self.conn is None:
+                self._initialize_database()
+            return self.conn
+    
+    async def _execute_query(self, query: str, params: tuple = None) -> sqlite3.Cursor:
+        """Execute a database query with proper connection management."""
+        conn = await self._ensure_connection()
+        if params:
+            return conn.execute(query, params)
+        else:
+            return conn.execute(query)
+    
+    async def _execute_many(self, query: str, params_list: List[tuple]) -> sqlite3.Cursor:
+        """Execute a database query with multiple parameter sets."""
+        conn = await self._ensure_connection()
+        return conn.executemany(query, params_list)
+    
     def _encrypt_data(self, data: str) -> str:
         """Encrypt sensitive data."""
         try:
@@ -182,18 +204,19 @@ class SecureDatabase:
         return hashlib.md5(params_str.encode()).hexdigest()
     
     # User Preferences Methods
-    def store_preference(self, pref_type: str, pref_value: str, ttl_hours: int = 24) -> bool:
+    async def store_preference(self, pref_type: str, pref_value: str, ttl_hours: int = 24) -> bool:
         """Store user preference with automatic expiration."""
         try:
             encrypted_value = self._encrypt_data(pref_value)
             expires_at = datetime.now() + timedelta(hours=ttl_hours)
             
-            self.conn.execute("""
+            await self._execute_query("""
                 INSERT INTO user_preferences (preference_type, preference_value, expires_at)
                 VALUES (?, ?, ?)
             """, (pref_type, encrypted_value, expires_at))
             
-            self.conn.commit()
+            conn = await self._ensure_connection()
+            conn.commit()
             return True
             
         except Exception as e:
@@ -500,7 +523,7 @@ class SecureDatabase:
             print(f"Error getting database stats: {e}")
             return {}
     
-    def save_conversation(self, user_id: str, user_message: str, assistant_response: str) -> bool:
+    async def save_conversation(self, user_id: str, user_message: str, assistant_response: str) -> bool:
         """
         Save conversation to database.
         
@@ -518,7 +541,7 @@ class SecureDatabase:
             encrypted_assistant_msg = self._encrypt_data(assistant_response)
             
             # Store in a simple conversations table
-            self.conn.execute("""
+            await self._execute_query("""
                 CREATE TABLE IF NOT EXISTS conversations (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id TEXT NOT NULL,
@@ -528,12 +551,37 @@ class SecureDatabase:
                 )
             """)
             
-            self.conn.execute("""
+            await self._execute_query("""
                 INSERT INTO conversations (user_id, user_message, assistant_response)
                 VALUES (?, ?, ?)
             """, (user_id, encrypted_user_msg, encrypted_assistant_msg))
             
-            self.conn.commit()
+            conn = await self._ensure_connection()
+            conn.commit()
+            return True
+            
+        except Exception as e:
+            print(f"Error saving conversation: {e}")
+            return False
+    
+    def close(self):
+        """Close database connection securely."""
+        if self.conn:
+            self.conn.close()
+            self.conn = None
+            print("Database connection closed")
+    
+    def __enter__(self):
+        """Context manager entry."""
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit."""
+        self.close()
+
+            
+            conn = await self._ensure_connection()
+            conn.commit()
             return True
             
         except Exception as e:

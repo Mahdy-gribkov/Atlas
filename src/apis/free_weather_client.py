@@ -8,6 +8,11 @@ import asyncio
 from typing import Dict, Any, Optional
 from datetime import datetime
 import json
+import logging
+
+from ..utils.error_handler import retry_async, circuit_breaker_async, API_RETRY_CONFIG, API_CIRCUIT_BREAKER_CONFIG
+
+logger = logging.getLogger(__name__)
 
 class FreeWeatherClient:
     """
@@ -18,6 +23,8 @@ class FreeWeatherClient:
     def __init__(self):
         self.session = None
     
+    @retry_async(config=API_RETRY_CONFIG, exceptions=(aiohttp.ClientError, asyncio.TimeoutError))
+    @circuit_breaker_async(config=API_CIRCUIT_BREAKER_CONFIG)
     async def get_current_weather(self, city: str) -> Optional[Dict[str, Any]]:
         """
         Get current weather using free APIs.
@@ -42,7 +49,7 @@ class FreeWeatherClient:
             return None
             
         except Exception as e:
-            print(f"Free weather API error: {e}")
+            logger.error(f"Free weather API error: {e}")
             return None
     
     async def _get_wttr_weather(self, city: str) -> Optional[Dict[str, Any]]:
@@ -69,9 +76,15 @@ class FreeWeatherClient:
                             'source': 'wttr.in (Free)',
                             'timestamp': datetime.now().isoformat()
                         }
+                    else:
+                        logger.warning(f"wttr.in API returned status {response.status}")
                         
+        except aiohttp.ClientError as e:
+            logger.error(f"wttr.in network error: {e}")
+        except asyncio.TimeoutError:
+            logger.error("wttr.in request timeout")
         except Exception as e:
-            print(f"wttr.in API error: {e}")
+            logger.error(f"wttr.in API error: {e}")
         
         return None
     
@@ -97,6 +110,19 @@ class FreeWeatherClient:
                             'temperature': data.get('main', {}).get('temp', 'N/A'),
                             'feels_like': data.get('main', {}).get('feels_like', 'N/A'),
                             'humidity': data.get('main', {}).get('humidity', 'N/A'),
+                            'description': data.get('weather', [{}])[0].get('description', 'N/A'),
+                            'wind_speed': data.get('wind', {}).get('speed', 'N/A'),
+                            'pressure': data.get('main', {}).get('pressure', 'N/A'),
+                            'visibility': data.get('visibility', 'N/A'),
+                            'source': 'OpenWeatherMap (Demo)',
+                            'timestamp': datetime.now().isoformat()
+                        }
+                        
+        except Exception as e:
+            print(f"OpenWeatherMap demo API error: {e}")
+        
+        return None
+
                             'description': data.get('weather', [{}])[0].get('description', 'N/A'),
                             'wind_speed': data.get('wind', {}).get('speed', 'N/A'),
                             'pressure': data.get('main', {}).get('pressure', 'N/A'),

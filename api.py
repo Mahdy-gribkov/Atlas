@@ -1,10 +1,33 @@
 #!/usr/bin/env python3
 """
 FastAPI backend for Travel AI Agent
-Provides REST API for React frontend
+Provides REST API for React frontend with streaming responses
+
+This module implements the FastAPI backend server that handles:
+- Chat endpoints with streaming responses
+- CORS configuration for React frontend
+- Response caching for performance
+- Error handling and logging
+- Health checks and monitoring
+
+Endpoints:
+- POST /chat: Streaming chat endpoint with real-time responses
+- POST /chat-simple: Simple chat endpoint for fallback
+- GET /features: Available features information
+- GET /health: Health check endpoint
+- GET /: Root endpoint for API status
+
+Features:
+- Real-time streaming responses using Server-Sent Events
+- Response caching with TTL for performance
+- Comprehensive error handling
+- CORS support for frontend integration
+- Static file serving for React build
+- Health monitoring and status checks
 
 Author: Mahdy Gribkov
 License: MIT
+Version: 1.0.0
 """
 
 from fastapi import FastAPI, HTTPException
@@ -18,6 +41,8 @@ import logging
 import time
 import os
 from travel_agent import TravelAgent
+from src.utils.cache_manager import cache_manager, API_CACHE
+from src.utils.security import security_validator, security_monitor
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -42,9 +67,8 @@ app.add_middleware(
 # Initialize travel agent
 agent = TravelAgent()
 
-# Response cache for common queries
-response_cache = {}
-CACHE_DURATION = 300  # 5 minutes
+# Get API response cache
+api_cache = cache_manager.get_cache(API_CACHE)
 
 class ChatRequest(BaseModel):
     message: str
@@ -59,61 +83,62 @@ async def root():
     return {"message": "Travel AI Agent API is running!"}
 
 async def generate_streaming_response(message: str):
-    """Generate streaming response for real-time chat."""
+    """Generate streaming response for real-time chat with timeout handling."""
     try:
         # Check cache first
         cache_key = f"chat_{hash(message)}"
-        current_time = time.time()
         
-        if cache_key in response_cache:
-            cached_data = response_cache[cache_key]
-            if current_time - cached_data['timestamp'] < CACHE_DURATION:
-                # Return cached response in chunks for streaming effect
-                response = cached_data['response']
-                words = response.split()
-                chunk_size = 5
-                
-                for i in range(0, len(words), chunk_size):
-                    chunk = ' '.join(words[i:i+chunk_size])
-                    yield f"data: {json.dumps({'chunk': chunk, 'done': False})}\n\n"
-                    await asyncio.sleep(0.05)  # Small delay for streaming effect
-                
-                yield f"data: {json.dumps({'chunk': '', 'done': True})}\n\n"
-                return
+        cached_response = await api_cache.get(cache_key)
+        if cached_response:
+            # Return cached response in chunks for streaming effect
+            response = cached_response
+            words = response.split()
+            chunk_size = 3
+            
+            for i in range(0, len(words), chunk_size):
+                chunk = ' '.join(words[i:i+chunk_size])
+                yield f"data: {json.dumps({'chunk': chunk, 'done': False})}\n\n"
+                await asyncio.sleep(0.02)  # Faster streaming
+            
+            yield f"data: {json.dumps({'chunk': '', 'done': True})}\n\n"
+            return
         
-        # Generate new response with streaming
+        # Generate new response with timeout
         logger.info(f"Processing new request: {message[:100]}...")
         
-        # Start processing
-        yield f"data: {json.dumps({'chunk': '🔍 Analyzing your request...', 'done': False})}\n\n"
-        await asyncio.sleep(0.1)
+        # Start processing with timeout
+        yield f"data: {json.dumps({'chunk': 'Planning your trip...', 'done': False})}\n\n"
         
-        # Process the query
-        response = await agent.process_query(message)
+        try:
+            # Process with timeout to prevent long waits
+            response = await asyncio.wait_for(
+                agent.process_query(message), 
+                timeout=30.0  # 30 second timeout
+            )
+        except asyncio.TimeoutError:
+            yield f"data: {json.dumps({'chunk': 'Request is taking longer than expected. Please try a simpler question or check your internet connection.', 'done': True})}\n\n"
+            return
         
         # Cache the response
-        response_cache[cache_key] = {
-            'response': response,
-            'timestamp': current_time
-        }
+        await api_cache.set(cache_key, response, ttl=3600)  # 1 hour cache
         
-        # Stream the response
+        # Stream the response faster
         words = response.split()
-        chunk_size = 8
+        chunk_size = 4
         
         for i in range(0, len(words), chunk_size):
             chunk = ' '.join(words[i:i+chunk_size])
             yield f"data: {json.dumps({'chunk': chunk, 'done': False})}\n\n"
-            await asyncio.sleep(0.03)  # Faster streaming for better UX
+            await asyncio.sleep(0.02)  # Faster streaming
         
         yield f"data: {json.dumps({'chunk': '', 'done': True})}\n\n"
         
         # Save conversation
-        agent.save_conversation()
+        await agent.save_conversation()
         
     except Exception as e:
         logger.error(f"Streaming error: {e}")
-        yield f"data: {json.dumps({'chunk': f'Sorry, I encountered an error: {str(e)}', 'done': True})}\n\n"
+        yield f"data: {json.dumps({'chunk': f'Sorry, I encountered an error. Please try again.', 'done': True})}\n\n"
 
 @app.post("/chat")
 async def chat_stream(request: ChatRequest):
@@ -126,8 +151,19 @@ async def chat_stream(request: ChatRequest):
     Returns:
         Streaming response from the agent
     """
+    # Validate input
+    validation_result = security_validator.validate_message(request.message)
+    if not validation_result['valid']:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid input: {'; '.join(validation_result['errors'])}"
+        )
+    
+    # Use sanitized message
+    sanitized_message = validation_result['sanitized']
+    
     return StreamingResponse(
-        generate_streaming_response(request.message),
+        generate_streaming_response(sanitized_message),
         media_type="text/plain"
     )
 
@@ -137,28 +173,34 @@ async def chat_simple(request: ChatRequest):
     Simple chat endpoint for fallback.
     """
     try:
-        logger.info(f"Processing simple chat request: {request.message[:100]}...")
+        # Validate input
+        validation_result = security_validator.validate_message(request.message)
+        if not validation_result['valid']:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Invalid input: {'; '.join(validation_result['errors'])}"
+            )
+        
+        # Use sanitized message
+        sanitized_message = validation_result['sanitized']
+        
+        logger.info(f"Processing simple chat request: {sanitized_message[:100]}...")
         
         # Check cache first
-        cache_key = f"chat_{hash(request.message)}"
-        current_time = time.time()
+        cache_key = f"chat_{hash(sanitized_message)}"
         
-        if cache_key in response_cache:
-            cached_data = response_cache[cache_key]
-            if current_time - cached_data['timestamp'] < CACHE_DURATION:
-                return ChatResponse(response=cached_data['response'])
+        cached_response = await api_cache.get(cache_key)
+        if cached_response:
+            return ChatResponse(response=cached_response)
         
         # Process the query
-        response = await agent.process_query(request.message)
+        response = await agent.process_query(sanitized_message)
         
         # Cache the response
-        response_cache[cache_key] = {
-            'response': response,
-            'timestamp': current_time
-        }
+        await api_cache.set(cache_key, response, ttl=1800)  # 30 minutes
         
         # Save conversation
-        agent.save_conversation()
+        await agent.save_conversation()
         
         return ChatResponse(response=response)
         
@@ -195,6 +237,106 @@ async def health_check():
     except Exception as e:
         return {
             "status": "unhealthy",
+            "error": str(e)
+        }
+
+@app.get("/cache/stats")
+async def get_cache_stats():
+    """Get cache statistics for monitoring."""
+    try:
+        stats = cache_manager.get_all_stats()
+        return {
+            "status": "success",
+            "cache_stats": stats,
+            "timestamp": time.time()
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e)
+        }
+
+@app.get("/security/report")
+async def get_security_report():
+    """Get security monitoring report."""
+    try:
+        report = security_monitor.get_security_report()
+        return {
+            "status": "success",
+            "security_report": report,
+            "timestamp": time.time()
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e)
+        }
+
+# Serve React build files
+if os.path.exists("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+    
+    # Serve React app for all other routes
+    @app.get("/{full_path:path}")
+    async def serve_react_app(full_path: str):
+        """Serve React app for all routes not handled by API."""
+        if full_path.startswith("api/") or full_path.startswith("static/"):
+            raise HTTPException(status_code=404, detail="Not found")
+        
+        # Serve index.html for all other routes (React Router)
+        index_path = os.path.join("static", "index.html")
+        if os.path.exists(index_path):
+            from fastapi.responses import FileResponse
+            return FileResponse(index_path)
+        else:
+            raise HTTPException(status_code=404, detail="React app not found")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000)
+
+        test_response = await agent.process_query("Hello")
+        return {
+            "status": "healthy",
+            "agent": "working",
+            "llm": agent.llm_type,
+            "model": agent.model_name if hasattr(agent, 'model_name') else "unknown"
+        }
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "error": str(e)
+        }
+
+@app.get("/cache/stats")
+async def get_cache_stats():
+    """Get cache statistics for monitoring."""
+    try:
+        stats = cache_manager.get_all_stats()
+        return {
+            "status": "success",
+            "cache_stats": stats,
+            "timestamp": time.time()
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e)
+        }
+
+@app.get("/security/report")
+async def get_security_report():
+    """Get security monitoring report."""
+    try:
+        report = security_monitor.get_security_report()
+        return {
+            "status": "success",
+            "security_report": report,
+            "timestamp": time.time()
+        }
+    except Exception as e:
+        return {
+            "status": "error",
             "error": str(e)
         }
 

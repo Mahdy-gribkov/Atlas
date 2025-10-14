@@ -8,8 +8,30 @@ A comprehensive travel planning agent that runs entirely locally using:
 - Encrypted local storage for privacy
 - Web search capabilities for current information
 
+Features:
+- Flight search and booking recommendations
+- Hotel and accommodation suggestions
+- Weather information and forecasts
+- Tourist attractions and activities
+- Car rental options
+- Events and entertainment
+- Travel insurance recommendations
+- Transportation options
+- Restaurant and dining suggestions
+- Currency conversion and budget planning
+- Country information and geocoding
+- Wikipedia integration for detailed information
+
+Architecture:
+- Backend: Python FastAPI with async/await
+- Frontend: React with streaming responses
+- Database: Encrypted SQLite with automatic cleanup
+- APIs: Comprehensive free API integrations
+- Security: AES-256 encryption, no data leakage
+
 Author: Mahdy Gribkov
 License: MIT
+Version: 1.0.0
 """
 
 import sys
@@ -26,21 +48,14 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from src.config import config
 from src.database.secure_database import SecureDatabase
-from src.apis import RestCountriesClient, WikipediaClient, NominatimClient, WebSearchClient, AviationStackClient, OpenWeatherClient
-from src.apis.free_weather_client import FreeWeatherClient
-from src.apis.free_flight_client import FreeFlightClient
-from src.apis.open_meteo_client import OpenMeteoClient
-from src.apis.currency_api_client import CurrencyAPIClient
-from src.apis.hotel_search_client import HotelSearchClient
-from src.apis.attractions_client import AttractionsClient
-from src.apis.car_rental_client import CarRentalClient
-from src.apis.events_client import EventsClient
-from src.apis.insurance_client import InsuranceClient
-from src.apis.transportation_client import TransportationClient
-from src.apis.food_client import FoodClient
+from src.apis import (
+    RestCountriesClient, WikipediaClient, NominatimClient, WebSearchClient, 
+    AviationStackClient, OpenWeatherClient, FreeWeatherClient, FreeFlightClient,
+    OpenMeteoClient, CurrencyAPIClient, HotelSearchClient, AttractionsClient,
+    CarRentalClient, EventsClient, InsuranceClient, TransportationClient, FoodClient
+)
 
 # Configure logging
-import os
 os.makedirs('data', exist_ok=True)  # Create data directory if it doesn't exist
 
 logging.basicConfig(
@@ -58,14 +73,34 @@ class TravelAgent:
     """
     Advanced Travel AI Agent with comprehensive travel planning capabilities.
     
+    This is the main class that orchestrates all travel planning functionality.
+    It integrates multiple APIs, manages conversation state, and provides
+    intelligent travel recommendations using local LLM processing.
+    
     Features:
-    - Local LLM integration (Llama 3.1 8B)
-    - Real-time web search
-    - Country information lookup
-    - Wikipedia integration
-    - Geocoding services
-    - Travel planning and budgeting
-    - Encrypted local storage
+    - Local LLM integration (Llama 3.1 8B) for natural language processing
+    - Real-time web search for current information
+    - Country information lookup via REST Countries API
+    - Wikipedia integration for detailed destination information
+    - Geocoding services via OpenStreetMap Nominatim
+    - Travel planning and budgeting with currency conversion
+    - Encrypted local storage for privacy
+    - Comprehensive API integrations (weather, flights, hotels, etc.)
+    - Streaming responses for real-time user experience
+    - Error handling and retry mechanisms
+    - Rate limiting and circuit breaker patterns
+    
+    Attributes:
+        database (SecureDatabase): Encrypted local database instance
+        conversation_history (List[Dict]): Chat conversation history
+        user_preferences (Dict): User preferences and settings
+        llm_type (str): Type of LLM being used ('local' or 'openai')
+        model_name (str): Name of the LLM model
+    
+    Example:
+        >>> agent = TravelAgent()
+        >>> response = await agent.process_query("Plan a trip to Japan")
+        >>> print(response)
     """
     
     def __init__(self):
@@ -155,7 +190,7 @@ class TravelAgent:
     
     def _call_llm(self, prompt: str, context: str = "") -> str:
         """
-        Call the LLM with enhanced prompting.
+        Call the LLM with optimized prompting for faster responses.
         
         Args:
             prompt: Main prompt for the LLM
@@ -165,25 +200,12 @@ class TravelAgent:
             LLM response
         """
         try:
-            # Build enhanced prompt with context
-            enhanced_prompt = f"""
-            You are a professional travel planning assistant. Provide accurate, helpful, and actionable travel advice.
-            
-            Context Information: {context}
-            
-            User Request: {prompt}
-            
-            Guidelines:
-            - Be specific and actionable in your recommendations
-            - Include practical travel tips and warnings
-            - Mention budget considerations when relevant
-            - Provide current, accurate information
-            - Ask clarifying questions if needed
-            - Be conversational but professional
-            - Focus on helping the user make informed travel decisions
-            
-            Response should be helpful, accurate, and tailored to the user's specific needs.
-            """
+            # Build concise prompt for faster processing
+            enhanced_prompt = f"""Travel assistant. Context: {context[:200]}... 
+
+User: {prompt}
+
+Provide helpful, specific travel advice. Be concise but informative."""
             
             if self.llm_type == "local":
                 import ollama
@@ -191,9 +213,10 @@ class TravelAgent:
                     model=self.model_name,
                     prompt=enhanced_prompt,
                     options={
-                        'temperature': 0.7,
-                        'top_p': 0.9,
-                        'num_predict': 1000
+                        'temperature': config.LLM_TEMPERATURE,
+                        'top_p': config.LLM_TOP_P,
+                        'num_predict': config.LLM_MAX_TOKENS,
+                        'stop': ['\n\n', 'User:', 'Context:']
                     }
                 )
                 return response['response']
@@ -1031,10 +1054,10 @@ class TravelAgent:
         
         return "\n".join(summary_parts)
     
-    def save_conversation(self):
+    async def save_conversation(self):
         """Save conversation to database."""
         try:
-            self.database.save_conversation(
+            await self.database.save_conversation(
                 user_id="default",
                 user_message=self.conversation_history[-2]['user'] if len(self.conversation_history) >= 2 else "",
                 assistant_response=self.conversation_history[-1]['assistant'] if self.conversation_history else ""
@@ -1535,6 +1558,41 @@ Privacy:
                 
                 # Add insurance tips
                 tips = await self.insurance_client.get_insurance_tips(destination)
+                insurance_info += f"""
+
+**🛡️ Insurance Tips:**
+{chr(10).join([f"• {tip}" for tip in tips])}
+
+*Data source: {insurance['source']}*
+                """
+                
+                return insurance_info.strip()
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Insurance data error: {e}")
+            return None
+
+
+def main():
+    """Main application entry point."""
+    try:
+        # Ensure data directory exists
+        os.makedirs('data', exist_ok=True)
+        
+        # Initialize and run the travel agent
+        agent = TravelAgent()
+        agent.chat()
+        
+    except Exception as e:
+        logger.error(f"Application error: {e}")
+        print(f"❌ Failed to start Travel AI Agent: {e}")
+        print("Please check the logs in data/travel_agent.log for more details.")
+
+if __name__ == "__main__":
+    main()
+
                 insurance_info += f"""
 
 **🛡️ Insurance Tips:**

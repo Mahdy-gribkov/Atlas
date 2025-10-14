@@ -1,19 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
-import axios from 'axios';
 import './App.css';
 
 function App() {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: '🌍 Welcome! I\'m your AI travel planning assistant. I can help you:\n\n✈️ Find flights and travel options\n🏨 Search for accommodations\n🌤️ Check weather conditions\n💰 Plan travel budgets\n📍 Get destination information\n\nWhere would you like to go?'
+      content: 'Welcome! I\'m your travel planning assistant. I can help you with flights, hotels, weather, budgets, and destination information. Where would you like to go?'
     }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [userLocation, setUserLocation] = useState('');
   const [showLocationPrompt, setShowLocationPrompt] = useState(true);
+  const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -22,6 +23,46 @@ function App() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Initialize voice recognition
+  useEffect(() => {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.lang = 'en-US';
+
+      recognitionRef.current.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognitionRef.current.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setInput(transcript);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+  }, []);
+
+  const handleVoiceInput = () => {
+    if (recognitionRef.current) {
+      if (isListening) {
+        recognitionRef.current.stop();
+      } else {
+        recognitionRef.current.start();
+      }
+    }
+  };
 
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
@@ -37,7 +78,7 @@ function App() {
     setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
     try {
-      const response = await fetch('/chat-simple', {
+      const response = await fetch('/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -49,17 +90,48 @@ function App() {
         throw new Error('Network response was not ok');
       }
 
-      const data = await response.json();
-      
-      // Update the last message (assistant message) with the response
-      setMessages(prev => {
-        const newMessages = [...prev];
-        newMessages[newMessages.length - 1] = {
-          role: 'assistant',
-          content: data.response
-        };
-        return newMessages;
-      });
+      // Handle streaming response
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantMessage = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) break;
+        
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              if (data.done) {
+                setIsLoading(false);
+                break;
+              }
+              
+              if (data.chunk) {
+                assistantMessage += data.chunk + ' ';
+                
+                // Update the assistant message in real-time
+                setMessages(prev => {
+                  const newMessages = [...prev];
+                  newMessages[newMessages.length - 1] = {
+                    role: 'assistant',
+                    content: assistantMessage
+                  };
+                  return newMessages;
+                });
+              }
+            } catch (e) {
+              // Ignore parsing errors for incomplete chunks
+            }
+          }
+        }
+      }
 
     } catch (error) {
       console.error('Error:', error);
@@ -71,7 +143,6 @@ function App() {
         };
         return newMessages;
       });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -94,18 +165,11 @@ function App() {
   };
 
   const exampleQueries = [
-    "I need flights from Tel Aviv to New York tomorrow morning",
-    "Plan a 2-week trip to Japan with $3000 budget", 
-    "What's the weather like in Tokyo this week?",
-    "Find budget hotels in Bangkok under $50/night",
-    "Tell me about attractions in Peru"
-  ];
-
-  const travelCategories = [
-    { icon: "✈️", title: "Flights", desc: "Find the best flight deals" },
-    { icon: "🏨", title: "Hotels", desc: "Discover accommodation options" },
-    { icon: "🌍", title: "Destinations", desc: "Explore countries and cities" },
-    { icon: "💰", title: "Budget", desc: "Plan your travel budget" }
+    "Find flights to New York",
+    "Plan a trip to Japan", 
+    "Weather in Tokyo",
+    "Hotels in Bangkok",
+    "Attractions in Peru"
   ];
 
   return (
@@ -113,32 +177,9 @@ function App() {
       <header className="app-header">
         <div className="header-content">
           <div className="logo-section">
-            <div className="logo">✈️</div>
+            <div className="logo">✈</div>
             <div className="title-section">
-              <h1>Travel AI Agent</h1>
-              <p>Your intelligent travel planning companion</p>
-            </div>
-          </div>
-          <div className="header-actions">
-            <div className="header-badges">
-              <span className="badge" title="Your data never leaves your device">🔒 Privacy-First</span>
-              <span className="badge" title="Powered by Llama 3.1:8b local AI">🤖 Local AI</span>
-              <span className="badge" title="Instant responses, no delays">⚡ Real-time</span>
-              <span className="badge" title="Voice recognition available">🎤 Voice</span>
-              <span className="badge" title="Multi-language support">🌍 Multi-lang</span>
-            </div>
-            <div className="quick-start-buttons">
-              {exampleQueries.slice(0, 3).map((query, index) => (
-                <button
-                  key={index}
-                  className="quick-header-button"
-                  onClick={() => setInput(query)}
-                  disabled={isLoading}
-                  title={query}
-                >
-                  {query.split(' ').slice(0, 2).join(' ')}...
-                </button>
-              ))}
+              <h1>Travel Assistant</h1>
             </div>
           </div>
         </div>
@@ -147,8 +188,8 @@ function App() {
       {showLocationPrompt && (
         <div className="location-prompt">
           <div className="location-modal">
-            <h3>📍 Where are you traveling from?</h3>
-            <p>This helps me provide better flight and travel recommendations.</p>
+            <h3>Where are you traveling from?</h3>
+            <p>This helps provide better recommendations.</p>
             <div className="location-input">
               <input
                 type="text"
@@ -174,10 +215,10 @@ function App() {
       <div className="main-content">
         <div className="chat-container">
           <div className="chat-header">
-            <h3>Chat with Travel AI</h3>
+            <h3>Travel Planning</h3>
             <div className="status-indicator">
               <span className="status-dot"></span>
-              <span>Online</span>
+              <span>Ready</span>
             </div>
           </div>
 
@@ -185,11 +226,29 @@ function App() {
             {messages.map((message, index) => (
               <div key={index} className={`message ${message.role}`}>
                 <div className="message-avatar">
-                  {message.role === 'user' ? '👤' : '🤖'}
+                  {message.role === 'user' ? '👤' : '✈'}
                 </div>
                 <div className="message-content">
                   <div className="message-text">
-                    {message.content}
+                    {message.role === 'assistant' ? (
+                      <div className="assistant-message">
+                        {message.content.split('\n').map((line, index) => (
+                          <div key={index} className="message-line">
+                            {line.includes('**') ? (
+                              <div dangerouslySetInnerHTML={{
+                                __html: line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                  .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                                  .replace(/•/g, '&bull;')
+                              }} />
+                            ) : (
+                              line
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      message.content
+                    )}
                   </div>
                   <div className="message-time">
                     {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
@@ -199,13 +258,14 @@ function App() {
             ))}
             {isLoading && (
               <div className="message assistant">
-                <div className="message-avatar">🤖</div>
+                <div className="message-avatar">✈</div>
                 <div className="message-content">
                   <div className="typing-indicator">
                     <span></span>
                     <span></span>
                     <span></span>
                   </div>
+                  <div className="loading-text">Planning your trip...</div>
                 </div>
               </div>
             )}
@@ -214,7 +274,11 @@ function App() {
 
           <div className="input-area">
             <div className="input-container">
-              <button className="voice-button" title="Voice input (coming soon)">
+              <button 
+                className={`voice-button ${isListening ? 'listening' : ''}`} 
+                onClick={handleVoiceInput} 
+                title="Voice input"
+              >
                 🎤
               </button>
               <textarea
@@ -240,6 +304,7 @@ function App() {
               </button>
             </div>
             <div className="quick-suggestions">
+              <div className="suggestions-title">Quick Examples:</div>
               {exampleQueries.map((query, index) => (
                 <button
                   key={index}

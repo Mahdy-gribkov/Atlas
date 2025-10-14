@@ -69,3 +69,52 @@
 2025-10-13 05:10:10,057 - INFO - Processing query: i want to travel to to a cheap place anywhere in the world from tel aviv in jan 26 (anytime in the m...
 2025-10-13 05:13:05,666 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
 2025-10-13 05:22:10,291 - INFO - Processing query: Cpython travel_agent.py...
+2025-10-13 05:25:11,116 - INFO - Using free flight data sources
+2025-10-13 05:25:11,117 - INFO - Using free weather data sources
+2025-10-13 05:25:11,117 - INFO - Free APIs initialized: Weather (wttr.in, Open-Meteo), Flights, Currency, Hotels, Attractions, Car Rental, Events, Insurance, Transportation, Food
+2025-10-13 05:25:11,865 - INFO - HTTP Request: GET http://127.0.0.1:11434/api/tags "HTTP/1.1 200 OK"
+2025-10-13 05:25:11,866 - INFO - Local LLM (llama3.1:8b) initialized
+2025-10-13 05:25:11,866 - INFO - Travel agent initialized successfully
+2025-10-13 05:28:28,616 - INFO - Using free flight data sources
+2025-10-13 05:28:28,617 - INFO - Using free weather data sources
+2025-10-13 05:28:28,617 - INFO - Free APIs initialized: Weather (wttr.in, Open-Meteo), Flights, Currency, Hotels, Attractions, Car Rental, Events, Insurance, Transportation, Food
+2025-10-13 05:28:30,749 - INFO - HTTP Request: GET http://127.0.0.1:11434/api/tags "HTTP/1.1 200 OK"
+2025-10-13 05:28:30,751 - INFO - Local LLM (llama3.1:8b) initialized
+2025-10-13 05:28:30,752 - INFO - Travel agent initialized successfully
+2025-10-14 02:35:08,572 - INFO - Using free flight data sources
+2025-10-14 02:35:08,572 - INFO - Using free weather data sources
+2025-10-14 02:35:08,572 - INFO - Free APIs initialized: Weather (wttr.in, Open-Meteo), Flights, Currency, Hotels, Attractions, Car Rental, Events, Insurance, Transportation, Food
+2025-10-14 02:35:09,599 - INFO - HTTP Request: GET http://127.0.0.1:11434/api/tags "HTTP/1.1 200 OK"
+2025-10-14 02:35:09,600 - INFO - Local LLM (llama3.1:8b) initialized
+2025-10-14 02:35:09,600 - INFO - Travel agent initialized successfully
+2025-10-14 02:36:38,926 - INFO - Using free flight data sources
+2025-10-14 02:36:38,927 - INFO - Using free weather data sources
+2025-10-14 02:36:38,928 - INFO - Free APIs initialized: Weather (wttr.in, Open-Meteo), Flights, Currency, Hotels, Attractions, Car Rental, Events, Insurance, Transportation, Food
+2025-10-14 02:36:45,969 - INFO - HTTP Request: GET http://127.0.0.1:11434/api/tags "HTTP/1.1 200 OK"
+2025-10-14 02:36:45,971 - INFO - Local LLM (llama3.1:8b) initialized
+2025-10-14 02:36:45,972 - INFO - Travel agent initialized successfully
+2025-10-14 02:37:01,265 - INFO - Processing query: Hello...
+2025-10-14 02:37:01,336 - INFO - Searching for general information...
+2025-10-14 02:38:22,933 - ERROR - LLM call failed: Server disconnected without sending a response.
+2025-10-14 02:38:52,676 - INFO - Processing new request: Plan a 2-week trip to Japan with $3000 budget...
+2025-10-14 02:38:52,788 - INFO - Processing query: Plan a 2-week trip to Japan with $3000 budget...
+2025-10-14 02:38:52,789 - INFO - Planning budget...
+2025-10-14 02:38:52,790 - ERROR - Budget data error: 'float' object has no attribute 'isdigit'
+2025-10-14 02:38:56,593 - ERROR - LLM call failed: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download
+2025-10-14 02:42:21,162 - INFO - Using free flight data sources
+2025-10-14 02:42:21,163 - INFO - Using free weather data sources
+2025-10-14 02:42:21,164 - INFO - Free APIs initialized: Weather (wttr.in, Open-Meteo), Flights, Currency, Hotels, Attractions, Car Rental, Events, Insurance, Transportation, Food
+2025-10-14 02:42:31,344 - INFO - HTTP Request: GET http://127.0.0.1:11434/api/tags "HTTP/1.1 200 OK"
+2025-10-14 02:42:31,365 - INFO - Local LLM (llama3.1:8b) initialized
+2025-10-14 02:42:31,368 - INFO - Travel agent initialized successfully
+2025-10-14 02:42:54,166 - INFO - Using free flight data sources
+2025-10-14 02:42:54,166 - INFO - Using free weather data sources
+2025-10-14 02:42:54,166 - INFO - Free APIs initialized: Weather (wttr.in, Open-Meteo), Flights, Currency, Hotels, Attractions, Car Rental, Events, Insurance, Transportation, Food
+2025-10-14 02:42:55,059 - INFO - HTTP Request: GET http://127.0.0.1:11434/api/tags "HTTP/1.1 200 OK"
+2025-10-14 02:42:55,061 - INFO - Local LLM (llama3.1:8b) initialized
+2025-10-14 02:42:55,062 - INFO - Travel agent initialized successfully
+2025-10-14 02:43:12,905 - INFO - Processing new request: Plan a 2-week trip to Japan with $3000 budget...
+2025-10-14 02:43:13,021 - INFO - Processing query: Plan a 2-week trip to Japan with $3000 budget...
+2025-10-14 02:43:13,024 - INFO - Planning budget...
+2025-10-14 02:43:13,024 - ERROR - Budget data error: 'float' object has no attribute 'isdigit'
+2025-10-14 02:51:35,705 - ERROR - LLM call failed: Server disconnected without sending a response.
