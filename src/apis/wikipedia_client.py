@@ -93,9 +93,85 @@ class WikipediaClient:
     async def _search_wikipedia(self, query: str, limit: int) -> List[Dict[str, Any]]:
         """Search Wikipedia using REST API (completely free, no API key)."""
         try:
-            url = f"{self.base_url}/page/summary/{urllib.parse.quote(query)}"
+            # Use Wikipedia search API to find articles
+            search_url = f"{self.base_url}/page/summary/{urllib.parse.quote(query)}"
             
             # Headers to be respectful to the service
+            headers = {
+                'User-Agent': 'Travel-AI-Agent/1.0 (contact@example.com)'
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(search_url, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        
+                        # Check if we got a valid response
+                        if data.get('type') != 'disambiguation' and data.get('extract'):
+                            result = {
+                                'title': data.get('title', ''),
+                                'extract': data.get('extract', ''),
+                                'url': data.get('content_urls', {}).get('desktop', {}).get('page', ''),
+                                'thumbnail': data.get('thumbnail', {}).get('source', '') if data.get('thumbnail') else '',
+                                'type': data.get('type', ''),
+                                'source': 'Wikipedia REST API (Real Data, Free)',
+                                'timestamp': datetime.now().isoformat()
+                            }
+                            
+                            return [result]
+                        else:
+                            # Try alternative search approach
+                            return await self._search_wikipedia_alternative(query, limit)
+                    else:
+                        # Try alternative search approach
+                        return await self._search_wikipedia_alternative(query, limit)
+                        
+        except Exception as e:
+            print(f"Wikipedia search API error: {e}")
+            # Try alternative search approach
+            return await self._search_wikipedia_alternative(query, limit)
+    
+    async def _search_wikipedia_alternative(self, query: str, limit: int) -> List[Dict[str, Any]]:
+        """Alternative Wikipedia search using different approach."""
+        try:
+            # Use Wikipedia's search endpoint
+            search_url = "https://en.wikipedia.org/w/api.php"
+            params = {
+                'action': 'query',
+                'format': 'json',
+                'list': 'search',
+                'srsearch': query,
+                'srlimit': limit,
+                'srprop': 'snippet'
+            }
+            
+            headers = {
+                'User-Agent': 'Travel-AI-Agent/1.0 (contact@example.com)'
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(search_url, params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        search_results = data.get('query', {}).get('search', [])
+                        
+                        results = []
+                        for item in search_results[:limit]:
+                            # Get page summary for each result
+                            summary = await self._get_page_summary(item['title'])
+                            if summary:
+                                results.append(summary)
+                        
+                        return results
+                        
+        except Exception as e:
+            print(f"Wikipedia alternative search error: {e}")
+            return []
+    
+    async def _get_page_summary(self, title: str) -> Optional[Dict[str, Any]]:
+        """Get page summary for a specific title."""
+        try:
+            url = f"{self.base_url}/page/summary/{urllib.parse.quote(title)}"
             headers = {
                 'User-Agent': 'Travel-AI-Agent/1.0 (contact@example.com)'
             }
@@ -105,7 +181,7 @@ class WikipediaClient:
                     if response.status == 200:
                         data = await response.json()
                         
-                        result = {
+                        return {
                             'title': data.get('title', ''),
                             'extract': data.get('extract', ''),
                             'url': data.get('content_urls', {}).get('desktop', {}).get('page', ''),
@@ -115,11 +191,9 @@ class WikipediaClient:
                             'timestamp': datetime.now().isoformat()
                         }
                         
-                        return [result]
-                        
         except Exception as e:
-            print(f"Wikipedia search API error: {e}")
-            return []
+            print(f"Wikipedia page summary error: {e}")
+            return None
     
     async def _get_wikipedia_article(self, title: str) -> Optional[Dict[str, Any]]:
         """Get Wikipedia article using REST API (completely free, no API key)."""

@@ -109,38 +109,50 @@ class NominatimClient:
             }
             
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                async with session.get(url, params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=15)) as response:
                     if response.status == 200:
                         data = await response.json()
                         
+                        # Check if we got valid results
+                        if not data or len(data) == 0:
+                            print(f"No geocoding results for: {address}")
+                            return []
+                        
                         results = []
                         for item in data:
-                            result = {
-                                'address': item.get('display_name', ''),
-                                'latitude': float(item.get('lat', 0)),
-                                'longitude': float(item.get('lon', 0)),
-                                'place_id': item.get('place_id', ''),
-                                'type': item.get('type', ''),
-                                'importance': item.get('importance', 0),
-                                'source': 'OpenStreetMap Nominatim (Real Data, Free)',
-                                'timestamp': datetime.now().isoformat()
-                            }
-                            
-                            # Add address components if available
-                            if 'address' in item:
-                                address_components = item['address']
-                                result['address_components'] = {
-                                    'country': address_components.get('country', ''),
-                                    'state': address_components.get('state', ''),
-                                    'city': address_components.get('city', ''),
-                                    'postcode': address_components.get('postcode', ''),
-                                    'street': address_components.get('street', ''),
-                                    'house_number': address_components.get('house_number', '')
+                            try:
+                                result = {
+                                    'address': item.get('display_name', ''),
+                                    'latitude': float(item.get('lat', 0)),
+                                    'longitude': float(item.get('lon', 0)),
+                                    'place_id': item.get('place_id', ''),
+                                    'type': item.get('type', ''),
+                                    'importance': item.get('importance', 0),
+                                    'source': 'OpenStreetMap Nominatim (Real Data, Free)',
+                                    'timestamp': datetime.now().isoformat()
                                 }
-                            
-                            results.append(result)
+                                
+                                # Add address components if available
+                                if 'address' in item:
+                                    address_components = item['address']
+                                    result['address_components'] = {
+                                        'country': address_components.get('country', ''),
+                                        'state': address_components.get('state', ''),
+                                        'city': address_components.get('city', ''),
+                                        'postcode': address_components.get('postcode', ''),
+                                        'street': address_components.get('street', ''),
+                                        'house_number': address_components.get('house_number', '')
+                                    }
+                                
+                                results.append(result)
+                            except (ValueError, TypeError) as e:
+                                print(f"Error processing geocoding result: {e}")
+                                continue
                         
                         return results
+                    else:
+                        print(f"Nominatim geocoding failed with status: {response.status}")
+                        return []
                         
         except Exception as e:
             print(f"Nominatim geocoding error: {e}")
