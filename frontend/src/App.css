@@ -296,9 +296,9 @@ body {
   z-index: 1;
 }
 
-/* Quick Examples Panel - Compact */
+/* Quick Examples Panel - Very Compact */
 .quick-examples-panel {
-  width: 180px;
+  width: 120px;
   background: rgba(15, 23, 42, 0.4);
   border-right: 1px solid rgba(51, 65, 85, 0.5);
   padding: 1.5rem;
@@ -1163,7 +1163,7 @@ div.app.light div.message.user div.message-text {
 /* Responsive Design */
 @media (max-width: 1024px) {
   .quick-examples-panel {
-    width: 120px;
+    width: 80px;
   }
   
   .messages {

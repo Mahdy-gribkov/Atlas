@@ -198,6 +198,21 @@ function App() {
               
               if (data.done) {
                 setIsLoading(false);
+                // Ensure we have a final message if none was added
+                if (assistantMessage.trim()) {
+                  setMessages(prev => {
+                    const newMessages = [...prev];
+                    const lastMessage = newMessages[newMessages.length - 1];
+                    if (lastMessage && lastMessage.role === 'assistant') {
+                      newMessages[newMessages.length - 1] = {
+                        role: 'assistant',
+                        content: assistantMessage.trim(),
+                        isTyping: false
+                      };
+                    }
+                    return newMessages;
+                  });
+                }
                 break;
               }
               
@@ -209,20 +224,27 @@ function App() {
                 
                 assistantMessage += data.chunk + ' ';
                 
-                // Update or add the assistant message
+                // Add or update the assistant message
                 setMessages(prev => {
                   const newMessages = [...prev];
-                  // Check if we already have an assistant message
-                  const lastMessage = newMessages[newMessages.length - 1];
-                  if (lastMessage && lastMessage.role === 'assistant') {
-                    // Update existing message
-                    newMessages[newMessages.length - 1] = {
+                  // Find the last assistant message or add a new one
+                  let assistantIndex = -1;
+                  for (let i = newMessages.length - 1; i >= 0; i--) {
+                    if (newMessages[i].role === 'assistant') {
+                      assistantIndex = i;
+                      break;
+                    }
+                  }
+                  
+                  if (assistantIndex >= 0) {
+                    // Update existing assistant message
+                    newMessages[assistantIndex] = {
                       role: 'assistant',
                       content: assistantMessage,
                       isTyping: false
                     };
                   } else {
-                    // Add new message
+                    // Add new assistant message
                     newMessages.push({
                       role: 'assistant',
                       content: assistantMessage,
@@ -241,14 +263,10 @@ function App() {
 
     } catch (error) {
       console.error('Error:', error);
-      setMessages(prev => {
-        const newMessages = [...prev];
-        newMessages[newMessages.length - 1] = {
-          role: 'assistant',
-          content: 'Sorry, I encountered an error. Please try again.'
-        };
-        return newMessages;
-      });
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'Sorry, I encountered an error. Please try again.'
+      }]);
       setIsLoading(false);
     }
   };
