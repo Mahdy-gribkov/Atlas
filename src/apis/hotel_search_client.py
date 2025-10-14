@@ -115,16 +115,22 @@ class HotelSearchClient:
                 # Calculate price based on budget
                 base_price = hotel_data['base_price']
                 if budget:
-                    # Adjust price to be within budget range
-                    if budget < 100:
-                        price_multiplier = 0.5
-                    elif budget < 200:
-                        price_multiplier = 0.8
-                    elif budget < 500:
-                        price_multiplier = 1.0
-                    else:
-                        price_multiplier = 1.2
-                    base_price = int(base_price * price_multiplier)
+                    # Convert budget to float if it's a string
+                    try:
+                        budget_float = float(budget)
+                        # Adjust price to be within budget range
+                        if budget_float < 100:
+                            price_multiplier = 0.5
+                        elif budget_float < 200:
+                            price_multiplier = 0.8
+                        elif budget_float < 500:
+                            price_multiplier = 1.0
+                        else:
+                            price_multiplier = 1.2
+                        base_price = int(base_price * price_multiplier)
+                    except (ValueError, TypeError):
+                        # If budget conversion fails, use default price
+                        pass
                 
                 # Generate amenities based on star rating
                 amenities = self._get_amenities(hotel_data['stars'])

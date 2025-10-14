@@ -223,19 +223,19 @@ class SecureDatabase:
             print(f"Error storing preference: {e}")
             return False
     
-    def get_preferences(self, pref_type: str = None) -> List[UserPreference]:
+    async def get_preferences(self, pref_type: str = None) -> List[UserPreference]:
         """Retrieve user preferences with automatic cleanup."""
         try:
             # Clean up expired preferences first
-            self.cleanup_expired_data()
+            await self.cleanup_expired_data()
             
             if pref_type:
-                cursor = self.conn.execute(
+                cursor = await self._execute_query(
                     "SELECT * FROM user_preferences WHERE preference_type = ?",
                     (pref_type,)
                 )
             else:
-                cursor = self.conn.execute("SELECT * FROM user_preferences")
+                cursor = await self._execute_query("SELECT * FROM user_preferences")
             
             preferences = []
             for row in cursor.fetchall():
@@ -259,50 +259,52 @@ class SecureDatabase:
             print(f"Error retrieving preferences: {e}")
             return []
     
-    def delete_preference(self, pref_type: str) -> bool:
+    async def delete_preference(self, pref_type: str) -> bool:
         """Delete specific preference type."""
         try:
-            self.conn.execute(
+            await self._execute_query(
                 "DELETE FROM user_preferences WHERE preference_type = ?",
                 (pref_type,)
             )
-            self.conn.commit()
+            conn = await self._ensure_connection()
+            conn.commit()
             return True
         except Exception as e:
             print(f"Error deleting preference: {e}")
             return False
     
     # Search History Methods
-    def store_search(self, search_type: str, params: Dict[str, Any], results_count: int = 0) -> bool:
+    async def store_search(self, search_type: str, params: Dict[str, Any], results_count: int = 0) -> bool:
         """Store search history with automatic expiration."""
         try:
             encrypted_params = self._encrypt_data(json.dumps(params))
             expires_at = datetime.now() + timedelta(days=1)
             
-            self.conn.execute("""
+            await self._execute_query("""
                 INSERT INTO search_history (search_type, search_params, results_count, expires_at)
                 VALUES (?, ?, ?, ?)
             """, (search_type, encrypted_params, results_count, expires_at))
             
-            self.conn.commit()
+            conn = await self._ensure_connection()
+            conn.commit()
             return True
             
         except Exception as e:
             print(f"Error storing search: {e}")
             return False
     
-    def get_search_history(self, search_type: str = None, limit: int = 10) -> List[SearchHistory]:
+    async def get_search_history(self, search_type: str = None, limit: int = 10) -> List[SearchHistory]:
         """Retrieve search history with automatic cleanup."""
         try:
-            self.cleanup_expired_data()
+            await self.cleanup_expired_data()
             
             if search_type:
-                cursor = self.conn.execute(
+                cursor = await self._execute_query(
                     "SELECT * FROM search_history WHERE search_type = ? ORDER BY created_at DESC LIMIT ?",
                     (search_type, limit)
                 )
             else:
-                cursor = self.conn.execute(
+                cursor = await self._execute_query(
                     "SELECT * FROM search_history ORDER BY created_at DESC LIMIT ?",
                     (limit,)
                 )
@@ -331,14 +333,14 @@ class SecureDatabase:
             return []
     
     # Travel Plans Methods
-    def store_travel_plan(self, plan: TravelPlan) -> bool:
+    async def store_travel_plan(self, plan: TravelPlan) -> bool:
         """Store travel plan."""
         try:
             encrypted_plan_data = self._encrypt_data(plan.plan_data)
             
             if plan.id:
                 # Update existing plan
-                self.conn.execute("""
+                await self._execute_query("""
                     UPDATE travel_plans SET
                         plan_name = ?, destination = ?, start_date = ?, end_date = ?,
                         travelers = ?, budget = ?, currency = ?, plan_data = ?, updated_at = ?
@@ -348,30 +350,31 @@ class SecureDatabase:
                       datetime.now(), plan.id))
             else:
                 # Insert new plan
-                self.conn.execute("""
+                await self._execute_query("""
                     INSERT INTO travel_plans 
                     (plan_name, destination, start_date, end_date, travelers, budget, currency, plan_data)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """, (plan.plan_name, plan.destination, plan.start_date, plan.end_date,
                       plan.travelers, plan.budget, plan.currency, encrypted_plan_data))
             
-            self.conn.commit()
+            conn = await self._ensure_connection()
+            conn.commit()
             return True
             
         except Exception as e:
             print(f"Error storing travel plan: {e}")
             return False
     
-    def get_travel_plans(self, destination: str = None) -> List[TravelPlan]:
+    async def get_travel_plans(self, destination: str = None) -> List[TravelPlan]:
         """Retrieve travel plans."""
         try:
             if destination:
-                cursor = self.conn.execute(
+                cursor = await self._execute_query(
                     "SELECT * FROM travel_plans WHERE destination LIKE ? ORDER BY created_at DESC",
                     (f"%{destination}%",)
                 )
             else:
-                cursor = self.conn.execute(
+                cursor = await self._execute_query(
                     "SELECT * FROM travel_plans ORDER BY created_at DESC"
                 )
             
@@ -404,7 +407,7 @@ class SecureDatabase:
             return []
     
     # API Cache Methods
-    def store_api_cache(self, api_name: str, endpoint: str, params: Dict[str, Any], 
+    async def store_api_cache(self, api_name: str, endpoint: str, params: Dict[str, Any], 
                        response_data: Dict[str, Any], ttl_hours: int = 1) -> bool:
         """Store API response in cache."""
         try:
@@ -413,30 +416,31 @@ class SecureDatabase:
             expires_at = datetime.now() + timedelta(hours=ttl_hours)
             
             # Delete existing cache for same parameters
-            self.conn.execute(
+            await self._execute_query(
                 "DELETE FROM api_cache WHERE api_name = ? AND params_hash = ?",
                 (api_name, params_hash)
             )
             
             # Insert new cache entry
-            self.conn.execute("""
+            await self._execute_query("""
                 INSERT INTO api_cache (api_name, endpoint, params_hash, response_data, expires_at)
                 VALUES (?, ?, ?, ?, ?)
             """, (api_name, endpoint, params_hash, encrypted_response, expires_at))
             
-            self.conn.commit()
+            conn = await self._ensure_connection()
+            conn.commit()
             return True
             
         except Exception as e:
             print(f"Error storing API cache: {e}")
             return False
     
-    def get_api_cache(self, api_name: str, params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    async def get_api_cache(self, api_name: str, params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Retrieve API response from cache."""
         try:
             params_hash = self._hash_params(params)
             
-            cursor = self.conn.execute("""
+            cursor = await self._execute_query("""
                 SELECT response_data FROM api_cache 
                 WHERE api_name = ? AND params_hash = ? AND expires_at > datetime('now')
             """, (api_name, params_hash))
@@ -453,30 +457,31 @@ class SecureDatabase:
             return None
     
     # Cleanup Methods
-    def cleanup_expired_data(self) -> int:
+    async def cleanup_expired_data(self) -> int:
         """Clean up all expired data and return count of deleted records."""
         try:
             deleted_count = 0
             
             # Clean up expired preferences
-            cursor = self.conn.execute(
+            cursor = await self._execute_query(
                 "DELETE FROM user_preferences WHERE expires_at IS NOT NULL AND expires_at < datetime('now')"
             )
             deleted_count += cursor.rowcount
             
             # Clean up expired search history
-            cursor = self.conn.execute(
+            cursor = await self._execute_query(
                 "DELETE FROM search_history WHERE expires_at IS NOT NULL AND expires_at < datetime('now')"
             )
             deleted_count += cursor.rowcount
             
             # Clean up expired cache
-            cursor = self.conn.execute(
+            cursor = await self._execute_query(
                 "DELETE FROM api_cache WHERE expires_at IS NOT NULL AND expires_at < datetime('now')"
             )
             deleted_count += cursor.rowcount
             
-            self.conn.commit()
+            conn = await self._ensure_connection()
+            conn.commit()
             
             if deleted_count > 0:
                 print(f"Cleaned up {deleted_count} expired records")
@@ -487,7 +492,7 @@ class SecureDatabase:
             print(f"Error during cleanup: {e}")
             return 0
     
-    def get_database_stats(self) -> Dict[str, int]:
+    async def get_database_stats(self) -> Dict[str, int]:
         """Get database statistics."""
         try:
             stats = {}
@@ -495,23 +500,23 @@ class SecureDatabase:
             # Count records in each table
             tables = ['user_preferences', 'search_history', 'travel_plans', 'api_cache']
             for table in tables:
-                cursor = self.conn.execute(f"SELECT COUNT(*) FROM {table}")
+                cursor = await self._execute_query(f"SELECT COUNT(*) FROM {table}")
                 stats[table] = cursor.fetchone()[0]
             
             # Count expired records
-            cursor = self.conn.execute("""
+            cursor = await self._execute_query("""
                 SELECT COUNT(*) FROM user_preferences 
                 WHERE expires_at IS NOT NULL AND expires_at < datetime('now')
             """)
             stats['expired_preferences'] = cursor.fetchone()[0]
             
-            cursor = self.conn.execute("""
+            cursor = await self._execute_query("""
                 SELECT COUNT(*) FROM search_history 
                 WHERE expires_at IS NOT NULL AND expires_at < datetime('now')
             """)
             stats['expired_searches'] = cursor.fetchone()[0]
             
-            cursor = self.conn.execute("""
+            cursor = await self._execute_query("""
                 SELECT COUNT(*) FROM api_cache 
                 WHERE expires_at IS NOT NULL AND expires_at < datetime('now')
             """)

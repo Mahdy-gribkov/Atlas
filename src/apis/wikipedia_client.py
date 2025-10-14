@@ -23,7 +23,7 @@ class WikipediaClient:
         # No API key needed - uses Wikipedia REST API (completely free)
         self.base_url = "https://en.wikipedia.org/api/rest_v1"
     
-    async def search_articles(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+    async def search(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
         """
         Search Wikipedia articles using Wikipedia REST API (completely free, no API key).
         

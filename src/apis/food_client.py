@@ -18,8 +18,7 @@ class FoodClient:
     def __init__(self):
         self.session = None
     
-    async def get_restaurants(self, city: str, price_range: str = "all", 
-                            cuisine: str = "all") -> List[Dict[str, Any]]:
+    async def search_restaurants(self, city: str, cuisine: str = "all") -> List[Dict[str, Any]]:
         """
         Get restaurants for a city using free data sources.
         
@@ -33,7 +32,7 @@ class FoodClient:
         """
         try:
             # Generate realistic restaurant data
-            restaurants = await self._generate_realistic_restaurants(city, price_range, cuisine)
+            restaurants = await self._generate_realistic_restaurants(city, "all", cuisine)
             
             # Try to get additional data from free sources
             additional_restaurants = await self._get_free_restaurant_data(city)

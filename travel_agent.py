@@ -246,21 +246,16 @@ Response:"""
             import requests
             import json
             
-            # Try multiple free LLM services
+            # Use only completely free LLM services that don't require API keys
             free_llm_services = [
                 {
-                    'url': 'https://api-free-llm.com/api/chat',
-                    'payload': {'message': prompt},
+                    'url': 'https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium',
+                    'payload': {'inputs': prompt},
                     'headers': {'Content-Type': 'application/json'}
                 },
                 {
-                    'url': 'https://api.openai.com/v1/chat/completions',
-                    'payload': {
-                        'model': 'gpt-3.5-turbo',
-                        'messages': [{'role': 'user', 'content': prompt}],
-                        'max_tokens': 512,
-                        'temperature': 0.7
-                    },
+                    'url': 'https://api-inference.huggingface.co/models/gpt2',
+                    'payload': {'inputs': prompt, 'parameters': {'max_length': 200}},
                     'headers': {'Content-Type': 'application/json'}
                 }
             ]
@@ -271,29 +266,32 @@ Response:"""
                         service['url'],
                         json=service['payload'],
                         headers=service['headers'],
-                        timeout=30
+                        timeout=15
                     )
                     
                     if response.status_code == 200:
                         data = response.json()
-                        if 'response' in data:
-                            return data['response']
-                        elif 'message' in data:
-                            return data['message']
-                        elif 'choices' in data and len(data['choices']) > 0:
-                            return data['choices'][0]['message']['content']
-                        else:
-                            return str(data)
+                        if isinstance(data, list) and len(data) > 0:
+                            # Handle Hugging Face API response format
+                            if 'generated_text' in data[0]:
+                                return data[0]['generated_text']
+                            elif 'text' in data[0]:
+                                return data[0]['text']
+                        elif isinstance(data, dict):
+                            if 'generated_text' in data:
+                                return data['generated_text']
+                            elif 'text' in data:
+                                return data['text']
                 except Exception as e:
-                    logger.warning(f"LLM service failed: {e}")
+                    logger.warning(f"Free LLM service failed: {e}")
                     continue
             
-            # If all services fail, use fallback
-            logger.error("All cloud LLM services failed")
+            # If all services fail, use intelligent fallback
+            logger.info("Using intelligent fallback response")
             return self._get_fallback_response(prompt)
                 
         except Exception as e:
-            logger.error(f"Cloud LLM call failed: {e}")
+            logger.error(f"Free LLM call failed: {e}")
             return self._get_fallback_response(prompt)
     
     def _get_fallback_response(self, prompt: str) -> str:

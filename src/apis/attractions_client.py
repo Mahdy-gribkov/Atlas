@@ -18,7 +18,7 @@ class AttractionsClient:
     def __init__(self):
         self.session = None
     
-    async def get_attractions(self, city: str, limit: int = 10) -> List[Dict[str, Any]]:
+    async def search_attractions(self, city: str, category: str = "tourist") -> List[Dict[str, Any]]:
         """
         Get attractions for a city using free data sources.
         
@@ -31,14 +31,14 @@ class AttractionsClient:
         """
         try:
             # Generate realistic attraction data based on city
-            attractions = await self._generate_realistic_attractions(city, limit)
+            attractions = await self._generate_realistic_attractions(city, 10)
             
             # Try to get additional data from free sources
             additional_attractions = await self._get_free_attraction_data(city)
             if additional_attractions:
                 attractions.extend(additional_attractions)
             
-            return attractions[:limit]
+            return attractions[:10]
             
         except Exception as e:
             print(f"Attractions search error: {e}")

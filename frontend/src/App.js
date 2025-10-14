@@ -738,7 +738,7 @@ function App() {
                 LLM may make mistakes. For guidance only.
               </span>
               <span className="model-info">
-                DialoGPT-medium
+                Free LLM (Hugging Face)
               </span>
             </div>
           </div>

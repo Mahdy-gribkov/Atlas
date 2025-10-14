@@ -22,8 +22,8 @@ class Config:
     OLLAMA_MODEL: str = os.getenv('OLLAMA_MODEL', 'llama3.1:8b')
     
     # Free Cloud LLM Settings - Completely free, no API key required
-    CLOUD_LLM_URL: str = os.getenv('CLOUD_LLM_URL', 'https://api-free-llm.com/api/chat')
-    CLOUD_LLM_MODEL: str = os.getenv('CLOUD_LLM_MODEL', 'gpt-3.5-turbo')
+    CLOUD_LLM_URL: str = os.getenv('CLOUD_LLM_URL', 'https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium')
+    CLOUD_LLM_MODEL: str = os.getenv('CLOUD_LLM_MODEL', 'microsoft/DialoGPT-medium')
     # No API key needed - completely free service
     
     # LLM Performance Settings
