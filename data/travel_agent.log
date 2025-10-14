@@ -141,3 +141,8 @@
 2025-10-14 05:19:54,651 - INFO - Processing query: Hello...
 2025-10-14 05:19:54,657 - INFO - Searching for general information...
 2025-10-14 05:19:59,442 - ERROR - LLM call failed: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download
+2025-10-14 05:29:34,211 - INFO - Using free flight data sources
+2025-10-14 05:29:34,212 - INFO - Using free weather data sources
+2025-10-14 05:29:34,213 - INFO - Free APIs initialized: Weather (wttr.in, Open-Meteo), Flights, Currency, Hotels, Attractions, Car Rental, Events, Insurance, Transportation, Food
+2025-10-14 05:29:34,213 - INFO - Free Cloud LLM (gpt-3.5-turbo) initialized
+2025-10-14 05:29:34,214 - INFO - Travel agent initialized successfully

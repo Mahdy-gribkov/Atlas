@@ -22,9 +22,14 @@ class Config:
     AMADEUS_API_SECRET: Optional[str] = os.getenv('AMADEUS_API_SECRET')
     OPENAI_API_KEY: Optional[str] = os.getenv('OPENAI_API_KEY')
     
-    # Local LLM Settings (Free) - Optimized for performance
+    # LLM Settings - Free Cloud LLM (No API key required)
+    USE_LOCAL_LLM: bool = os.getenv('USE_LOCAL_LLM', 'false').lower() == 'true'
     OLLAMA_MODEL: str = os.getenv('OLLAMA_MODEL', 'llama3.1:8b')
-    USE_LOCAL_LLM: bool = os.getenv('USE_LOCAL_LLM', 'true').lower() == 'true'
+    
+    # Free Cloud LLM Settings
+    CLOUD_LLM_URL: str = os.getenv('CLOUD_LLM_URL', 'https://api.apifreellm.com/v1/chat/completions')
+    CLOUD_LLM_MODEL: str = os.getenv('CLOUD_LLM_MODEL', 'gpt-3.5-turbo')
+    CLOUD_LLM_API_KEY: Optional[str] = os.getenv('CLOUD_LLM_API_KEY')  # Optional for some services
     
     # LLM Performance Settings
     LLM_TEMPERATURE: float = float(os.getenv('LLM_TEMPERATURE', '0.7'))

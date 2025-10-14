@@ -9,7 +9,7 @@ services:
       - PYTHONPATH=/app/src
       - ENVIRONMENT=production
     volumes:
-      - ./data:/app/data
+      - travel_agent_data:/app/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -18,16 +18,5 @@ services:
       retries: 3
       start_period: 40s
 
-  # Optional: Add Ollama service for local LLM
-  ollama:
-    image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    restart: unless-stopped
-    profiles:
-      - llm
-
 volumes:
-  ollama_data:
+  travel_agent_data:

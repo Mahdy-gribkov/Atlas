@@ -158,7 +158,7 @@ class TravelAgent:
         if config.USE_LOCAL_LLM:
             self._init_local_llm()
         else:
-            self._init_openai_llm()
+            self._init_cloud_llm()
         
         logger.info("Travel agent initialized successfully")
     
@@ -175,17 +175,16 @@ class TravelAgent:
             logger.error(f"Local LLM initialization failed: {e}")
             raise
     
-    def _init_openai_llm(self):
-        """Initialize OpenAI LLM (fallback)."""
+    def _init_cloud_llm(self):
+        """Initialize free cloud LLM (no API key required)."""
         try:
-            import openai
-            if not config.OPENAI_API_KEY:
-                raise ValueError("OpenAI API key not provided")
-            self.llm_type = "openai"
-            openai.api_key = config.OPENAI_API_KEY
-            logger.info("OpenAI LLM initialized")
+            self.llm_type = "cloud"
+            self.model_name = config.CLOUD_LLM_MODEL
+            self.cloud_llm_url = config.CLOUD_LLM_URL
+            self.cloud_llm_api_key = config.CLOUD_LLM_API_KEY
+            logger.info(f"Free Cloud LLM ({self.model_name}) initialized")
         except Exception as e:
-            logger.error(f"OpenAI LLM initialization failed: {e}")
+            logger.error(f"Cloud LLM initialization failed: {e}")
             raise
     
     def _call_llm(self, prompt: str, context: str = "") -> str:
@@ -230,6 +229,13 @@ Response:"""
                 )
                 return response['response']
             
+            elif self.llm_type == "cloud":
+                import aiohttp
+                import asyncio
+                
+                # Use asyncio to run the async request
+                return asyncio.run(self._call_cloud_llm_async(enhanced_prompt))
+            
             elif self.llm_type == "openai":
                 import openai
                 response = openai.ChatCompletion.create(
@@ -242,6 +248,47 @@ Response:"""
         except Exception as e:
             logger.error(f"LLM call failed: {e}")
             return f"I apologize, but I'm having trouble processing your request right now. Error: {str(e)}"
+    
+    async def _call_cloud_llm_async(self, prompt: str) -> str:
+        """Call the free cloud LLM asynchronously."""
+        try:
+            import aiohttp
+            
+            headers = {
+                'Content-Type': 'application/json',
+            }
+            
+            # Add API key if provided (optional for some services)
+            if self.cloud_llm_api_key:
+                headers['Authorization'] = f'Bearer {self.cloud_llm_api_key}'
+            
+            payload = {
+                'model': self.model_name,
+                'messages': [
+                    {'role': 'user', 'content': prompt}
+                ],
+                'temperature': config.LLM_TEMPERATURE,
+                'max_tokens': config.LLM_MAX_TOKENS,
+                'top_p': config.LLM_TOP_P
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    self.cloud_llm_url,
+                    headers=headers,
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=config.LLM_TIMEOUT)
+                ) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        return data['choices'][0]['message']['content']
+                    else:
+                        error_text = await response.text()
+                        raise Exception(f"Cloud LLM API error: {response.status} - {error_text}")
+                        
+        except Exception as e:
+            logger.error(f"Cloud LLM call failed: {e}")
+            return f"I apologize, but I'm having trouble connecting to the AI service right now. Please try again later."
     
     async def get_country_info(self, country_name: str) -> Dict[str, Any]:
         """Get comprehensive country information."""

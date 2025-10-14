@@ -33,16 +33,4 @@ services:
     depends_on:
       - travel-agent-dev
 
-  # Optional: Add Ollama service for local LLM
-  ollama:
-    image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    restart: unless-stopped
-    profiles:
-      - llm
-
-volumes:
-  ollama_data:
+# No additional services needed - using free cloud LLM
