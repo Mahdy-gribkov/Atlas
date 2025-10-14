@@ -140,6 +140,7 @@ const TravelMap = ({ currentLocation, destinationLocation, suggestedLocations })
   return (
     <div className="real-map-container">
       <MapContainer
+        key={`${mapCenter[0]}-${mapCenter[1]}`}
         center={mapCenter}
         zoom={markers.length > 1 ? 6 : 10}
         style={{ height: '100%', width: '100%' }}

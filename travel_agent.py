@@ -230,8 +230,8 @@ Response:"""
                 return response['response']
             
             elif self.llm_type == "cloud":
-                # Process the request with travel planning logic
-                return self._process_travel_request(enhanced_prompt)
+                # Use simple rule-based responses for reliability
+                return self._get_rule_based_response(enhanced_prompt)
             
             elif self.llm_type == "openai":
                 import openai
@@ -245,6 +245,42 @@ Response:"""
         except Exception as e:
             logger.error(f"LLM call failed: {e}")
             return f"I apologize, but I'm having trouble processing your request right now. Error: {str(e)}"
+    
+    def _get_rule_based_response(self, prompt: str) -> str:
+        """Get rule-based responses for common travel queries."""
+        prompt_lower = prompt.lower()
+        
+        # Rome trip planning
+        if "rome" in prompt_lower and ("israel" in prompt_lower or "from" in prompt_lower):
+            return self._generate_rome_trip_plan()
+        
+        # General trip planning
+        elif any(word in prompt_lower for word in ["trip", "travel", "plan", "itinerary"]):
+            return self._generate_generic_trip_plan(prompt)
+        
+        # Weather queries
+        elif "weather" in prompt_lower:
+            return "I can help you check weather for your destination. Please specify which city you'd like weather information for."
+        
+        # Flight queries
+        elif "flight" in prompt_lower:
+            return "I can help you find flights. Please provide your departure city, destination, and travel dates."
+        
+        # Hotel queries
+        elif "hotel" in prompt_lower:
+            return "I can help you find hotels. Please specify your destination city and travel dates."
+        
+        # Attractions queries
+        elif "attraction" in prompt_lower or "things to do" in prompt_lower:
+            return "I can help you find attractions and activities. Please specify which city you're interested in."
+        
+        # General greeting
+        elif any(word in prompt_lower for word in ["hello", "hi", "hey", "help"]):
+            return "I'm your travel planning assistant! I can help you with:\n• Trip planning and itineraries\n• Flight information\n• Hotel recommendations\n• Weather forecasts\n• Budget planning\n• Destination information\n\nWhat would you like help with?"
+        
+        # Default response
+        else:
+            return "I'm a travel assistant. I can help you plan trips, find flights, hotels, and provide travel information. How can I assist you today?"
     
     def _process_travel_request(self, prompt: str) -> str:
         """Process travel requests with structured responses."""
@@ -595,16 +631,14 @@ What destination are you most interested in?"""
         else:
             await self._handle_general_query(query, response_parts, context_parts)
         
-        # Generate comprehensive response using LLM
-        context = "\n".join(context_parts) if context_parts else "No specific context available."
-        llm_response = self._call_llm(query, context)
-        
-        # Combine structured data with LLM response
+        # Generate comprehensive response using LLM only if no structured data
         if response_parts:
-            structured_response = "\n\n".join(response_parts)
-            final_response = f"{structured_response}\n\n{llm_response}"
+            # We have structured data, use it directly
+            final_response = "\n\n".join(response_parts)
         else:
-            final_response = llm_response
+            # No structured data, use LLM for general responses
+            context = "\n".join(context_parts) if context_parts else "No specific context available."
+            final_response = self._call_llm(query, context)
         
         # Store response in conversation history
         self.conversation_history.append({

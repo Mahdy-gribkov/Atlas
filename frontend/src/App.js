@@ -190,37 +190,50 @@ function App() {
       setShowLocationPrompt(false);
       
       // Try to geocode the user's location input
+      let geocodedLocation = null;
+      
+      // First try backend geocoding
       try {
-        const geocodedLocation = await mapService.geocodeAddress(userLocation);
-        if (geocodedLocation && geocodedLocation.lat && geocodedLocation.lng) {
-          setCurrentLocation({
-            name: geocodedLocation.name || userLocation,
-            lat: geocodedLocation.lat,
-            lng: geocodedLocation.lng
-          });
-        } else {
-          // Fallback to predefined locations
-          const locations = {
-            'israel': { lat: 31.0461, lng: 34.8516, name: 'Israel' },
-            'tel aviv': { lat: 32.0853, lng: 34.7818, name: 'Tel Aviv' },
-            'jerusalem': { lat: 31.7683, lng: 35.2137, name: 'Jerusalem' },
-            'new york': { lat: 40.7128, lng: -74.0060, name: 'New York' },
-            'london': { lat: 51.5074, lng: -0.1278, name: 'London' },
-            'paris': { lat: 48.8566, lng: 2.3522, name: 'Paris' },
-            'rome': { lat: 41.9028, lng: 12.4964, name: 'Rome' }
-          };
-          
-          const locationKey = userLocation.toLowerCase();
-          if (locations[locationKey]) {
-            setCurrentLocation(locations[locationKey]);
-          } else {
-            // Default fallback
-            setCurrentLocation({ name: userLocation, lat: 32.0853, lng: 34.7818 });
-          }
-        }
+        geocodedLocation = await mapService.geocodeAddress(userLocation);
       } catch (error) {
-        console.log('Geocoding error, using fallback:', error);
-        setCurrentLocation({ name: userLocation, lat: 32.0853, lng: 34.7818 });
+        console.log('Backend geocoding failed, trying fallback:', error);
+      }
+      
+      // If backend failed, try fallback geocoding
+      if (!geocodedLocation || !geocodedLocation.lat || !geocodedLocation.lng) {
+        try {
+          geocodedLocation = await mapService.fallbackGeocode(userLocation);
+        } catch (error) {
+          console.log('Fallback geocoding failed:', error);
+        }
+      }
+      
+      // If geocoding worked, use it
+      if (geocodedLocation && geocodedLocation.lat && geocodedLocation.lng) {
+        setCurrentLocation({
+          name: geocodedLocation.name || userLocation,
+          lat: geocodedLocation.lat,
+          lng: geocodedLocation.lng
+        });
+      } else {
+        // Fallback to predefined locations
+        const locations = {
+          'israel': { lat: 31.0461, lng: 34.8516, name: 'Israel' },
+          'tel aviv': { lat: 32.0853, lng: 34.7818, name: 'Tel Aviv' },
+          'jerusalem': { lat: 31.7683, lng: 35.2137, name: 'Jerusalem' },
+          'new york': { lat: 40.7128, lng: -74.0060, name: 'New York' },
+          'london': { lat: 51.5074, lng: -0.1278, name: 'London' },
+          'paris': { lat: 48.8566, lng: 2.3522, name: 'Paris' },
+          'rome': { lat: 41.9028, lng: 12.4964, name: 'Rome' }
+        };
+        
+        const locationKey = userLocation.toLowerCase();
+        if (locations[locationKey]) {
+          setCurrentLocation(locations[locationKey]);
+        } else {
+          // Default fallback
+          setCurrentLocation({ name: userLocation, lat: 32.0853, lng: 34.7818 });
+        }
       }
       
       setMessages(prev => [...prev, {
