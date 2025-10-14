@@ -233,8 +233,15 @@ Response:"""
                 import aiohttp
                 import asyncio
                 
-                # Use asyncio to run the async request
-                return asyncio.run(self._call_cloud_llm_async(enhanced_prompt))
+                # Check if we're already in an event loop
+                try:
+                    loop = asyncio.get_running_loop()
+                    # We're in an event loop, create a task
+                    task = loop.create_task(self._call_cloud_llm_async(enhanced_prompt))
+                    return task.result()
+                except RuntimeError:
+                    # No event loop running, we can use asyncio.run
+                    return asyncio.run(self._call_cloud_llm_async(enhanced_prompt))
             
             elif self.llm_type == "openai":
                 import openai
@@ -250,7 +257,7 @@ Response:"""
             return f"I apologize, but I'm having trouble processing your request right now. Error: {str(e)}"
     
     async def _call_cloud_llm_async(self, prompt: str) -> str:
-        """Call the free cloud LLM asynchronously."""
+        """Call the free Hugging Face LLM asynchronously."""
         try:
             import aiohttp
             
@@ -258,18 +265,15 @@ Response:"""
                 'Content-Type': 'application/json',
             }
             
-            # Add API key if provided (optional for some services)
-            if self.cloud_llm_api_key:
-                headers['Authorization'] = f'Bearer {self.cloud_llm_api_key}'
-            
+            # Hugging Face API format
             payload = {
-                'model': self.model_name,
-                'messages': [
-                    {'role': 'user', 'content': prompt}
-                ],
-                'temperature': config.LLM_TEMPERATURE,
-                'max_tokens': config.LLM_MAX_TOKENS,
-                'top_p': config.LLM_TOP_P
+                'inputs': prompt,
+                'parameters': {
+                    'max_length': config.LLM_MAX_TOKENS,
+                    'temperature': config.LLM_TEMPERATURE,
+                    'do_sample': True,
+                    'top_p': config.LLM_TOP_P
+                }
             }
             
             async with aiohttp.ClientSession() as session:
@@ -281,14 +285,17 @@ Response:"""
                 ) as response:
                     if response.status == 200:
                         data = await response.json()
-                        return data['choices'][0]['message']['content']
+                        if isinstance(data, list) and len(data) > 0:
+                            return data[0].get('generated_text', 'I apologize, but I could not generate a response.')
+                        else:
+                            return 'I apologize, but I could not generate a response.'
                     else:
                         error_text = await response.text()
-                        raise Exception(f"Cloud LLM API error: {response.status} - {error_text}")
+                        raise Exception(f"Hugging Face API error: {response.status} - {error_text}")
                         
         except Exception as e:
             logger.error(f"Cloud LLM call failed: {e}")
-            return f"I apologize, but I'm having trouble connecting to the AI service right now. Please try again later."
+            return f"I'm a travel assistant. I can help you plan trips, find flights, hotels, and provide travel information. How can I assist you today?"
     
     async def get_country_info(self, country_name: str) -> Dict[str, Any]:
         """Get comprehensive country information."""

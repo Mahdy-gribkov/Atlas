@@ -24,10 +24,10 @@ The Travel AI Agent is a comprehensive full-stack application that demonstrates 
 ## 🚀 **Quick Start**
 
 ### **Docker Deployment (Recommended)**
-```bash
+   ```bash
 # Clone the repository
-git clone <repository-url>
-cd Travel_Agent
+   git clone <repository-url>
+   cd Travel_Agent
 
 # Deploy with Docker
 ./deploy.sh
@@ -37,21 +37,21 @@ open http://localhost:8000
 ```
 
 ### **Development Setup**
-```bash
+   ```bash
 # Clone the repository
 git clone <repository-url>
 cd Travel_Agent
 
 # Install Python dependencies
-pip install -r requirements.txt
+   pip install -r requirements.txt
 
 # Install frontend dependencies
-cd frontend
-npm install
-cd ..
+   cd frontend
+   npm install
+   cd ..
 
 # Start the application
-python api.py
+   python api.py
 
 # Access the application
 open http://localhost:8000

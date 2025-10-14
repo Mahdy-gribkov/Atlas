@@ -79,8 +79,13 @@ class ChatResponse(BaseModel):
 
 @app.get("/")
 async def root():
-    """Health check endpoint."""
-    return {"message": "Travel AI Agent API is running!"}
+    """Serve React app."""
+    index_path = os.path.join("frontend/build", "index.html")
+    if os.path.exists(index_path):
+        from fastapi.responses import FileResponse
+        return FileResponse(index_path)
+    else:
+        return {"message": "Travel AI Agent API is running!", "error": "React app not found"}
 
 async def generate_streaming_response(message: str):
     """Generate streaming response for real-time chat with timeout handling."""
