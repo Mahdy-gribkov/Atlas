@@ -61,18 +61,17 @@ class NominatimClient:
                             result = data[0]
                             return {
                                 'location': location,
-                                'lat': float(result.get('lat', 0)),
-                                'lon': float(result.get('lon', 0)),
+                                'latitude': float(result.get('lat', 0)),
+                                'longitude': float(result.get('lon', 0)),
                                 'display_name': result.get('display_name', location),
                                 'address': result.get('address', {}),
                                 'place_id': result.get('place_id'),
-                                'osm_type': result.get('osm_type'),
                                 'osm_id': result.get('osm_id'),
                                 'source': 'Nominatim (OpenStreetMap)',
                                 'timestamp': datetime.now().isoformat()
                             }
                         else:
-                            return {'error': f'No results found for location: {location}'}
+                            return {'error': 'Location not found'}
                     else:
                         return {'error': f'Geocoding failed: {response.status}'}
                         
@@ -106,12 +105,11 @@ class NominatimClient:
                         data = await response.json()
                         
                         return {
-                            'lat': lat,
-                            'lon': lon,
-                            'display_name': data.get('display_name', 'Unknown location'),
+                            'latitude': lat,
+                            'longitude': lon,
+                            'display_name': data.get('display_name', ''),
                             'address': data.get('address', {}),
                             'place_id': data.get('place_id'),
-                            'osm_type': data.get('osm_type'),
                             'osm_id': data.get('osm_id'),
                             'source': 'Nominatim (OpenStreetMap)',
                             'timestamp': datetime.now().isoformat()
@@ -122,89 +120,3 @@ class NominatimClient:
         except Exception as e:
             print(f"Reverse geocoding error: {e}")
             return {'error': str(e)}
-    
-
-            
-        Returns:
-            Geocoding results
-        """
-        try:
-            params = {
-                'q': location,
-                'format': 'json',
-                'limit': 1,
-                'addressdetails': 1,
-                'extratags': 1
-            }
-            
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"{self.base_url}/search", params=params, timeout=aiohttp.ClientTimeout(total=30)) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        
-                        if data and len(data) > 0:
-                            result = data[0]
-                            return {
-                                'location': location,
-                                'lat': float(result.get('lat', 0)),
-                                'lon': float(result.get('lon', 0)),
-                                'display_name': result.get('display_name', location),
-                                'address': result.get('address', {}),
-                                'place_id': result.get('place_id'),
-                                'osm_type': result.get('osm_type'),
-                                'osm_id': result.get('osm_id'),
-                                'source': 'Nominatim (OpenStreetMap)',
-                                'timestamp': datetime.now().isoformat()
-                            }
-                        else:
-                            return {'error': f'No results found for location: {location}'}
-                    else:
-                        return {'error': f'Geocoding failed: {response.status}'}
-                        
-        except Exception as e:
-            print(f"Geocoding error: {e}")
-            return {'error': str(e)}
-    
-    async def reverse_geocode(self, lat: float, lon: float) -> Dict[str, Any]:
-        """
-        Reverse geocode coordinates to get address.
-        
-        Args:
-            lat: Latitude
-            lon: Longitude
-            
-        Returns:
-            Reverse geocoding results
-        """
-        try:
-            params = {
-                'lat': lat,
-                'lon': lon,
-                'format': 'json',
-                'addressdetails': 1,
-                'extratags': 1
-            }
-            
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"{self.base_url}/reverse", params=params, timeout=aiohttp.ClientTimeout(total=30)) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        
-                        return {
-                            'lat': lat,
-                            'lon': lon,
-                            'display_name': data.get('display_name', 'Unknown location'),
-                            'address': data.get('address', {}),
-                            'place_id': data.get('place_id'),
-                            'osm_type': data.get('osm_type'),
-                            'osm_id': data.get('osm_id'),
-                            'source': 'Nominatim (OpenStreetMap)',
-                            'timestamp': datetime.now().isoformat()
-                        }
-                    else:
-                        return {'error': f'Reverse geocoding failed: {response.status}'}
-                        
-        except Exception as e:
-            print(f"Reverse geocoding error: {e}")
-            return {'error': str(e)}
-    

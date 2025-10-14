@@ -9,7 +9,7 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 import json
 
-from ..config import config
+from config import config
 from .rate_limiter import APIRateLimiter
 
 class OpenWeatherClient:

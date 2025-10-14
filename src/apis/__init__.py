@@ -52,33 +52,3 @@ __all__ = [
     'TransportationClient',
     'FoodClient'
 ]
-
-from .insurance_client import InsuranceClient
-from .transportation_client import TransportationClient
-from .food_client import FoodClient
-
-__all__ = [
-    # Core clients
-    'OpenWeatherClient',
-    'AviationStackClient',
-    'RestCountriesClient',
-    'WikipediaClient',
-    'NominatimClient',
-    'WebSearchClient',
-    'APIRateLimiter',
-    
-    # Free clients
-    'FreeWeatherClient',
-    'FreeFlightClient',
-    'OpenMeteoClient',
-    
-    # Service clients
-    'CurrencyAPIClient',
-    'HotelSearchClient',
-    'AttractionsClient',
-    'CarRentalClient',
-    'EventsClient',
-    'InsuranceClient',
-    'TransportationClient',
-    'FoodClient'
-]

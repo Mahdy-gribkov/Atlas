@@ -46,9 +46,9 @@ import logging
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
-from src.config import config
-from src.database.secure_database import SecureDatabase
-from src.apis import (
+from config import config
+from database.secure_database import SecureDatabase
+from apis import (
     RestCountriesClient, WikipediaClient, NominatimClient, WebSearchClient, 
     AviationStackClient, OpenWeatherClient, FreeWeatherClient, FreeFlightClient,
     OpenMeteoClient, CurrencyAPIClient, HotelSearchClient, AttractionsClient,
@@ -200,12 +200,21 @@ class TravelAgent:
             LLM response
         """
         try:
-            # Build concise prompt for faster processing
-            enhanced_prompt = f"""Travel assistant. Context: {context[:200]}... 
+            # Build interactive prompt for better responses
+            enhanced_prompt = f"""You are a helpful travel assistant. 
 
-User: {prompt}
+Context: {context[:300]}
 
-Provide helpful, specific travel advice. Be concise but informative."""
+User request: {prompt}
+
+Instructions:
+- If the request is vague (like "plan a trip"), ask for specific details (dates, budget, interests, duration)
+- Provide specific, actionable information
+- Ask clarifying questions when needed
+- Be conversational and helpful
+- Focus on practical travel advice
+
+Response:"""
             
             if self.llm_type == "local":
                 import ollama
@@ -1558,41 +1567,6 @@ Privacy:
                 
                 # Add insurance tips
                 tips = await self.insurance_client.get_insurance_tips(destination)
-                insurance_info += f"""
-
-**🛡️ Insurance Tips:**
-{chr(10).join([f"• {tip}" for tip in tips])}
-
-*Data source: {insurance['source']}*
-                """
-                
-                return insurance_info.strip()
-            
-            return None
-            
-        except Exception as e:
-            logger.error(f"Insurance data error: {e}")
-            return None
-
-
-def main():
-    """Main application entry point."""
-    try:
-        # Ensure data directory exists
-        os.makedirs('data', exist_ok=True)
-        
-        # Initialize and run the travel agent
-        agent = TravelAgent()
-        agent.chat()
-        
-    except Exception as e:
-        logger.error(f"Application error: {e}")
-        print(f"❌ Failed to start Travel AI Agent: {e}")
-        print("Please check the logs in data/travel_agent.log for more details.")
-
-if __name__ == "__main__":
-    main()
-
                 insurance_info += f"""
 
 **🛡️ Insurance Tips:**

@@ -13,7 +13,7 @@ from cryptography.fernet import Fernet
 import json
 
 from .models import UserPreference, SearchHistory, TravelPlan, APICache
-from ..config import config
+from config import config
 
 class SecureDatabase:
     """
@@ -555,30 +555,6 @@ class SecureDatabase:
                 INSERT INTO conversations (user_id, user_message, assistant_response)
                 VALUES (?, ?, ?)
             """, (user_id, encrypted_user_msg, encrypted_assistant_msg))
-            
-            conn = await self._ensure_connection()
-            conn.commit()
-            return True
-            
-        except Exception as e:
-            print(f"Error saving conversation: {e}")
-            return False
-    
-    def close(self):
-        """Close database connection securely."""
-        if self.conn:
-            self.conn.close()
-            self.conn = None
-            print("Database connection closed")
-    
-    def __enter__(self):
-        """Context manager entry."""
-        return self
-    
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit."""
-        self.close()
-
             
             conn = await self._ensure_connection()
             conn.commit()
