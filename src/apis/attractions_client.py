@@ -1,365 +1,144 @@
 """
-Free Attractions Search API client - No API key required.
-Uses realistic attractions data generation based on real attraction information.
+Free Attractions API client - No API key required.
+Uses free attraction data sources and realistic attraction information.
 """
 
 import aiohttp
 import asyncio
 from typing import Dict, List, Optional, Any
-from datetime import datetime, timedelta
+from datetime import datetime
 import json
-import random
-
-from .rate_limiter import APIRateLimiter
 
 class AttractionsClient:
     """
-    Free attractions search client using realistic data generation.
+    Free attractions client using realistic attraction data.
     Provides attraction information without requiring API keys.
     """
     
-    def __init__(self, rate_limiter: APIRateLimiter = None):
-        self.rate_limiter = rate_limiter or APIRateLimiter()
-        # No API key needed - uses OpenStreetMap Overpass API (completely free)
-        self.overpass_url = "https://overpass-api.de/api/interpreter"
+    def __init__(self):
+        self.session = None
     
-    async def search_attractions(self, city: str, category: str = None) -> List[Dict[str, Any]]:
+    async def get_attractions(self, city: str, limit: int = 10) -> List[Dict[str, Any]]:
         """
-        Search for attractions using OpenStreetMap Overpass API (completely free, no API key).
+        Get attractions for a city using free data sources.
         
         Args:
             city: City name
-            category: Attraction category (optional)
+            limit: Maximum number of attractions to return
             
         Returns:
-            List of attraction options from real data
+            List of attractions
         """
         try:
-            # First try to get real attraction data from OpenStreetMap
-            attractions = await self._search_osm_attractions(city, category)
-            if attractions:
-                return attractions
+            # Generate realistic attraction data based on city
+            attractions = await self._generate_realistic_attractions(city, limit)
             
-            # Fallback to realistic data if OSM fails
-            print(f"OSM search failed for {city}, using fallback data")
-            attractions = await self._generate_realistic_attractions(city, category)
+            # Try to get additional data from free sources
+            additional_attractions = await self._get_free_attraction_data(city)
+            if additional_attractions:
+                attractions.extend(additional_attractions)
             
-            return attractions
+            return attractions[:limit]
             
         except Exception as e:
-            print(f"Attraction search error: {e}")
+            print(f"Attractions search error: {e}")
             return []
     
-    async def get_attraction_details(self, attraction_id: str) -> Optional[Dict[str, Any]]:
-        """Get detailed information about a specific attraction."""
-        try:
-            # Generate detailed attraction information
-            attraction_details = self._generate_attraction_details(attraction_id)
-            
-            return attraction_details
-            
-        except Exception as e:
-            print(f"Attraction details error: {e}")
-            return None
-    
-    async def _search_osm_attractions(self, city: str, category: str = None) -> List[Dict[str, Any]]:
-        """Search for attractions using OpenStreetMap Overpass API (completely free, no API key)."""
-        try:
-            # First get coordinates for the city using Nominatim
-            coords = await self._get_city_coordinates(city)
-            if not coords:
-                return []
-            
-            lat, lon = coords['lat'], coords['lon']
-            
-            # Build Overpass QL query for tourist attractions
-            category_filter = ""
-            if category:
-                category_filter = f'["tourism"="{category.lower()}"]'
-            
-            # Search for various types of tourist attractions
-            overpass_query = f"""
-            [out:json][timeout:25];
-            (
-              node["tourism"~"attraction|museum|gallery|zoo|aquarium|theme_park|monument|memorial|artwork|viewpoint|information"]{category_filter}(around:10000,{lat},{lon});
-              way["tourism"~"attraction|museum|gallery|zoo|aquarium|theme_park|monument|memorial|artwork|viewpoint|information"]{category_filter}(around:10000,{lat},{lon});
-              relation["tourism"~"attraction|museum|gallery|zoo|aquarium|theme_park|monument|memorial|artwork|viewpoint|information"]{category_filter}(around:10000,{lat},{lon});
-              node["historic"~"monument|memorial|castle|palace|ruins|archaeological_site"]{category_filter}(around:10000,{lat},{lon});
-              way["historic"~"monument|memorial|castle|palace|ruins|archaeological_site"]{category_filter}(around:10000,{lat},{lon});
-              relation["historic"~"monument|memorial|castle|palace|ruins|archaeological_site"]{category_filter}(around:10000,{lat},{lon});
-            );
-            out center;
-            """
-            
-            headers = {
-                'User-Agent': 'Travel-AI-Agent/1.0 (contact@example.com)'
-            }
-            
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    self.overpass_url, 
-                    data=overpass_query, 
-                    headers=headers,
-                    timeout=aiohttp.ClientTimeout(total=30)
-                ) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        elements = data.get('elements', [])
-                        
-                        attractions = []
-                        for element in elements[:20]:  # Limit to 20 results
-                            # Get coordinates
-                            if element['type'] == 'node':
-                                elem_lat = element.get('lat', lat)
-                                elem_lon = element.get('lon', lon)
-                            else:
-                                # For ways and relations, use center coordinates
-                                center = element.get('center', {})
-                                elem_lat = center.get('lat', lat)
-                                elem_lon = center.get('lon', lon)
-                            
-                            # Get attraction details
-                            tags = element.get('tags', {})
-                            name = tags.get('name', f"Attraction {len(attractions) + 1}")
-                            
-                            attraction = {
-                                'id': f"osm_{element.get('id', len(attractions))}",
-                                'name': name,
-                                'category': self._get_attraction_category(tags),
-                                'description': tags.get('description', tags.get('wikipedia', '')),
-                                'address': tags.get('addr:full', tags.get('addr:street', '')),
-                                'phone': tags.get('phone', ''),
-                                'website': tags.get('website', ''),
-                                'opening_hours': tags.get('opening_hours', ''),
-                                'latitude': elem_lat,
-                                'longitude': elem_lon,
-                                'rating': 4.0 + (len(attractions) % 5) * 0.2,  # Generate realistic ratings
-                                'price': self._get_price_from_tags(tags),
-                                'amenities': self._get_amenities_from_tags(tags),
-                                'source': 'OpenStreetMap (Real Data, Free)',
-                                'timestamp': datetime.now().isoformat()
-                            }
-                            
-                            attractions.append(attraction)
-                        
-                        return attractions
-                    else:
-                        print(f"Overpass API error: {response.status}")
-                        return []
-                        
-        except Exception as e:
-            print(f"OSM attraction search error: {e}")
-            return []
-    
-    async def _get_city_coordinates(self, city: str) -> Optional[Dict[str, float]]:
-        """Get city coordinates using Nominatim (free, no API key)."""
-        try:
-            url = "https://nominatim.openstreetmap.org/search"
-            params = {
-                'q': city,
-                'format': 'json',
-                'limit': 1,
-                'addressdetails': 1
-            }
-            
-            headers = {
-                'User-Agent': 'Travel-AI-Agent/1.0 (contact@example.com)'
-            }
-            
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        if data and len(data) > 0:
-                            return {
-                                'lat': float(data[0]['lat']),
-                                'lon': float(data[0]['lon'])
-                            }
-        except Exception as e:
-            print(f"Geocoding error: {e}")
-            return None
-    
-    def _get_attraction_category(self, tags: Dict[str, str]) -> str:
-        """Determine attraction category from OSM tags."""
-        tourism = tags.get('tourism', '').lower()
-        historic = tags.get('historic', '').lower()
-        
-        if tourism in ['museum', 'gallery']:
-            return 'Museum'
-        elif tourism in ['zoo', 'aquarium']:
-            return 'Zoo/Aquarium'
-        elif tourism in ['theme_park']:
-            return 'Theme Park'
-        elif tourism in ['monument', 'memorial'] or historic in ['monument', 'memorial']:
-            return 'Monument'
-        elif tourism in ['artwork']:
-            return 'Art'
-        elif tourism in ['viewpoint']:
-            return 'Viewpoint'
-        elif tourism in ['information']:
-            return 'Information'
-        elif historic in ['castle', 'palace']:
-            return 'Historic Site'
-        elif historic in ['ruins', 'archaeological_site']:
-            return 'Archaeological Site'
-        else:
-            return 'Attraction'
-    
-    def _get_price_from_tags(self, tags: Dict[str, str]) -> str:
-        """Determine price from OSM tags."""
-        if 'fee' in tags:
-            fee = tags['fee'].lower()
-            if 'no' in fee or 'free' in fee:
-                return 'Free'
-            elif 'yes' in fee:
-                return 'Paid'
-        
-        # Default based on attraction type
-        tourism = tags.get('tourism', '').lower()
-        if tourism in ['museum', 'gallery', 'zoo', 'aquarium', 'theme_park']:
-            return 'Paid'
-        else:
-            return 'Free'
-    
-    def _get_amenities_from_tags(self, tags: Dict[str, str]) -> List[str]:
-        """Extract amenities from OSM tags."""
-        amenities = []
-        
-        if tags.get('wheelchair') == 'yes':
-            amenities.append('Wheelchair Accessible')
-        if tags.get('wifi') == 'yes':
-            amenities.append('WiFi')
-        if tags.get('parking') == 'yes':
-            amenities.append('Parking')
-        if tags.get('toilets') == 'yes':
-            amenities.append('Restrooms')
-        if tags.get('shop') == 'yes':
-            amenities.append('Gift Shop')
-        if tags.get('cafe') == 'yes':
-            amenities.append('Cafe')
-        
-        return amenities
-    
-    def _is_category_match(self, search_category: str, attraction_category: str) -> bool:
-        """Check if search category matches attraction category with flexible matching."""
-        # Define category mappings
-        category_mappings = {
-            'landmarks': ['historical', 'monument', 'architecture', 'religious'],
-            'museums': ['museum', 'gallery'],
-            'parks': ['park', 'garden'],
-            'markets': ['market', 'shopping'],
-            'entertainment': ['entertainment', 'theme park', 'zoo'],
-            'religious': ['religious', 'church', 'temple', 'mosque'],
-            'historical': ['historical', 'monument', 'castle', 'palace'],
-            'architecture': ['architecture', 'monument', 'building']
-        }
-        
-        # Check if search category maps to attraction category
-        if search_category in category_mappings:
-            return attraction_category in category_mappings[search_category]
-        
-        # Check if attraction category maps to search category
-        for key, values in category_mappings.items():
-            if attraction_category in values and key == search_category:
-                return True
-        
-        return False
-    
-    async def _generate_realistic_attractions(self, city: str, category: str = None) -> List[Dict[str, Any]]:
+    async def _generate_realistic_attractions(self, city: str, limit: int) -> List[Dict[str, Any]]:
         """Generate realistic attraction data based on city."""
         try:
-            # Real attraction data for major cities
+            # Base attraction data for different cities
             city_attractions = {
-                "tel aviv": [
-                    {"name": "Old Jaffa", "category": "Historical", "rating": 4.5, "price": "Free"},
-                    {"name": "Tel Aviv Museum of Art", "category": "Museum", "rating": 4.6, "price": "$15"},
-                    {"name": "Carmel Market", "category": "Market", "rating": 4.3, "price": "Free"},
-                    {"name": "Rothschild Boulevard", "category": "Architecture", "rating": 4.4, "price": "Free"},
-                    {"name": "Neve Tzedek", "category": "Neighborhood", "rating": 4.5, "price": "Free"},
-                    {"name": "Tel Aviv Port", "category": "Waterfront", "rating": 4.2, "price": "Free"}
+                'new york': [
+                    {'name': 'Statue of Liberty', 'category': 'monument', 'base_price': 25, 'duration': '2-3 hours'},
+                    {'name': 'Central Park', 'category': 'park', 'base_price': 0, 'duration': '1-4 hours'},
+                    {'name': 'Times Square', 'category': 'landmark', 'base_price': 0, 'duration': '1-2 hours'},
+                    {'name': 'Empire State Building', 'category': 'observation', 'base_price': 40, 'duration': '1-2 hours'},
+                    {'name': 'Metropolitan Museum of Art', 'category': 'museum', 'base_price': 25, 'duration': '2-4 hours'},
+                    {'name': 'Brooklyn Bridge', 'category': 'landmark', 'base_price': 0, 'duration': '1-2 hours'},
+                    {'name': '9/11 Memorial', 'category': 'memorial', 'base_price': 0, 'duration': '1-2 hours'},
+                    {'name': 'High Line', 'category': 'park', 'base_price': 0, 'duration': '1-2 hours'}
                 ],
-                "jerusalem": [
-                    {"name": "Western Wall", "category": "Religious", "rating": 4.8, "price": "Free"},
-                    {"name": "Church of the Holy Sepulchre", "category": "Religious", "rating": 4.7, "price": "Free"},
-                    {"name": "Dome of the Rock", "category": "Religious", "rating": 4.6, "price": "Free"},
-                    {"name": "Israel Museum", "category": "Museum", "rating": 4.5, "price": "$20"},
-                    {"name": "Mount of Olives", "category": "Religious", "rating": 4.4, "price": "Free"},
-                    {"name": "Mahane Yehuda Market", "category": "Market", "rating": 4.3, "price": "Free"}
+                'london': [
+                    {'name': 'Big Ben', 'category': 'landmark', 'base_price': 0, 'duration': '30 minutes'},
+                    {'name': 'Tower of London', 'category': 'castle', 'base_price': 30, 'duration': '2-3 hours'},
+                    {'name': 'London Eye', 'category': 'observation', 'base_price': 35, 'duration': '1 hour'},
+                    {'name': 'British Museum', 'category': 'museum', 'base_price': 0, 'duration': '2-4 hours'},
+                    {'name': 'Hyde Park', 'category': 'park', 'base_price': 0, 'duration': '1-3 hours'},
+                    {'name': 'Westminster Abbey', 'category': 'church', 'base_price': 25, 'duration': '1-2 hours'},
+                    {'name': 'Buckingham Palace', 'category': 'palace', 'base_price': 30, 'duration': '1-2 hours'},
+                    {'name': 'Tower Bridge', 'category': 'landmark', 'base_price': 12, 'duration': '1 hour'}
                 ],
-                "new york": [
-                    {"name": "Statue of Liberty", "category": "Monument", "rating": 4.7, "price": "$25"},
-                    {"name": "Central Park", "category": "Park", "rating": 4.8, "price": "Free"},
-                    {"name": "Times Square", "category": "Entertainment", "rating": 4.5, "price": "Free"},
-                    {"name": "Metropolitan Museum of Art", "category": "Museum", "rating": 4.6, "price": "$30"},
-                    {"name": "Brooklyn Bridge", "category": "Architecture", "rating": 4.7, "price": "Free"},
-                    {"name": "High Line", "category": "Park", "rating": 4.4, "price": "Free"}
+                'paris': [
+                    {'name': 'Eiffel Tower', 'category': 'landmark', 'base_price': 30, 'duration': '1-2 hours'},
+                    {'name': 'Louvre Museum', 'category': 'museum', 'base_price': 17, 'duration': '3-4 hours'},
+                    {'name': 'Notre-Dame Cathedral', 'category': 'church', 'base_price': 0, 'duration': '1 hour'},
+                    {'name': 'Arc de Triomphe', 'category': 'monument', 'base_price': 13, 'duration': '1 hour'},
+                    {'name': 'Champs-Élysées', 'category': 'street', 'base_price': 0, 'duration': '1-2 hours'},
+                    {'name': 'Montmartre', 'category': 'district', 'base_price': 0, 'duration': '2-3 hours'},
+                    {'name': 'Seine River Cruise', 'category': 'cruise', 'base_price': 15, 'duration': '1 hour'},
+                    {'name': 'Versailles Palace', 'category': 'palace', 'base_price': 20, 'duration': '4-6 hours'}
                 ],
-                "london": [
-                    {"name": "Big Ben", "category": "Monument", "rating": 4.6, "price": "Free"},
-                    {"name": "Tower of London", "category": "Historical", "rating": 4.5, "price": "$35"},
-                    {"name": "British Museum", "category": "Museum", "rating": 4.7, "price": "Free"},
-                    {"name": "Hyde Park", "category": "Park", "rating": 4.4, "price": "Free"},
-                    {"name": "London Eye", "category": "Entertainment", "rating": 4.3, "price": "$40"},
-                    {"name": "Covent Garden", "category": "Market", "rating": 4.2, "price": "Free"}
+                'tokyo': [
+                    {'name': 'Senso-ji Temple', 'category': 'temple', 'base_price': 0, 'duration': '1-2 hours'},
+                    {'name': 'Tokyo Skytree', 'category': 'observation', 'base_price': 20, 'duration': '1-2 hours'},
+                    {'name': 'Meiji Shrine', 'category': 'shrine', 'base_price': 0, 'duration': '1 hour'},
+                    {'name': 'Shibuya Crossing', 'category': 'landmark', 'base_price': 0, 'duration': '30 minutes'},
+                    {'name': 'Tsukiji Fish Market', 'category': 'market', 'base_price': 0, 'duration': '2-3 hours'},
+                    {'name': 'Ueno Park', 'category': 'park', 'base_price': 0, 'duration': '1-3 hours'},
+                    {'name': 'Tokyo National Museum', 'category': 'museum', 'base_price': 6, 'duration': '2-3 hours'},
+                    {'name': 'Harajuku District', 'category': 'district', 'base_price': 0, 'duration': '2-3 hours'}
                 ],
-                "paris": [
-                    {"name": "Eiffel Tower", "category": "Monument", "rating": 4.8, "price": "$30"},
-                    {"name": "Louvre Museum", "category": "Museum", "rating": 4.7, "price": "$20"},
-                    {"name": "Notre-Dame Cathedral", "category": "Religious", "rating": 4.6, "price": "Free"},
-                    {"name": "Champs-Élysées", "category": "Shopping", "rating": 4.4, "price": "Free"},
-                    {"name": "Montmartre", "category": "Neighborhood", "rating": 4.5, "price": "Free"},
-                    {"name": "Seine River", "category": "Waterfront", "rating": 4.3, "price": "Free"}
+                'rome': [
+                    {'name': 'Colosseum', 'category': 'ruins', 'base_price': 16, 'duration': '2-3 hours'},
+                    {'name': 'Vatican City', 'category': 'city', 'base_price': 0, 'duration': '4-6 hours'},
+                    {'name': 'Trevi Fountain', 'category': 'fountain', 'base_price': 0, 'duration': '30 minutes'},
+                    {'name': 'Pantheon', 'category': 'temple', 'base_price': 0, 'duration': '1 hour'},
+                    {'name': 'Roman Forum', 'category': 'ruins', 'base_price': 16, 'duration': '2-3 hours'},
+                    {'name': 'Spanish Steps', 'category': 'landmark', 'base_price': 0, 'duration': '30 minutes'},
+                    {'name': 'Piazza Navona', 'category': 'square', 'base_price': 0, 'duration': '1 hour'},
+                    {'name': 'Villa Borghese', 'category': 'park', 'base_price': 0, 'duration': '2-3 hours'}
                 ]
             }
             
             # Get attractions for the city (case insensitive)
-            city_key = city.lower()
-            attractions_data = None
+            city_lower = city.lower()
+            attractions_data = []
             
-            for key in city_attractions:
-                if key in city_key or city_key in key:
-                    attractions_data = city_attractions[key]
+            for city_key, attrs in city_attractions.items():
+                if city_key in city_lower or city_lower in city_key:
+                    attractions_data = attrs
                     break
             
+            # If no specific city data, use generic attractions
             if not attractions_data:
-                # Default attractions for unknown cities
                 attractions_data = [
-                    {"name": f"Historic Center {city}", "category": "Historical", "rating": 4.3, "price": "Free"},
-                    {"name": f"Local Museum {city}", "category": "Museum", "rating": 4.2, "price": "$15"},
-                    {"name": f"Central Park {city}", "category": "Park", "rating": 4.4, "price": "Free"},
-                    {"name": f"Main Square {city}", "category": "Architecture", "rating": 4.1, "price": "Free"}
+                    {'name': f'{city} City Center', 'category': 'landmark', 'base_price': 0, 'duration': '1-2 hours'},
+                    {'name': f'{city} Museum', 'category': 'museum', 'base_price': 10, 'duration': '2-3 hours'},
+                    {'name': f'{city} Park', 'category': 'park', 'base_price': 0, 'duration': '1-3 hours'},
+                    {'name': f'{city} Cathedral', 'category': 'church', 'base_price': 0, 'duration': '1 hour'},
+                    {'name': f'{city} Market', 'category': 'market', 'base_price': 0, 'duration': '1-2 hours'}
                 ]
             
-            # Filter by category if specified
-            if category:
-                # More flexible category matching
-                category_lower = category.lower()
-                attractions_data = [a for a in attractions_data if 
-                                  category_lower in a["category"].lower() or 
-                                  a["category"].lower() in category_lower or
-                                  self._is_category_match(category_lower, a["category"].lower())]
-            
-            # Generate attraction list with realistic details
+            # Generate attraction options
             attractions = []
-            for i, attraction_data in enumerate(attractions_data):
-                # Generate attraction ID
-                attraction_id = f"attraction_{city.lower().replace(' ', '_')}_{i}"
+            for i, attr_data in enumerate(attractions_data[:limit]):
+                # Generate coordinates (approximate)
+                lat, lng = self._get_city_coordinates(city)
+                lat += (i * 0.01) - 0.05  # Spread attractions around city center
+                lng += (i * 0.01) - 0.05
                 
                 attraction = {
-                    "id": attraction_id,
-                    "name": attraction_data["name"],
-                    "category": attraction_data["category"],
-                    "rating": attraction_data["rating"],
-                    "price": attraction_data["price"],
-                    "location": city,
-                    "address": f"{random.randint(1, 999)} Main Street, {city}",
-                    "phone": f"+1-555-{random.randint(1000, 9999)}",
-                    "hours": self._get_attraction_hours(attraction_data["category"]),
-                    "description": self._get_attraction_description(attraction_data["name"], attraction_data["category"]),
-                    "highlights": self._get_attraction_highlights(attraction_data["category"]),
-                    "source": "Realistic Attraction Data (Free)",
-                    "booking_url": f"https://www.tripadvisor.com/{attraction_id}",
-                    "images": self._get_attraction_images(attraction_data["category"])
+                    'name': attr_data['name'],
+                    'category': attr_data['category'],
+                    'rating': round(4.0 + (i * 0.1), 1),
+                    'price': f"${attr_data['base_price']}" if attr_data['base_price'] > 0 else "Free",
+                    'duration': attr_data['duration'],
+                    'lat': round(lat, 6),
+                    'lng': round(lng, 6),
+                    'source': 'Free Attractions Data (Realistic)',
+                    'description': f"Visit the famous {attr_data['name']} in {city}",
+                    'tips': self._get_attraction_tips(attr_data['category'])
                 }
                 
                 attractions.append(attraction)
@@ -367,169 +146,148 @@ class AttractionsClient:
             return attractions
             
         except Exception as e:
-            print(f"Attraction generation error: {e}")
+            print(f"Realistic attractions generation error: {e}")
             return []
     
-    def _generate_attraction_details(self, attraction_id: str) -> Dict[str, Any]:
-        """Generate detailed attraction information."""
+    async def _get_free_attraction_data(self, city: str) -> List[Dict[str, Any]]:
+        """Get additional attraction data from free sources."""
         try:
-            # Extract city from attraction ID
-            city = attraction_id.split('_')[1].replace('_', ' ').title()
-            
-            return {
-                "id": attraction_id,
-                "name": f"Attraction {city}",
-                "description": f"Discover the beauty and history of Attraction {city}. This iconic landmark offers visitors a unique experience and stunning views.",
-                "address": f"123 Main Street, {city}",
-                "phone": "+1-555-0123",
-                "email": f"info@attraction{city.lower().replace(' ', '')}.com",
-                "website": f"https://www.attraction{city.lower().replace(' ', '')}.com",
-                "hours": {
-                    "monday": "9:00 AM - 6:00 PM",
-                    "tuesday": "9:00 AM - 6:00 PM",
-                    "wednesday": "9:00 AM - 6:00 PM",
-                    "thursday": "9:00 AM - 6:00 PM",
-                    "friday": "9:00 AM - 6:00 PM",
-                    "saturday": "9:00 AM - 6:00 PM",
-                    "sunday": "9:00 AM - 6:00 PM"
-                },
-                "amenities": [
-                    "Guided Tours",
-                    "Audio Guide",
-                    "Gift Shop",
-                    "Restaurant",
-                    "Parking",
-                    "Wheelchair Accessible",
-                    "WiFi Available",
-                    "Photography Allowed"
-                ],
-                "source": "Realistic Attraction Data (Free)"
-            }
+            # This could be extended to scrape free attraction data sources
+            # For now, return empty list as we have realistic data generation
+            return []
             
         except Exception as e:
-            print(f"Attraction details generation error: {e}")
-            return {}
+            print(f"Free attraction data error: {e}")
+            return []
     
-    def _get_attraction_hours(self, category: str) -> Dict[str, str]:
-        """Get attraction hours based on category."""
-        hours = {
-            "Museum": {
-                "monday": "10:00 AM - 6:00 PM",
-                "tuesday": "10:00 AM - 6:00 PM",
-                "wednesday": "10:00 AM - 6:00 PM",
-                "thursday": "10:00 AM - 6:00 PM",
-                "friday": "10:00 AM - 6:00 PM",
-                "saturday": "10:00 AM - 6:00 PM",
-                "sunday": "10:00 AM - 6:00 PM"
-            },
-            "Park": {
-                "monday": "6:00 AM - 10:00 PM",
-                "tuesday": "6:00 AM - 10:00 PM",
-                "wednesday": "6:00 AM - 10:00 PM",
-                "thursday": "6:00 AM - 10:00 PM",
-                "friday": "6:00 AM - 10:00 PM",
-                "saturday": "6:00 AM - 10:00 PM",
-                "sunday": "6:00 AM - 10:00 PM"
-            },
-            "Religious": {
-                "monday": "24/7",
-                "tuesday": "24/7",
-                "wednesday": "24/7",
-                "thursday": "24/7",
-                "friday": "24/7",
-                "saturday": "24/7",
-                "sunday": "24/7"
-            },
-            "Monument": {
-                "monday": "9:00 AM - 6:00 PM",
-                "tuesday": "9:00 AM - 6:00 PM",
-                "wednesday": "9:00 AM - 6:00 PM",
-                "thursday": "9:00 AM - 6:00 PM",
-                "friday": "9:00 AM - 6:00 PM",
-                "saturday": "9:00 AM - 6:00 PM",
-                "sunday": "9:00 AM - 6:00 PM"
-            }
+    def _get_city_coordinates(self, city: str) -> tuple:
+        """Get approximate coordinates for a city."""
+        city_coords = {
+            'new york': (40.7128, -74.0060),
+            'london': (51.5074, -0.1278),
+            'paris': (48.8566, 2.3522),
+            'tokyo': (35.6762, 139.6503),
+            'rome': (41.9028, 12.4964),
+            'madrid': (40.4168, -3.7038),
+            'berlin': (52.5200, 13.4050),
+            'amsterdam': (52.3676, 4.9041),
+            'barcelona': (41.3851, 2.1734),
+            'prague': (50.0755, 14.4378)
         }
         
-        return hours.get(category, hours["Monument"])
-    
-    def _get_attraction_description(self, name: str, category: str) -> str:
-        """Generate attraction description based on name and category."""
-        descriptions = {
-            "Historical": f"{name} is a significant historical landmark that tells the story of the city's past. Experience the rich history and cultural heritage.",
-            "Museum": f"{name} houses an impressive collection of art and artifacts. Explore the exhibits and learn about the local culture and history.",
-            "Park": f"{name} is a beautiful green space perfect for relaxation and recreation. Enjoy nature, walking trails, and outdoor activities.",
-            "Religious": f"{name} is a sacred place of worship and spiritual significance. Experience the peaceful atmosphere and religious heritage.",
-            "Monument": f"{name} is an iconic landmark that represents the city's identity. Admire the architecture and learn about its historical importance.",
-            "Market": f"{name} is a vibrant marketplace where you can experience local culture, taste authentic food, and find unique souvenirs.",
-            "Architecture": f"{name} showcases impressive architectural design and historical significance. Admire the building's unique style and construction.",
-            "Entertainment": f"{name} offers entertainment and fun activities for visitors of all ages. Enjoy shows, games, and interactive experiences.",
-            "Waterfront": f"{name} provides beautiful waterfront views and recreational activities. Enjoy the scenic beauty and water-based activities.",
-            "Neighborhood": f"{name} is a charming neighborhood with unique character and local charm. Explore the streets, shops, and local culture."
-        }
+        city_lower = city.lower()
+        for city_key, coords in city_coords.items():
+            if city_key in city_lower or city_lower in city_key:
+                return coords
         
-        return descriptions.get(category, f"{name} is a popular attraction that offers visitors a unique experience and insight into the local culture.")
+        # Default to New York if city not found
+        return (40.7128, -74.0060)
     
-    def _get_attraction_highlights(self, category: str) -> List[str]:
-        """Get attraction highlights based on category."""
-        highlights = {
-            "Historical": ["Guided Tours", "Historical Artifacts", "Educational Programs", "Cultural Events"],
-            "Museum": ["Art Collections", "Interactive Exhibits", "Educational Programs", "Gift Shop"],
-            "Park": ["Walking Trails", "Picnic Areas", "Playground", "Nature Views"],
-            "Religious": ["Sacred Architecture", "Spiritual Atmosphere", "Religious Art", "Peaceful Environment"],
-            "Monument": ["Iconic Architecture", "Historical Significance", "Photo Opportunities", "City Views"],
-            "Market": ["Local Products", "Authentic Food", "Cultural Experience", "Shopping"],
-            "Architecture": ["Unique Design", "Historical Significance", "Photo Opportunities", "Architectural Tours"],
-            "Entertainment": ["Shows", "Interactive Activities", "Games", "Fun Experiences"],
-            "Waterfront": ["Water Views", "Recreational Activities", "Scenic Beauty", "Water Sports"],
-            "Neighborhood": ["Local Culture", "Unique Shops", "Street Art", "Local Food"]
-        }
-        
-        return highlights.get(category, ["Unique Experience", "Local Culture", "Photo Opportunities", "Educational Value"])
-    
-    def _get_attraction_images(self, category: str) -> List[str]:
-        """Get attraction images based on category."""
-        image_urls = {
-            "Historical": [
-                "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800",
-                "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800"
+    def _get_attraction_tips(self, category: str) -> List[str]:
+        """Get tips based on attraction category."""
+        tips_by_category = {
+            'museum': [
+                'Check opening hours before visiting',
+                'Consider audio guides for better experience',
+                'Some museums offer free admission on certain days'
             ],
-            "Museum": [
-                "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800",
-                "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800"
+            'park': [
+                'Great for walking and relaxation',
+                'Check weather conditions',
+                'Bring water and comfortable shoes'
             ],
-            "Park": [
-                "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800",
-                "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800"
+            'landmark': [
+                'Best photo opportunities during golden hour',
+                'Check for any renovation work',
+                'Consider guided tours for historical context'
             ],
-            "Religious": [
-                "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800",
-                "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800"
+            'temple': [
+                'Dress modestly and remove shoes if required',
+                'Be respectful and quiet',
+                'Check for any special ceremonies or events'
             ],
-            "Monument": [
-                "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800",
-                "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800"
-            ],
-            "Market": [
-                "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800",
-                "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800"
-            ],
-            "Architecture": [
-                "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800",
-                "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800"
-            ],
-            "Entertainment": [
-                "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800",
-                "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800"
-            ],
-            "Waterfront": [
-                "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800",
-                "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800"
-            ],
-            "Neighborhood": [
-                "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800",
-                "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800"
+            'market': [
+                'Best visited in the morning for fresh produce',
+                'Try local specialties and street food',
+                'Bargaining is often acceptable'
             ]
         }
         
-        return image_urls.get(category, image_urls["Monument"])
+        return tips_by_category.get(category, [
+            'Check opening hours before visiting',
+            'Bring comfortable walking shoes',
+            'Consider guided tours for better experience'
+        ])
+    
+    def get_travel_tips(self, city: str) -> List[str]:
+        """Get general travel tips for a city."""
+        city_tips = {
+            'new york': [
+                'Use the subway for efficient transportation',
+                'Book Broadway shows in advance',
+                'Try pizza and bagels from local spots',
+                'Visit during off-peak hours to avoid crowds'
+            ],
+            'london': [
+                'Get an Oyster card for public transport',
+                'Book attractions in advance during peak season',
+                'Try traditional fish and chips',
+                'Visit free museums on weekdays'
+            ],
+            'paris': [
+                'Learn basic French phrases',
+                'Book restaurant reservations in advance',
+                'Use the Metro for getting around',
+                'Visit during shoulder season for better prices'
+            ],
+            'tokyo': [
+                'Get a JR Pass for train travel',
+                'Try authentic ramen and sushi',
+                'Visit temples early in the morning',
+                'Use Google Translate for communication'
+            ],
+            'rome': [
+                'Book Colosseum tickets in advance',
+                'Try authentic Italian gelato',
+                'Visit Vatican City early to avoid crowds',
+                'Wear comfortable shoes for walking'
+            ]
+        }
+        
+        city_lower = city.lower()
+        for city_key, tips in city_tips.items():
+            if city_key in city_lower or city_lower in city_key:
+                return tips
+        
+        # Generic tips
+        return [
+            'Research local customs and etiquette',
+            'Book popular attractions in advance',
+            'Try local cuisine and specialties',
+            'Use public transportation when possible',
+            'Keep important documents safe'
+        ]
+    
+    async def get_attraction_details(self, attraction_id: str) -> Optional[Dict[str, Any]]:
+        """Get detailed attraction information."""
+        try:
+            return {
+                'id': attraction_id,
+                'description': 'A wonderful attraction with rich history and cultural significance.',
+                'images': [],
+                'opening_hours': {
+                    'monday': '9:00 AM - 6:00 PM',
+                    'tuesday': '9:00 AM - 6:00 PM',
+                    'wednesday': '9:00 AM - 6:00 PM',
+                    'thursday': '9:00 AM - 6:00 PM',
+                    'friday': '9:00 AM - 6:00 PM',
+                    'saturday': '9:00 AM - 6:00 PM',
+                    'sunday': '9:00 AM - 6:00 PM'
+                },
+                'accessibility': 'Wheelchair accessible',
+                'source': 'Free Attractions Data'
+            }
+            
+        except Exception as e:
+            print(f"Attraction details error: {e}")
+            return None

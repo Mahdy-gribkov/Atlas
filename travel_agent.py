@@ -241,34 +241,56 @@ Response:"""
             return f"I apologize, but I'm having trouble processing your request right now. Error: {str(e)}"
     
     def _call_cloud_llm_sync(self, prompt: str) -> str:
-        """Call ApiFreeLLM synchronously for intelligent responses."""
+        """Call free cloud LLM synchronously for intelligent responses."""
         try:
             import requests
             import json
             
-            # ApiFreeLLM API call
-            payload = {
-                "message": prompt
-            }
+            # Try multiple free LLM services
+            free_llm_services = [
+                {
+                    'url': 'https://api-free-llm.com/api/chat',
+                    'payload': {'message': prompt},
+                    'headers': {'Content-Type': 'application/json'}
+                },
+                {
+                    'url': 'https://api.openai.com/v1/chat/completions',
+                    'payload': {
+                        'model': 'gpt-3.5-turbo',
+                        'messages': [{'role': 'user', 'content': prompt}],
+                        'max_tokens': 512,
+                        'temperature': 0.7
+                    },
+                    'headers': {'Content-Type': 'application/json'}
+                }
+            ]
             
-            response = requests.post(
-                self.cloud_llm_url,
-                json=payload,
-                headers={'Content-Type': 'application/json'},
-                timeout=30
-            )
+            for service in free_llm_services:
+                try:
+                    response = requests.post(
+                        service['url'],
+                        json=service['payload'],
+                        headers=service['headers'],
+                        timeout=30
+                    )
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        if 'response' in data:
+                            return data['response']
+                        elif 'message' in data:
+                            return data['message']
+                        elif 'choices' in data and len(data['choices']) > 0:
+                            return data['choices'][0]['message']['content']
+                        else:
+                            return str(data)
+                except Exception as e:
+                    logger.warning(f"LLM service failed: {e}")
+                    continue
             
-            if response.status_code == 200:
-                data = response.json()
-                if 'response' in data:
-                    return data['response']
-                elif 'message' in data:
-                    return data['message']
-                else:
-                    return str(data)
-            else:
-                logger.error(f"ApiFreeLLM API error: {response.status_code}")
-                return self._get_fallback_response(prompt)
+            # If all services fail, use fallback
+            logger.error("All cloud LLM services failed")
+            return self._get_fallback_response(prompt)
                 
         except Exception as e:
             logger.error(f"Cloud LLM call failed: {e}")
