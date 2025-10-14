@@ -240,4 +240,66 @@ async def health_check():
             "error": str(e)
         }
 
+# Map API endpoints for frontend integration
+@app.post("/api/maps/geocode")
+async def geocode_address(request: dict):
+    """Geocode an address to get coordinates."""
+    try:
+        address = request.get("address", "")
+        if not address:
+            return {"error": "Address is required"}
+        
+        # Use the maps client to geocode
+        result = await agent.maps_client.geocode(address)
+        return result
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.post("/api/maps/reverse-geocode")
+async def reverse_geocode(request: dict):
+    """Reverse geocode coordinates to get address."""
+    try:
+        lat = request.get("lat")
+        lng = request.get("lng")
+        if lat is None or lng is None:
+            return {"error": "Latitude and longitude are required"}
+        
+        # Use the maps client to reverse geocode
+        result = await agent.maps_client.reverse_geocode(lat, lng)
+        return result
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.post("/api/maps/search")
+async def search_locations(request: dict):
+    """Search for locations."""
+    try:
+        query = request.get("query", "")
+        if not query:
+            return {"error": "Query is required"}
+        
+        # Use the maps client to search
+        result = await agent.maps_client.geocode(query)
+        return result
+    except Exception as e:
+        return {"error": str(e)}
+
+# Serve React build files
+if os.path.exists("frontend/build"):
+    app.mount("/static", StaticFiles(directory="frontend/build/static"), name="static")
+    
+    # Serve React app for all other routes
+    @app.get("/{full_path:path}")
+    async def serve_react_app(full_path: str):
+        """Serve React app for all routes not handled by API."""
+        if full_path.startswith("api/") or full_path.startswith("static/"):
+            raise HTTPException(status_code=404, detail="Not found")
+        
+        # Serve index.html for all other routes (React Router)
+        index_path = os.path.join("frontend/build", "index.html")
+        if os.path.exists(index_path):
+            from fastapi.responses import FileResponse
+            return FileResponse(index_path)
+        else:
+            raise HTTPException(status_code=404, detail="React app not found")
 
