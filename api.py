@@ -35,6 +35,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from typing import Dict, Any, Optional
 import asyncio
 import json
 import logging
@@ -72,6 +73,7 @@ api_cache = cache_manager.get_cache(API_CACHE)
 
 class ChatRequest(BaseModel):
     message: str
+    context: Optional[Dict[str, Any]] = None
 
 class ChatResponse(BaseModel):
     response: str
@@ -87,7 +89,7 @@ async def root():
     else:
         return {"message": "Travel AI Agent API is running!", "error": "React app not found"}
 
-async def generate_streaming_response(message: str):
+async def generate_streaming_response(message: str, context: Optional[Dict[str, Any]] = None):
     """Generate streaming response for real-time chat with timeout handling."""
     try:
         # Check cache first
@@ -117,7 +119,7 @@ async def generate_streaming_response(message: str):
         try:
             # Process with timeout to prevent long waits
             response = await asyncio.wait_for(
-                agent.process_query(message), 
+                agent.process_query(message, context), 
                 timeout=30.0  # 30 second timeout
             )
         except asyncio.TimeoutError:
@@ -168,7 +170,7 @@ async def chat_stream(request: ChatRequest):
     sanitized_message = validation_result['sanitized']
     
     return StreamingResponse(
-        generate_streaming_response(sanitized_message),
+        generate_streaming_response(sanitized_message, request.context),
         media_type="text/plain"
     )
 

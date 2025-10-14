@@ -286,9 +286,9 @@ body {
   z-index: 1;
 }
 
-/* Examples Sidebar - Larger */
+/* Examples Sidebar - Smaller to give more space to map */
 .examples-sidebar {
-  width: 280px;
+  width: 200px;
   background: rgba(15, 23, 42, 0.4);
   border-right: 1px solid rgba(51, 65, 85, 0.5);
   padding: 1.5rem;
@@ -1153,7 +1153,7 @@ div.app.light div.message.user div.message-text {
 /* Responsive Design */
 @media (max-width: 1024px) {
   .examples-sidebar {
-    width: 180px;
+    width: 150px;
   }
   
   .messages {

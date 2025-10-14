@@ -21,6 +21,16 @@ function App() {
   const [destinationLocation, setDestinationLocation] = useState(null);
   const [suggestedLocations, setSuggestedLocations] = useState([]);
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
+  const [isMapLoading, setIsMapLoading] = useState(false);
+  const [isLocationLoading, setIsLocationLoading] = useState(false);
+  const [userContext, setUserContext] = useState({
+    departureLocation: null,
+    destination: null,
+    travelDates: null,
+    budget: null,
+    interests: [],
+    travelStyle: null
+  });
 
   // Utility function to clean and format message content
   const formatMessageContent = (content) => {
@@ -29,14 +39,28 @@ function App() {
     // Remove HTML tags and clean up the content
     let cleaned = content
       .replace(/<[^>]*>/g, '') // Remove HTML tags
-      .replace(/\*\*(.*?)\*\*/g, '**$1**') // Keep markdown bold
-      .replace(/\*(.*?)\*/g, '*$1*') // Keep markdown italic
       .replace(/&bull;/g, '•') // Convert HTML bullets
       .replace(/&nbsp;/g, ' ') // Convert HTML spaces
       .replace(/\n\n+/g, '\n\n') // Clean up multiple newlines
       .trim();
     
     return cleaned;
+  };
+
+  // Function to format travel planning messages
+  const formatTravelMessage = (content) => {
+    if (!content) return content;
+    
+    // Remove the "Planning your trip... 🗺️ Travel Planning Assistant" prefix
+    let formatted = content.replace(/^Planning your trip\.\.\.\s*🗺️\s*Travel Planning Assistant\s*/i, '');
+    
+    // Format questions to be on separate lines
+    formatted = formatted.replace(/\•\s*([^•]+?):\s*([^•]+?)(?=\•|$)/g, '• $1:\n  $2');
+    
+    // Format bullet points better
+    formatted = formatted.replace(/\•\s*/g, '• ');
+    
+    return formatted;
   };
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -122,8 +146,8 @@ function App() {
     // Add user message
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
 
-    // Add empty assistant message for streaming
-    setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+    // Add typing indicator for assistant message
+    setMessages(prev => [...prev, { role: 'assistant', content: '', isTyping: true }]);
 
     try {
       const response = await fetch('/chat', {
@@ -131,7 +155,10 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: userMessage })
+        body: JSON.stringify({ 
+          message: userMessage,
+          context: userContext
+        })
       });
 
       if (!response.ok) {
@@ -162,17 +189,23 @@ function App() {
               }
               
               if (data.chunk) {
+                // Skip the "Planning your trip..." chunk
+                if (data.chunk.includes('Planning your trip...')) {
+                  continue;
+                }
+                
                 assistantMessage += data.chunk + ' ';
                 
                 // Update the assistant message in real-time
-      setMessages(prev => {
-        const newMessages = [...prev];
-        newMessages[newMessages.length - 1] = {
-          role: 'assistant',
-                    content: assistantMessage
-        };
-        return newMessages;
-      });
+                setMessages(prev => {
+                  const newMessages = [...prev];
+                  newMessages[newMessages.length - 1] = {
+                    role: 'assistant',
+                    content: assistantMessage,
+                    isTyping: false
+                  };
+                  return newMessages;
+                });
               }
             } catch (e) {
               // Ignore parsing errors for incomplete chunks
@@ -204,6 +237,7 @@ function App() {
 
   const handleLocationSubmit = async () => {
     if (userLocation.trim()) {
+      setIsLocationLoading(true);
       setShowLocationPrompt(false);
       
       // Try to geocode the user's location input
@@ -253,10 +287,18 @@ function App() {
         }
       }
       
+      // Update user context
+      setUserContext(prev => ({
+        ...prev,
+        departureLocation: userLocation
+      }));
+      
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: `Great! I'll remember you're traveling from ${userLocation}. Now, where would you like to go?`
       }]);
+      
+      setIsLocationLoading(false);
     }
   };
 
@@ -545,7 +587,7 @@ function App() {
                   <div className="message-text">
                     {message.role === 'assistant' ? (
                       <div className="assistant-message">
-                        {formatMessageContent(message.content).split('\n').map((line, index) => {
+                        {formatTravelMessage(formatMessageContent(message.content)).split('\n').map((line, index) => {
                           if (line.trim() === '') return <br key={index} />;
                           
                           // Format different types of content
@@ -607,7 +649,7 @@ function App() {
                     <span></span>
                     <span></span>
                   </div>
-                  <div className="loading-text">Planning your trip...</div>
+                  <div className="loading-text">AI is thinking...</div>
                 </div>
               </div>
             )}

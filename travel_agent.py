@@ -609,12 +609,13 @@ What destination are you most interested in?"""
         else:
             return 'general'
     
-    async def process_query(self, query: str) -> str:
+    async def process_query(self, query: str, context: Optional[Dict[str, Any]] = None) -> str:
         """
         Process a travel query with comprehensive analysis.
         
         Args:
             query: User's travel query
+            context: User context including departure location, destination, etc.
             
         Returns:
             Comprehensive travel response
@@ -628,8 +629,19 @@ What destination are you most interested in?"""
             'type': 'user'
         })
         
-        # Extract travel information
+        # Extract travel information and enhance with context
         travel_info = self.extract_travel_info(query)
+        if context:
+            # Enhance travel info with context
+            if context.get('departureLocation') and not travel_info.get('origin'):
+                travel_info['origin'] = context['departureLocation']
+            if context.get('destination') and not travel_info.get('destination'):
+                travel_info['destination'] = context['destination']
+            if context.get('travelDates') and not travel_info.get('dates'):
+                travel_info['dates'] = context['travelDates']
+            if context.get('budget') and not travel_info.get('budget'):
+                travel_info['budget'] = context['budget']
+        
         query_lower = query.lower()
         
         response_parts = []
