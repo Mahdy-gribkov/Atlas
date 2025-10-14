@@ -54,11 +54,25 @@ function App() {
     // Remove the "Planning your trip... 🗺️ Travel Planning Assistant" prefix
     let formatted = content.replace(/^Planning your trip\.\.\.\s*🗺️\s*Travel Planning Assistant\s*/i, '');
     
+    // Remove the "🗺️ Travel Planning Assistant" prefix
+    formatted = formatted.replace(/^🗺️\s*Travel Planning Assistant\s*/i, '');
+    
+    // Rewrite the generic message
+    formatted = formatted.replace(/^I can help you plan your trip! To provide the best recommendations, please let me know:\s*/i, '');
+    
+    // If we have context, customize the message
+    if (userContext.departureLocation) {
+      formatted = formatted.replace(/•\s*Destination:\s*Where do you want to go\?/i, '');
+    }
+    
     // Format questions to be on separate lines
     formatted = formatted.replace(/\•\s*([^•]+?):\s*([^•]+?)(?=\•|$)/g, '• $1:\n  $2');
     
     // Format bullet points better
     formatted = formatted.replace(/\•\s*/g, '• ');
+    
+    // Clean up extra whitespace
+    formatted = formatted.replace(/\n\s*\n\s*\n/g, '\n\n').trim();
     
     return formatted;
   };
@@ -84,15 +98,15 @@ function App() {
         },
         (error) => {
           console.log('Geolocation error:', error);
-          // Fallback to a default location (New York)
+          // Fallback to a default location (no user location set)
           setCurrentLocation({ lat: 40.7128, lng: -74.0060 });
-          setUserLocation('New York, NY');
+          // Don't set userLocation to avoid showing in input field
         }
       );
     } else {
       // Fallback to a default location
       setCurrentLocation({ lat: 40.7128, lng: -74.0060 });
-      setUserLocation('New York, NY');
+      // Don't set userLocation to avoid showing in input field
     }
   }, []);
 
@@ -146,8 +160,7 @@ function App() {
     // Add user message
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
 
-    // Add typing indicator for assistant message
-    setMessages(prev => [...prev, { role: 'assistant', content: '', isTyping: true }]);
+    // Don't add empty message - we'll show loading indicator separately
 
     try {
       const response = await fetch('/chat', {
@@ -196,14 +209,26 @@ function App() {
                 
                 assistantMessage += data.chunk + ' ';
                 
-                // Update the assistant message in real-time
+                // Update or add the assistant message
                 setMessages(prev => {
                   const newMessages = [...prev];
-                  newMessages[newMessages.length - 1] = {
-                    role: 'assistant',
-                    content: assistantMessage,
-                    isTyping: false
-                  };
+                  // Check if we already have an assistant message
+                  const lastMessage = newMessages[newMessages.length - 1];
+                  if (lastMessage && lastMessage.role === 'assistant') {
+                    // Update existing message
+                    newMessages[newMessages.length - 1] = {
+                      role: 'assistant',
+                      content: assistantMessage,
+                      isTyping: false
+                    };
+                  } else {
+                    // Add new message
+                    newMessages.push({
+                      role: 'assistant',
+                      content: assistantMessage,
+                      isTyping: false
+                    });
+                  }
                   return newMessages;
                 });
               }
@@ -527,7 +552,7 @@ function App() {
 
       <div className="main-content">
         {showExamples && (
-          <div className="examples-sidebar">
+          <div className="quick-examples-panel">
             <div className="examples-header">
               <div className="section-title">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">

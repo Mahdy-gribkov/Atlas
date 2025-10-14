@@ -223,13 +223,21 @@ body {
   border-radius: 0.5rem;
   font-size: 1rem;
   outline: none;
-  transition: border-color 0.2s;
-  background: #0f172a;
+  transition: all 0.2s ease;
+  background: rgba(15, 23, 42, 0.8);
   color: #f1f5f9;
+  backdrop-filter: blur(10px);
+}
+
+.location-input input:hover {
+  border-color: #475569;
+  background: rgba(15, 23, 42, 0.9);
 }
 
 .location-input input:focus {
   border-color: #3b82f6;
+  background: rgba(15, 23, 42, 0.95);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .app.light .location-input input {
@@ -243,19 +251,21 @@ body {
 }
 
 .location-input button {
-  background: #3b82f6;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
 .location-input button:hover:not(:disabled) {
-  background: #2563eb;
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
 .location-input button:disabled {
@@ -286,9 +296,9 @@ body {
   z-index: 1;
 }
 
-/* Examples Sidebar - Smaller to give more space to map */
-.examples-sidebar {
-  width: 200px;
+/* Quick Examples Panel - Compact */
+.quick-examples-panel {
+  width: 180px;
   background: rgba(15, 23, 42, 0.4);
   border-right: 1px solid rgba(51, 65, 85, 0.5);
   padding: 1.5rem;
@@ -301,7 +311,7 @@ body {
   margin-top: -1px;
 }
 
-.app.light .examples-sidebar {
+.app.light .quick-examples-panel {
   background: rgba(248, 250, 252, 0.4);
   border-color: rgba(226, 232, 240, 0.5);
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1), 2px 0 10px rgba(0, 0, 0, 0.05);
@@ -1152,8 +1162,8 @@ div.app.light div.message.user div.message-text {
 
 /* Responsive Design */
 @media (max-width: 1024px) {
-  .examples-sidebar {
-    width: 150px;
+  .quick-examples-panel {
+    width: 120px;
   }
   
   .messages {
@@ -1176,7 +1186,7 @@ div.app.light div.message.user div.message-text {
     text-align: center;
   }
   
-  .examples-sidebar {
+  .quick-examples-panel {
     display: none;
   }
   

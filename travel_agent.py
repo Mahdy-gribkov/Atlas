@@ -709,9 +709,25 @@ Keep your response concise but helpful, focusing on actionable advice."""
                 logger.error(f"LLM enhancement failed: {e}")
                 final_response = structured_data
         else:
-            # No structured data, use LLM for general responses
-            context = "\n".join(context_parts) if context_parts else "No specific context available."
-            final_response = self._call_llm(query, context)
+            # No structured data, use LLM for intelligent responses
+            context_text = "\n".join(context_parts) if context_parts else "No specific context available."
+            
+            # Create intelligent prompt based on user context
+            if context and isinstance(context, dict) and context.get('departureLocation'):
+                intelligent_prompt = f"""You are a professional travel assistant. The user is traveling from {context['departureLocation']}. 
+                
+User Query: {query}
+
+Please provide a helpful, specific response. If they're asking about destinations, suggest specific places and activities. 
+If they're asking about planning, provide concrete next steps. Be conversational and helpful, not generic."""
+            else:
+                intelligent_prompt = f"""You are a professional travel assistant. 
+
+User Query: {query}
+
+Please provide a helpful, specific response. Be conversational and provide actionable advice."""
+            
+            final_response = self._call_llm(intelligent_prompt, context_text)
         
         # Store response in conversation history
         self.conversation_history.append({
