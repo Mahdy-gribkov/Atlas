@@ -44,7 +44,7 @@ class Config:
     # Application Settings
     DEBUG: bool = os.getenv('DEBUG', 'false').lower() == 'true'
     LOG_LEVEL: str = os.getenv('LOG_LEVEL', 'INFO')
-    DATABASE_PATH: str = os.getenv('DATABASE_PATH', './data/travel_agent.db')
+    DATABASE_PATH: str = os.getenv('DATABASE_PATH', '/tmp/travel_agent.db')
     CACHE_TTL: int = int(os.getenv('CACHE_TTL', '3600'))
     
     # API Rate Limits (Free tier limits)

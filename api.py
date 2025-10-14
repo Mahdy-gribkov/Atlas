@@ -303,3 +303,7 @@ if os.path.exists("frontend/build"):
         else:
             raise HTTPException(status_code=404, detail="React app not found")
 
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+

@@ -48,12 +48,11 @@ COPY start.py .
 COPY --from=frontend-builder /app/frontend/build ./frontend/build
 
 # Create data directory for database and logs
-RUN mkdir -p data && chmod 755 data
+RUN mkdir -p data
 
 # Create non-root user for security
 RUN useradd --create-home --shell /bin/bash app && \
-    chown -R app:app /app && \
-    chmod 755 /app/data
+    chown -R app:app /app
 USER app
 
 # Expose port
