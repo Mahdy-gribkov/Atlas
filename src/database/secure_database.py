@@ -1,9 +1,10 @@
 """
 Secure database implementation with encryption and automatic cleanup.
 Provides privacy-first data storage for the Travel AI Agent.
+Uses aiosqlite for proper async database operations.
 """
 
-import sqlite3
+import aiosqlite
 import os
 import hashlib
 import asyncio
@@ -11,6 +12,9 @@ from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 from cryptography.fernet import Fernet
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 from .models import UserPreference, SearchHistory, TravelPlan, APICache
 from config import config
@@ -19,9 +23,17 @@ class SecureDatabase:
     """
     Encrypted local database with zero external access.
     All data is encrypted at rest and automatically cleaned up.
+    Uses aiosqlite for proper async operations.
     """
     
     def __init__(self, db_path: str = None, encryption_key: str = None):
+        """
+        Initialize the secure database.
+        
+        Args:
+            db_path: Path to the database file
+            encryption_key: Encryption key for data protection
+        """
         self.db_path = db_path or config.DATABASE_PATH
         self.encryption_key = encryption_key or config.ENCRYPTION_KEY
         
@@ -30,36 +42,43 @@ class SecureDatabase:
             self.encryption_key = Fernet.generate_key().decode()
         
         self.fernet = Fernet(self.encryption_key.encode())
-        self.conn: Optional[sqlite3.Connection] = None
         self._connection_lock = asyncio.Lock()
+        self._initialized = False
         
         # Create database directory if it doesn't exist
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
-        
-        self._initialize_database()
     
-    def _initialize_database(self):
+    async def _ensure_initialized(self):
+        """Ensure database is initialized."""
+        if not self._initialized:
+            await self._initialize_database()
+    
+    async def _initialize_database(self):
         """Initialize encrypted SQLite database with tables."""
         try:
-            self.conn = sqlite3.connect(self.db_path)
-            self.conn.execute("PRAGMA journal_mode=WAL")
-            self.conn.execute("PRAGMA synchronous=NORMAL")
-            self.conn.execute("PRAGMA cache_size=1000")
-            self.conn.execute("PRAGMA temp_store=MEMORY")
-            
-            # Create tables
-            self._create_tables()
-            
-            # Set up automatic cleanup
-            self._setup_cleanup_triggers()
-            
-            print(f"Secure database initialized: {self.db_path}")
+            async with aiosqlite.connect(self.db_path) as db:
+                # Set pragmas for better performance
+                await db.execute("PRAGMA journal_mode=WAL")
+                await db.execute("PRAGMA synchronous=NORMAL")
+                await db.execute("PRAGMA cache_size=1000")
+                await db.execute("PRAGMA temp_store=MEMORY")
+                
+                # Create tables
+                await self._create_tables(db)
+                
+                # Set up automatic cleanup triggers
+                await self._setup_cleanup_triggers(db)
+                
+                await db.commit()
+                
+            self._initialized = True
+            logger.info(f"Secure database initialized: {self.db_path}")
             
         except Exception as e:
-            print(f"Database initialization error: {e}")
+            logger.error(f"Database initialization error: {e}")
             raise
     
-    def _create_tables(self):
+    async def _create_tables(self, db: aiosqlite.Connection):
         """Create database tables with proper structure."""
         tables = [
             """
@@ -106,11 +125,20 @@ class SecureDatabase:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 expires_at TIMESTAMP DEFAULT (datetime('now', '+1 hour'))
             )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS conversations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                user_message TEXT NOT NULL,
+                assistant_response TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
             """
         ]
         
         for table_sql in tables:
-            self.conn.execute(table_sql)
+            await db.execute(table_sql)
         
         # Create indexes for better performance
         indexes = [
@@ -120,18 +148,17 @@ class SecureDatabase:
             "CREATE INDEX IF NOT EXISTS idx_search_expires ON search_history(expires_at)",
             "CREATE INDEX IF NOT EXISTS idx_plans_destination ON travel_plans(destination)",
             "CREATE INDEX IF NOT EXISTS idx_cache_hash ON api_cache(params_hash)",
-            "CREATE INDEX IF NOT EXISTS idx_cache_expires ON api_cache(expires_at)"
+            "CREATE INDEX IF NOT EXISTS idx_cache_expires ON api_cache(expires_at)",
+            "CREATE INDEX IF NOT EXISTS idx_conversations_user ON conversations(user_id)"
         ]
         
         for index_sql in indexes:
-            self.conn.execute(index_sql)
-        
-        self.conn.commit()
+            await db.execute(index_sql)
     
-    def _setup_cleanup_triggers(self):
+    async def _setup_cleanup_triggers(self, db: aiosqlite.Connection):
         """Set up automatic cleanup triggers for expired data."""
         # Trigger to clean up expired preferences
-        self.conn.execute("""
+        await db.execute("""
             CREATE TRIGGER IF NOT EXISTS cleanup_expired_preferences
             AFTER INSERT ON user_preferences
             BEGIN
@@ -141,7 +168,7 @@ class SecureDatabase:
         """)
         
         # Trigger to clean up expired search history
-        self.conn.execute("""
+        await db.execute("""
             CREATE TRIGGER IF NOT EXISTS cleanup_expired_searches
             AFTER INSERT ON search_history
             BEGIN
@@ -151,7 +178,7 @@ class SecureDatabase:
         """)
         
         # Trigger to clean up expired cache
-        self.conn.execute("""
+        await db.execute("""
             CREATE TRIGGER IF NOT EXISTS cleanup_expired_cache
             AFTER INSERT ON api_cache
             BEGIN
@@ -159,35 +186,34 @@ class SecureDatabase:
                 WHERE expires_at IS NOT NULL AND expires_at < datetime('now');
             END
         """)
-        
-        self.conn.commit()
     
-    async def _ensure_connection(self):
-        """Ensure database connection is available and thread-safe."""
-        async with self._connection_lock:
-            if self.conn is None:
-                self._initialize_database()
-            return self.conn
-    
-    async def _execute_query(self, query: str, params: tuple = None) -> sqlite3.Cursor:
+    async def _execute_query(self, query: str, params: tuple = None) -> aiosqlite.Cursor:
         """Execute a database query with proper connection management."""
-        conn = await self._ensure_connection()
-        if params:
-            return conn.execute(query, params)
-        else:
-            return conn.execute(query)
+        await self._ensure_initialized()
+        
+        async with aiosqlite.connect(self.db_path) as db:
+            if params:
+                cursor = await db.execute(query, params)
+            else:
+                cursor = await db.execute(query)
+            await db.commit()
+            return cursor
     
-    async def _execute_many(self, query: str, params_list: List[tuple]) -> sqlite3.Cursor:
+    async def _execute_many(self, query: str, params_list: List[tuple]) -> aiosqlite.Cursor:
         """Execute a database query with multiple parameter sets."""
-        conn = await self._ensure_connection()
-        return conn.executemany(query, params_list)
+        await self._ensure_initialized()
+        
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.executemany(query, params_list)
+            await db.commit()
+            return cursor
     
     def _encrypt_data(self, data: str) -> str:
         """Encrypt sensitive data."""
         try:
             return self.fernet.encrypt(data.encode()).decode()
         except Exception as e:
-            print(f"Encryption error: {e}")
+            logger.error(f"Encryption error: {e}")
             return data
     
     def _decrypt_data(self, encrypted_data: str) -> str:
@@ -195,7 +221,7 @@ class SecureDatabase:
         try:
             return self.fernet.decrypt(encrypted_data.encode()).decode()
         except Exception as e:
-            print(f"Decryption error: {e}")
+            logger.error(f"Decryption error: {e}")
             return encrypted_data
     
     def _hash_params(self, params: Dict[str, Any]) -> str:
@@ -215,12 +241,10 @@ class SecureDatabase:
                 VALUES (?, ?, ?)
             """, (pref_type, encrypted_value, expires_at))
             
-            conn = await self._ensure_connection()
-            conn.commit()
             return True
             
         except Exception as e:
-            print(f"Error storing preference: {e}")
+            logger.error(f"Error storing preference: {e}")
             return False
     
     async def get_preferences(self, pref_type: str = None) -> List[UserPreference]:
@@ -238,7 +262,7 @@ class SecureDatabase:
                 cursor = await self._execute_query("SELECT * FROM user_preferences")
             
             preferences = []
-            for row in cursor.fetchall():
+            async for row in cursor:
                 try:
                     decrypted_value = self._decrypt_data(row[2])
                     preference = UserPreference(
@@ -250,13 +274,13 @@ class SecureDatabase:
                     )
                     preferences.append(preference)
                 except Exception as e:
-                    print(f"Error processing preference: {e}")
+                    logger.error(f"Error processing preference: {e}")
                     continue
             
             return preferences
             
         except Exception as e:
-            print(f"Error retrieving preferences: {e}")
+            logger.error(f"Error retrieving preferences: {e}")
             return []
     
     async def delete_preference(self, pref_type: str) -> bool:
@@ -266,11 +290,9 @@ class SecureDatabase:
                 "DELETE FROM user_preferences WHERE preference_type = ?",
                 (pref_type,)
             )
-            conn = await self._ensure_connection()
-            conn.commit()
             return True
         except Exception as e:
-            print(f"Error deleting preference: {e}")
+            logger.error(f"Error deleting preference: {e}")
             return False
     
     # Search History Methods
@@ -285,12 +307,10 @@ class SecureDatabase:
                 VALUES (?, ?, ?, ?)
             """, (search_type, encrypted_params, results_count, expires_at))
             
-            conn = await self._ensure_connection()
-            conn.commit()
             return True
             
         except Exception as e:
-            print(f"Error storing search: {e}")
+            logger.error(f"Error storing search: {e}")
             return False
     
     async def get_search_history(self, search_type: str = None, limit: int = 10) -> List[SearchHistory]:
@@ -310,7 +330,7 @@ class SecureDatabase:
                 )
             
             searches = []
-            for row in cursor.fetchall():
+            async for row in cursor:
                 try:
                     decrypted_params = self._decrypt_data(row[2])
                     search = SearchHistory(
@@ -323,13 +343,13 @@ class SecureDatabase:
                     )
                     searches.append(search)
                 except Exception as e:
-                    print(f"Error processing search: {e}")
+                    logger.error(f"Error processing search: {e}")
                     continue
             
             return searches
             
         except Exception as e:
-            print(f"Error retrieving search history: {e}")
+            logger.error(f"Error retrieving search history: {e}")
             return []
     
     # Travel Plans Methods
@@ -357,12 +377,10 @@ class SecureDatabase:
                 """, (plan.plan_name, plan.destination, plan.start_date, plan.end_date,
                       plan.travelers, plan.budget, plan.currency, encrypted_plan_data))
             
-            conn = await self._ensure_connection()
-            conn.commit()
             return True
             
         except Exception as e:
-            print(f"Error storing travel plan: {e}")
+            logger.error(f"Error storing travel plan: {e}")
             return False
     
     async def get_travel_plans(self, destination: str = None) -> List[TravelPlan]:
@@ -379,7 +397,7 @@ class SecureDatabase:
                 )
             
             plans = []
-            for row in cursor.fetchall():
+            async for row in cursor:
                 try:
                     decrypted_plan_data = self._decrypt_data(row[8])
                     plan = TravelPlan(
@@ -397,13 +415,13 @@ class SecureDatabase:
                     )
                     plans.append(plan)
                 except Exception as e:
-                    print(f"Error processing travel plan: {e}")
+                    logger.error(f"Error processing travel plan: {e}")
                     continue
             
             return plans
             
         except Exception as e:
-            print(f"Error retrieving travel plans: {e}")
+            logger.error(f"Error retrieving travel plans: {e}")
             return []
     
     # API Cache Methods
@@ -427,12 +445,10 @@ class SecureDatabase:
                 VALUES (?, ?, ?, ?, ?)
             """, (api_name, endpoint, params_hash, encrypted_response, expires_at))
             
-            conn = await self._ensure_connection()
-            conn.commit()
             return True
             
         except Exception as e:
-            print(f"Error storing API cache: {e}")
+            logger.error(f"Error storing API cache: {e}")
             return False
     
     async def get_api_cache(self, api_name: str, params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -445,7 +461,7 @@ class SecureDatabase:
                 WHERE api_name = ? AND params_hash = ? AND expires_at > datetime('now')
             """, (api_name, params_hash))
             
-            row = cursor.fetchone()
+            row = await cursor.fetchone()
             if row:
                 decrypted_response = self._decrypt_data(row[0])
                 return json.loads(decrypted_response)
@@ -453,7 +469,7 @@ class SecureDatabase:
             return None
             
         except Exception as e:
-            print(f"Error retrieving API cache: {e}")
+            logger.error(f"Error retrieving API cache: {e}")
             return None
     
     # Cleanup Methods
@@ -480,16 +496,13 @@ class SecureDatabase:
             )
             deleted_count += cursor.rowcount
             
-            conn = await self._ensure_connection()
-            conn.commit()
-            
             if deleted_count > 0:
-                print(f"Cleaned up {deleted_count} expired records")
+                logger.info(f"Cleaned up {deleted_count} expired records")
             
             return deleted_count
             
         except Exception as e:
-            print(f"Error during cleanup: {e}")
+            logger.error(f"Error during cleanup: {e}")
             return 0
     
     async def get_database_stats(self) -> Dict[str, int]:
@@ -498,34 +511,38 @@ class SecureDatabase:
             stats = {}
             
             # Count records in each table
-            tables = ['user_preferences', 'search_history', 'travel_plans', 'api_cache']
+            tables = ['user_preferences', 'search_history', 'travel_plans', 'api_cache', 'conversations']
             for table in tables:
                 cursor = await self._execute_query(f"SELECT COUNT(*) FROM {table}")
-                stats[table] = cursor.fetchone()[0]
+                row = await cursor.fetchone()
+                stats[table] = row[0] if row else 0
             
             # Count expired records
             cursor = await self._execute_query("""
                 SELECT COUNT(*) FROM user_preferences 
                 WHERE expires_at IS NOT NULL AND expires_at < datetime('now')
             """)
-            stats['expired_preferences'] = cursor.fetchone()[0]
+            row = await cursor.fetchone()
+            stats['expired_preferences'] = row[0] if row else 0
             
             cursor = await self._execute_query("""
                 SELECT COUNT(*) FROM search_history 
                 WHERE expires_at IS NOT NULL AND expires_at < datetime('now')
             """)
-            stats['expired_searches'] = cursor.fetchone()[0]
+            row = await cursor.fetchone()
+            stats['expired_searches'] = row[0] if row else 0
             
             cursor = await self._execute_query("""
                 SELECT COUNT(*) FROM api_cache 
                 WHERE expires_at IS NOT NULL AND expires_at < datetime('now')
             """)
-            stats['expired_cache'] = cursor.fetchone()[0]
+            row = await cursor.fetchone()
+            stats['expired_cache'] = row[0] if row else 0
             
             return stats
             
         except Exception as e:
-            print(f"Error getting database stats: {e}")
+            logger.error(f"Error getting database stats: {e}")
             return {}
     
     async def save_conversation(self, user_id: str, user_message: str, assistant_response: str) -> bool:
@@ -545,41 +562,65 @@ class SecureDatabase:
             encrypted_user_msg = self._encrypt_data(user_message)
             encrypted_assistant_msg = self._encrypt_data(assistant_response)
             
-            # Store in a simple conversations table
-            await self._execute_query("""
-                CREATE TABLE IF NOT EXISTS conversations (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id TEXT NOT NULL,
-                    user_message TEXT NOT NULL,
-                    assistant_response TEXT NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            
             await self._execute_query("""
                 INSERT INTO conversations (user_id, user_message, assistant_response)
                 VALUES (?, ?, ?)
             """, (user_id, encrypted_user_msg, encrypted_assistant_msg))
             
-            conn = await self._ensure_connection()
-            conn.commit()
             return True
             
         except Exception as e:
-            print(f"Error saving conversation: {e}")
+            logger.error(f"Error saving conversation: {e}")
             return False
     
-    def close(self):
-        """Close database connection securely."""
-        if self.conn:
-            self.conn.close()
-            self.conn = None
-            print("Database connection closed")
+    async def get_conversations(self, user_id: str = None, limit: int = 50) -> List[Dict[str, Any]]:
+        """Get conversation history."""
+        try:
+            if user_id:
+                cursor = await self._execute_query(
+                    "SELECT * FROM conversations WHERE user_id = ? ORDER BY created_at DESC LIMIT ?",
+                    (user_id, limit)
+                )
+            else:
+                cursor = await self._execute_query(
+                    "SELECT * FROM conversations ORDER BY created_at DESC LIMIT ?",
+                    (limit,)
+                )
+            
+            conversations = []
+            async for row in cursor:
+                try:
+                    decrypted_user_msg = self._decrypt_data(row[2])
+                    decrypted_assistant_msg = self._decrypt_data(row[3])
+                    
+                    conversations.append({
+                        'id': row[0],
+                        'user_id': row[1],
+                        'user_message': decrypted_user_msg,
+                        'assistant_response': decrypted_assistant_msg,
+                        'created_at': datetime.fromisoformat(row[4]) if row[4] else None
+                    })
+                except Exception as e:
+                    logger.error(f"Error processing conversation: {e}")
+                    continue
+            
+            return conversations
+            
+        except Exception as e:
+            logger.error(f"Error retrieving conversations: {e}")
+            return []
     
-    def __enter__(self):
-        """Context manager entry."""
+    async def close(self):
+        """Close database connection securely."""
+        # With aiosqlite, connections are automatically closed
+        # This method is kept for compatibility
+        logger.info("Database connection closed")
+    
+    async def __aenter__(self):
+        """Async context manager entry."""
+        await self._ensure_initialized()
         return self
     
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit."""
-        self.close()
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit."""
+        await self.close()

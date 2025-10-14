@@ -121,7 +121,7 @@ async def generate_streaming_response(message: str, context: Optional[Dict[str, 
             # Process with timeout to prevent long waits
             response = await asyncio.wait_for(
                 agent.process_query(message, context), 
-                timeout=30.0  # 30 second timeout
+                timeout=15.0  # 15 second timeout for better UX
             )
         except asyncio.TimeoutError:
             yield f"data: {json.dumps({'chunk': 'Request is taking longer than expected. Please try a simpler question or check your internet connection.', 'done': True})}\n\n"

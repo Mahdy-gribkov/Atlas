@@ -50,7 +50,7 @@ from src.config import config
 from src.database.secure_database import SecureDatabase
 from src.apis import (
     RestCountriesClient, WikipediaClient, NominatimClient, WebSearchClient, 
-    AviationStackClient, OpenWeatherClient, FreeWeatherClient, FreeFlightClient,
+    AviationStackClient, WeatherClient, FreeFlightClient,
     OpenMeteoClient, CurrencyAPIClient, HotelSearchClient, AttractionsClient,
     CarRentalClient, EventsClient, InsuranceClient, TransportationClient, FoodClient
 )
@@ -117,7 +117,7 @@ class TravelAgent:
         
         # Free API clients (always available)
         self.free_flight_client = FreeFlightClient()
-        self.free_weather_client = FreeWeatherClient()
+        self.weather_client = WeatherClient()
         self.open_meteo_client = OpenMeteoClient()
         self.currency_client = CurrencyAPIClient()
         self.hotel_client = HotelSearchClient()
@@ -135,11 +135,8 @@ class TravelAgent:
         except Exception as e:
             logger.warning(f"Flight API not available: {e}")
         
-        try:
-            self.weather_client = OpenWeatherClient()
-            logger.info("Free Weather API client initialized")
-        except Exception as e:
-            logger.warning(f"Weather API not available: {e}")
+        # Weather client is already initialized above
+        logger.info("Free Weather API client initialized")
         
         # Log available free APIs
         logger.info("Free APIs initialized: Weather (wttr.in, Open-Meteo), Flights, Currency, Hotels, Attractions, Car Rental, Events, Insurance, Transportation, Food")
@@ -298,37 +295,57 @@ Response:"""
         """Get intelligent fallback responses for common travel queries."""
         prompt_lower = prompt.lower()
         
+        # Extract destination and context
+        destination = self._extract_destination_from_prompt(prompt_lower)
+        travel_type = self._classify_travel_query(prompt_lower)
+        
         # Rome trip planning
         if "rome" in prompt_lower and ("israel" in prompt_lower or "from" in prompt_lower):
             return self._generate_rome_trip_plan()
         
-        # General trip planning
-        elif any(word in prompt_lower for word in ["trip", "travel", "plan", "itinerary"]):
-            return self._generate_generic_trip_plan(prompt)
+        # Destination-specific responses
+        elif destination:
+            return self._generate_destination_response(destination, travel_type, prompt_lower)
         
         # Weather queries
         elif "weather" in prompt_lower:
-            return "I can help you check weather for your destination. Please specify which city you'd like weather information for."
+            return "🌤️ I can help you check weather for your destination. Please specify which city you'd like weather information for, and I'll provide current conditions and forecasts."
         
         # Flight queries
         elif "flight" in prompt_lower:
-            return "I can help you find flights. Please provide your departure city, destination, and travel dates."
+            return "✈️ I can help you find flights. Please provide:\n• Your departure city\n• Destination city\n• Travel dates\n• Number of passengers\n\nI'll search for the best flight options for you."
         
         # Hotel queries
-        elif "hotel" in prompt_lower:
-            return "I can help you find hotels. Please specify your destination city and travel dates."
+        elif "hotel" in prompt_lower or "accommodation" in prompt_lower:
+            return "🏨 I can help you find hotels and accommodations. Please specify:\n• Your destination city\n• Check-in and check-out dates\n• Number of guests\n• Budget range\n\nI'll provide hotel recommendations with prices and amenities."
         
         # Attractions queries
-        elif "attraction" in prompt_lower or "things to do" in prompt_lower:
-            return "I can help you find attractions and activities. Please specify which city you're interested in."
+        elif "attraction" in prompt_lower or "things to do" in prompt_lower or "sightseeing" in prompt_lower:
+            return "🎯 I can help you find attractions and activities. Please specify which city you're interested in, and I'll provide:\n• Top tourist attractions\n• Local activities\n• Cultural sites\n• Entertainment options"
+        
+        # Budget queries
+        elif "budget" in prompt_lower or "cost" in prompt_lower or "price" in prompt_lower:
+            return "💰 I can help you plan your travel budget. Please provide:\n• Your destination\n• Trip duration\n• Travel style (budget/mid-range/luxury)\n• Number of travelers\n\nI'll create a detailed budget breakdown for you."
+        
+        # Transportation queries
+        elif any(word in prompt_lower for word in ["transport", "bus", "train", "metro", "taxi", "uber"]):
+            return "🚌 I can help you with transportation options. Please specify:\n• Your destination city\n• Areas you'll be traveling between\n• Preferred transportation type\n\nI'll provide public transit, taxi, and ride-sharing options."
+        
+        # Food queries
+        elif any(word in prompt_lower for word in ["food", "restaurant", "cuisine", "eat", "dining"]):
+            return "🍽️ I can help you find great restaurants and local cuisine. Please specify:\n• Your destination city\n• Food preferences or dietary restrictions\n• Budget range\n• Cuisine type\n\nI'll recommend the best local restaurants and dishes to try."
+        
+        # General trip planning
+        elif any(word in prompt_lower for word in ["trip", "travel", "plan", "itinerary", "visit"]):
+            return self._generate_generic_trip_plan(prompt)
         
         # General greeting
         elif any(word in prompt_lower for word in ["hello", "hi", "hey", "help"]):
-            return "I'm your travel planning assistant! I can help you with:\n• Trip planning and itineraries\n• Flight information\n• Hotel recommendations\n• Weather forecasts\n• Budget planning\n• Destination information\n\nWhat would you like help with?"
+            return "🌍 Welcome! I'm your travel planning assistant. I can help you with:\n\n• 🗺️ Trip planning and itineraries\n• ✈️ Flight information and booking\n• 🏨 Hotel recommendations\n• 🌤️ Weather forecasts\n• 💰 Budget planning and cost estimates\n• 🎯 Attractions and activities\n• 🍽️ Restaurant recommendations\n• 🚌 Transportation options\n• 🛡️ Travel insurance\n• 📍 Destination information\n\nWhat would you like help with today?"
         
         # Default response
         else:
-            return "I'm a travel assistant. I can help you plan trips, find flights, hotels, and provide travel information. How can I assist you today?"
+            return "🌍 I'm your travel planning assistant! I can help you with comprehensive travel planning including flights, hotels, weather, attractions, and more. Please let me know what you'd like to plan or ask about your next trip!"
     
     def _process_travel_request(self, prompt: str) -> str:
         """Process travel requests with structured responses."""
@@ -352,6 +369,61 @@ Response:"""
         except Exception as e:
             logger.error(f"Travel request processing failed: {e}")
             return "I'm a travel assistant. I can help you plan trips, find flights, hotels, and provide travel information. How can I assist you today?"
+    
+    def _extract_destination_from_prompt(self, prompt_lower: str) -> Optional[str]:
+        """Extract destination from user prompt."""
+        destinations = [
+            'tokyo', 'japan', 'paris', 'france', 'london', 'england', 'uk', 'rome', 'italy',
+            'new york', 'nyc', 'usa', 'america', 'bangkok', 'thailand', 'sydney', 'australia',
+            'berlin', 'germany', 'madrid', 'spain', 'amsterdam', 'netherlands', 'vienna', 'austria',
+            'prague', 'czech republic', 'budapest', 'hungary', 'lisbon', 'portugal', 'athens', 'greece',
+            'istanbul', 'turkey', 'cairo', 'egypt', 'dubai', 'uae', 'singapore', 'hong kong', 'china',
+            'seoul', 'south korea', 'mumbai', 'delhi', 'india', 'rio de janeiro', 'sao paulo', 'brazil',
+            'buenos aires', 'argentina', 'mexico city', 'mexico', 'toronto', 'vancouver', 'canada',
+            'peru', 'lima', 'chile', 'santiago', 'colombia', 'bogota', 'morocco', 'casablanca',
+            'south africa', 'cape town', 'johannesburg', 'kenya', 'nairobi', 'tanzania', 'zanzibar'
+        ]
+        
+        for dest in destinations:
+            if dest in prompt_lower:
+                return dest.title()
+        return None
+    
+    def _classify_travel_query(self, prompt_lower: str) -> str:
+        """Classify the type of travel query."""
+        if any(word in prompt_lower for word in ['weather', 'temperature', 'climate']):
+            return 'weather'
+        elif any(word in prompt_lower for word in ['flight', 'airline', 'fly']):
+            return 'flights'
+        elif any(word in prompt_lower for word in ['hotel', 'accommodation', 'stay']):
+            return 'accommodation'
+        elif any(word in prompt_lower for word in ['attraction', 'sightseeing', 'things to do']):
+            return 'attractions'
+        elif any(word in prompt_lower for word in ['food', 'restaurant', 'cuisine', 'eat']):
+            return 'food'
+        elif any(word in prompt_lower for word in ['budget', 'cost', 'price', 'expensive']):
+            return 'budget'
+        elif any(word in prompt_lower for word in ['transport', 'bus', 'train', 'metro']):
+            return 'transportation'
+        else:
+            return 'general'
+    
+    def _generate_destination_response(self, destination: str, travel_type: str, prompt_lower: str) -> str:
+        """Generate destination-specific response."""
+        if travel_type == 'weather':
+            return f"🌤️ I can help you check the weather in {destination}. Let me get current conditions and forecasts for you."
+        elif travel_type == 'flights':
+            return f"✈️ I can help you find flights to {destination}. Please provide your departure city and travel dates."
+        elif travel_type == 'accommodation':
+            return f"🏨 I can help you find hotels in {destination}. Please specify your check-in/check-out dates and number of guests."
+        elif travel_type == 'attractions':
+            return f"🎯 I can help you find the best attractions and activities in {destination}. Let me search for top tourist spots and local experiences."
+        elif travel_type == 'food':
+            return f"🍽️ I can help you find great restaurants and local cuisine in {destination}. What type of food are you interested in?"
+        elif travel_type == 'budget':
+            return f"💰 I can help you plan your budget for {destination}. Please let me know your trip duration and travel style."
+        else:
+            return f"🌍 I can help you plan your trip to {destination}! I can assist with flights, hotels, weather, attractions, and more. What would you like to know about {destination}?"
     
     def _generate_rome_trip_plan(self) -> str:
         """Generate a specific trip plan for Rome from Israel."""
@@ -773,9 +845,9 @@ Please provide a helpful, specific response. Be conversational and provide actio
                 if not weather_data and self.open_meteo_client:
                     weather_data = await self._get_open_meteo_weather(location)
                 
-                # Try wttr.in (free, reliable)
-                if not weather_data and self.free_weather_client:
-                    weather_data = await self._get_free_weather_data(location)
+                # Try consolidated weather client (free, reliable)
+                if not weather_data and self.weather_client:
+                    weather_data = await self._get_weather_data(location)
                 
                 if weather_data:
                     response_parts.append(weather_data)
@@ -894,13 +966,13 @@ Please provide a helpful, specific response. Be conversational and provide actio
             logger.error(f"Real weather data error: {e}")
             return None
     
-    async def _get_free_weather_data(self, location: str) -> Optional[str]:
+    async def _get_weather_data(self, location: str) -> Optional[str]:
         """Get weather data from free APIs."""
         try:
-            if not self.free_weather_client:
+            if not self.weather_client:
                 return None
             
-            weather_data = await self.free_weather_client.get_current_weather(location)
+            weather_data = await self.weather_client.get_current_weather(location)
             
             if weather_data:
                 weather_info = f"""
