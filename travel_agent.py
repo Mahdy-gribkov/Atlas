@@ -46,9 +46,9 @@ import logging
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
-from config import config
-from database.secure_database import SecureDatabase
-from apis import (
+from src.config import config
+from src.database.secure_database import SecureDatabase
+from src.apis import (
     RestCountriesClient, WikipediaClient, NominatimClient, WebSearchClient, 
     AviationStackClient, OpenWeatherClient, FreeWeatherClient, FreeFlightClient,
     OpenMeteoClient, CurrencyAPIClient, HotelSearchClient, AttractionsClient,
