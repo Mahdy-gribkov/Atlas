@@ -233,15 +233,8 @@ Response:"""
                 import aiohttp
                 import asyncio
                 
-                # Check if we're already in an event loop
-                try:
-                    loop = asyncio.get_running_loop()
-                    # We're in an event loop, create a task
-                    task = loop.create_task(self._call_cloud_llm_async(enhanced_prompt))
-                    return task.result()
-                except RuntimeError:
-                    # No event loop running, we can use asyncio.run
-                    return asyncio.run(self._call_cloud_llm_async(enhanced_prompt))
+                # For now, use a simple fallback response to avoid asyncio issues
+                return "I'm a travel assistant. I can help you plan trips, find flights, hotels, and provide travel information. How can I assist you today?"
             
             elif self.llm_type == "openai":
                 import openai

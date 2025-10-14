@@ -15,11 +15,12 @@ function App() {
   const [userLocation, setUserLocation] = useState('');
   const [showLocationPrompt, setShowLocationPrompt] = useState(true);
   const [isListening, setIsListening] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [showExamples, setShowExamples] = useState(true);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [destinationLocation, setDestinationLocation] = useState(null);
   const [suggestedLocations, setSuggestedLocations] = useState([]);
+  const [showDownloadOptions, setShowDownloadOptions] = useState(false);
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
 
@@ -30,6 +31,29 @@ function App() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Get user's current location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setCurrentLocation({ lat: latitude, lng: longitude });
+          setUserLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+        },
+        (error) => {
+          console.log('Geolocation error:', error);
+          // Fallback to a default location (New York)
+          setCurrentLocation({ lat: 40.7128, lng: -74.0060 });
+          setUserLocation('New York, NY');
+        }
+      );
+    } else {
+      // Fallback to a default location
+      setCurrentLocation({ lat: 40.7128, lng: -74.0060 });
+      setUserLocation('New York, NY');
+    }
+  }, []);
 
   // Initialize voice recognition
   useEffect(() => {
@@ -197,11 +221,8 @@ function App() {
     }
   };
 
-  const saveChat = () => {
-    // Show save options
-    const format = prompt('Choose format: 1 for JSON, 2 for PDF, 3 for DOCX, or press Cancel for device save dialog');
-    
-    if (format === '1') {
+  const saveChat = (format) => {
+    if (format === 'json') {
       // JSON
       const chatData = {
         messages,
@@ -216,8 +237,8 @@ function App() {
       link.download = `travel-chat-${new Date().toISOString().split('T')[0]}.json`;
       link.click();
       URL.revokeObjectURL(url);
-    } else if (format === '2') {
-      // PDF (simple text-based)
+    } else if (format === 'txt') {
+      // Text file
       const chatText = messages.map(msg => 
         `${msg.role === 'user' ? 'You' : 'Assistant'}: ${msg.content}`
       ).join('\n\n');
@@ -228,28 +249,16 @@ function App() {
       link.download = `travel-chat-${new Date().toISOString().split('T')[0]}.txt`;
       link.click();
       URL.revokeObjectURL(url);
-    } else if (format === '3') {
-      // DOCX (simple text-based)
-      const chatText = messages.map(msg => 
-        `${msg.role === 'user' ? 'You' : 'Assistant'}: ${msg.content}`
-      ).join('\n\n');
-      const dataBlob = new Blob([chatText], { type: 'text/plain' });
+    } else if (format === 'md') {
+      // Markdown file
+      const chatMarkdown = messages.map(msg => 
+        `## ${msg.role === 'user' ? 'You' : 'Assistant'}\n\n${msg.content}`
+      ).join('\n\n---\n\n');
+      const dataBlob = new Blob([chatMarkdown], { type: 'text/markdown' });
       const url = URL.createObjectURL(dataBlob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `travel-chat-${new Date().toISOString().split('T')[0]}.txt`;
-      link.click();
-      URL.revokeObjectURL(url);
-    } else {
-      // Device save dialog
-      const chatText = messages.map(msg => 
-        `${msg.role === 'user' ? 'You' : 'Assistant'}: ${msg.content}`
-      ).join('\n\n');
-      const dataBlob = new Blob([chatText], { type: 'text/plain' });
-      const url = URL.createObjectURL(dataBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `travel-chat-${new Date().toISOString().split('T')[0]}.txt`;
+      link.download = `travel-chat-${new Date().toISOString().split('T')[0]}.md`;
       link.click();
       URL.revokeObjectURL(url);
     }
@@ -345,11 +354,20 @@ function App() {
                 <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/>
               </svg>
             </button>
-            <button className="header-btn" onClick={saveChat} title="Save chat">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/>
-              </svg>
-                </button>
+            <div className="download-container">
+              <button className="header-btn" onClick={() => setShowDownloadOptions(!showDownloadOptions)} title="Save chat">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/>
+                </svg>
+              </button>
+              {showDownloadOptions && (
+                <div className="download-options">
+                  <button onClick={() => { saveChat('json'); setShowDownloadOptions(false); }}>JSON</button>
+                  <button onClick={() => { saveChat('txt'); setShowDownloadOptions(false); }}>TXT</button>
+                  <button onClick={() => { saveChat('md'); setShowDownloadOptions(false); }}>MD</button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -552,7 +570,10 @@ function App() {
                 </svg>
               </span>
               <span className="disclaimer-text">
-                Local LLM uses energy and may make mistakes. For guidance only.
+                LLM may make mistakes. For guidance only.
+              </span>
+              <span className="model-info">
+                DialoGPT-medium
               </span>
             </div>
           </div>
