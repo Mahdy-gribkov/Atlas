@@ -15,6 +15,7 @@ const TravelMap = ({ currentLocation, destinationLocation, suggestedLocations })
   const [mapCenter, setMapCenter] = useState([0, 0]);
   const [markers, setMarkers] = useState([]);
   const [route, setRoute] = useState([]);
+  const [mapView, setMapView] = useState('standard');
 
   // Custom marker icons
   const createCustomIcon = (color, type = 'default') => {
@@ -97,9 +98,28 @@ const TravelMap = ({ currentLocation, destinationLocation, suggestedLocations })
 
     setMarkers(newMarkers);
 
-    // Calculate center point
+    // Calculate center point with priority logic
     if (pointCount > 0) {
-      setMapCenter([centerLat / pointCount, centerLng / pointCount]);
+      // Priority: current location first, then destination, then suggested locations
+      if (currentLocation && currentLocation.lat && currentLocation.lng) {
+        // If we have current location, center on it primarily
+        if (destinationLocation && destinationLocation.lat && destinationLocation.lng) {
+          // If we also have destination, center between them
+          setMapCenter([
+            (currentLocation.lat + destinationLocation.lat) / 2,
+            (currentLocation.lng + destinationLocation.lng) / 2
+          ]);
+        } else {
+          // Just center on current location
+          setMapCenter([currentLocation.lat, currentLocation.lng]);
+        }
+      } else if (destinationLocation && destinationLocation.lat && destinationLocation.lng) {
+        // Center on destination if no current location
+        setMapCenter([destinationLocation.lat, destinationLocation.lng]);
+      } else {
+        // Fallback to average of all points
+        setMapCenter([centerLat / pointCount, centerLng / pointCount]);
+      }
     } else {
       // Default to a reasonable center if no locations
       setMapCenter([40.7128, -74.0060]); // New York City
@@ -137,18 +157,57 @@ const TravelMap = ({ currentLocation, destinationLocation, suggestedLocations })
     );
   }
 
+  // Map view configurations
+  const mapViews = {
+    standard: {
+      name: 'Standard',
+      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    },
+    satellite: {
+      name: 'Satellite',
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      attribution: '&copy; <a href="https://www.esri.com/">Esri</a>'
+    },
+    terrain: {
+      name: 'Terrain',
+      url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+      attribution: '&copy; <a href="https://opentopomap.org/">OpenTopoMap</a>'
+    },
+    dark: {
+      name: 'Dark',
+      url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    }
+  };
+
   return (
     <div className="real-map-container">
+      {/* Map View Controls */}
+      <div className="map-controls">
+        <div className="map-view-selector">
+          {Object.entries(mapViews).map(([key, view]) => (
+            <button
+              key={key}
+              className={`map-view-btn ${mapView === key ? 'active' : ''}`}
+              onClick={() => setMapView(key)}
+            >
+              {view.name}
+            </button>
+          ))}
+        </div>
+      </div>
+      
       <MapContainer
-        key={`${mapCenter[0]}-${mapCenter[1]}`}
+        key={`${mapCenter[0]}-${mapCenter[1]}-${mapView}`}
         center={mapCenter}
         zoom={markers.length > 1 ? 6 : 10}
         style={{ height: '100%', width: '100%' }}
         className="leaflet-container"
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution={mapViews[mapView].attribution}
+          url={mapViews[mapView].url}
         />
         
         {markers.map((marker, index) => (

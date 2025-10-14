@@ -21,6 +21,23 @@ function App() {
   const [destinationLocation, setDestinationLocation] = useState(null);
   const [suggestedLocations, setSuggestedLocations] = useState([]);
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
+
+  // Utility function to clean and format message content
+  const formatMessageContent = (content) => {
+    if (!content) return '';
+    
+    // Remove HTML tags and clean up the content
+    let cleaned = content
+      .replace(/<[^>]*>/g, '') // Remove HTML tags
+      .replace(/\*\*(.*?)\*\*/g, '**$1**') // Keep markdown bold
+      .replace(/\*(.*?)\*/g, '*$1*') // Keep markdown italic
+      .replace(/&bull;/g, '•') // Convert HTML bullets
+      .replace(/&nbsp;/g, ' ') // Convert HTML spaces
+      .replace(/\n\n+/g, '\n\n') // Clean up multiple newlines
+      .trim();
+    
+    return cleaned;
+  };
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
 
@@ -315,6 +332,26 @@ function App() {
   const updateMapFromMessage = async (message) => {
     const content = message.content.toLowerCase();
     
+    // Check if this is an attractions message and extract destination
+    if (content.includes('top attractions in') && content.includes('🎯')) {
+      const match = content.match(/top attractions in ([^🎯]+)/);
+      if (match) {
+        const destination = match[1].trim();
+        try {
+          const geocodedLocation = await mapService.geocodeAddress(destination);
+          if (geocodedLocation && geocodedLocation.lat && geocodedLocation.lng) {
+            setDestinationLocation({
+              name: geocodedLocation.name || destination,
+              lat: geocodedLocation.lat,
+              lng: geocodedLocation.lng
+            });
+          }
+        } catch (error) {
+          console.log('Failed to geocode destination for attractions:', error);
+        }
+      }
+    }
+    
     // Simple location detection with fallback coordinates
     const locations = {
       'new york': { lat: 40.7128, lng: -74.0060, name: 'New York' },
@@ -508,7 +545,7 @@ function App() {
                   <div className="message-text">
                     {message.role === 'assistant' ? (
                       <div className="assistant-message">
-                        {message.content.split('\n').map((line, index) => {
+                        {formatMessageContent(message.content).split('\n').map((line, index) => {
                           if (line.trim() === '') return <br key={index} />;
                           
                           // Format different types of content
@@ -548,7 +585,7 @@ function App() {
                         })}
                       </div>
                     ) : (
-                      message.content
+                      formatMessageContent(message.content)
                     )}
                   </div>
                   <div className="message-time">

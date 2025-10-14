@@ -688,7 +688,11 @@ Keep your response concise but helpful, focusing on actionable advice."""
 
             try:
                 llm_insights = self._call_llm(enhanced_prompt, "")
-                final_response = f"{structured_data}\n\n🤖 **AI Travel Insights:**\n{llm_insights}"
+                # Clean up the LLM response to avoid duplication
+                if llm_insights and not llm_insights.startswith("I'm a travel assistant"):
+                    final_response = f"{structured_data}\n\n🤖 **AI Travel Insights:**\n{llm_insights}"
+                else:
+                    final_response = structured_data
             except Exception as e:
                 logger.error(f"LLM enhancement failed: {e}")
                 final_response = structured_data
@@ -1227,7 +1231,11 @@ Keep your response concise but helpful, focusing on actionable advice."""
                 for category, attrs in categories.items():
                     attractions_info += f"**{category.title()}:**\n"
                     for attr in attrs[:3]:  # Top 3 per category
-                        attractions_info += f"• **{attr['name']}** ⭐ {attr['rating']} - {attr['price']} ({attr['duration']})\n"
+                        # Add map reference if coordinates are available
+                        map_ref = ""
+                        if attr.get('lat') and attr.get('lng'):
+                            map_ref = f" 📍"
+                        attractions_info += f"• **{attr['name']}** ⭐ {attr['rating']} - {attr['price']} ({attr['duration']}){map_ref}\n"
                     attractions_info += "\n"
                 
                 # Add travel tips
