@@ -26,10 +26,10 @@ class Config:
     USE_LOCAL_LLM: bool = os.getenv('USE_LOCAL_LLM', 'false').lower() == 'true'
     OLLAMA_MODEL: str = os.getenv('OLLAMA_MODEL', 'llama3.1:8b')
     
-    # Free Cloud LLM Settings - Hugging Face (No API key required)
-    CLOUD_LLM_URL: str = os.getenv('CLOUD_LLM_URL', 'https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium')
-    CLOUD_LLM_MODEL: str = os.getenv('CLOUD_LLM_MODEL', 'microsoft/DialoGPT-medium')
-    CLOUD_LLM_API_KEY: Optional[str] = os.getenv('CLOUD_LLM_API_KEY')  # Not required for Hugging Face
+    # Free Cloud LLM Settings - ApiFreeLLM (No API key required)
+    CLOUD_LLM_URL: str = os.getenv('CLOUD_LLM_URL', 'https://apifreellm.com/api/chat')
+    CLOUD_LLM_MODEL: str = os.getenv('CLOUD_LLM_MODEL', 'gpt-3.5-turbo')
+    CLOUD_LLM_API_KEY: Optional[str] = None  # Not required for ApiFreeLLM
     
     # LLM Performance Settings
     LLM_TEMPERATURE: float = float(os.getenv('LLM_TEMPERATURE', '0.7'))

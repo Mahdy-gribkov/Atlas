@@ -230,8 +230,8 @@ Response:"""
                 return response['response']
             
             elif self.llm_type == "cloud":
-                # Use simple rule-based responses for reliability
-                return self._get_rule_based_response(enhanced_prompt)
+                # Use ApiFreeLLM for intelligent responses
+                return self._call_cloud_llm_sync(enhanced_prompt)
             
             elif self.llm_type == "openai":
                 import openai
@@ -246,8 +246,42 @@ Response:"""
             logger.error(f"LLM call failed: {e}")
             return f"I apologize, but I'm having trouble processing your request right now. Error: {str(e)}"
     
-    def _get_rule_based_response(self, prompt: str) -> str:
-        """Get rule-based responses for common travel queries."""
+    def _call_cloud_llm_sync(self, prompt: str) -> str:
+        """Call ApiFreeLLM synchronously for intelligent responses."""
+        try:
+            import requests
+            import json
+            
+            # ApiFreeLLM API call
+            payload = {
+                "message": prompt
+            }
+            
+            response = requests.post(
+                self.cloud_llm_url,
+                json=payload,
+                headers={'Content-Type': 'application/json'},
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if 'response' in data:
+                    return data['response']
+                elif 'message' in data:
+                    return data['message']
+                else:
+                    return str(data)
+            else:
+                logger.error(f"ApiFreeLLM API error: {response.status_code}")
+                return self._get_fallback_response(prompt)
+                
+        except Exception as e:
+            logger.error(f"Cloud LLM call failed: {e}")
+            return self._get_fallback_response(prompt)
+    
+    def _get_fallback_response(self, prompt: str) -> str:
+        """Get intelligent fallback responses for common travel queries."""
         prompt_lower = prompt.lower()
         
         # Rome trip planning
@@ -357,7 +391,7 @@ Once you provide these details, I can create a detailed itinerary with:
 What destination are you most interested in?"""
     
     async def _call_cloud_llm_async(self, prompt: str) -> str:
-        """Call the free Hugging Face LLM asynchronously."""
+        """Call ApiFreeLLM asynchronously."""
         try:
             import aiohttp
             
@@ -365,15 +399,9 @@ What destination are you most interested in?"""
                 'Content-Type': 'application/json',
             }
             
-            # Hugging Face API format
+            # ApiFreeLLM API format
             payload = {
-                'inputs': prompt,
-                'parameters': {
-                    'max_length': config.LLM_MAX_TOKENS,
-                    'temperature': config.LLM_TEMPERATURE,
-                    'do_sample': True,
-                    'top_p': config.LLM_TOP_P
-                }
+                'message': prompt
             }
             
             async with aiohttp.ClientSession() as session:
@@ -385,17 +413,19 @@ What destination are you most interested in?"""
                 ) as response:
                     if response.status == 200:
                         data = await response.json()
-                        if isinstance(data, list) and len(data) > 0:
-                            return data[0].get('generated_text', 'I apologize, but I could not generate a response.')
+                        if 'response' in data:
+                            return data['response']
+                        elif 'message' in data:
+                            return data['message']
                         else:
-                            return 'I apologize, but I could not generate a response.'
+                            return str(data)
                     else:
                         error_text = await response.text()
-                        raise Exception(f"Hugging Face API error: {response.status} - {error_text}")
+                        raise Exception(f"ApiFreeLLM API error: {response.status} - {error_text}")
                         
         except Exception as e:
             logger.error(f"Cloud LLM call failed: {e}")
-            return f"I'm a travel assistant. I can help you plan trips, find flights, hotels, and provide travel information. How can I assist you today?"
+            return self._get_fallback_response(prompt)
     
     async def get_country_info(self, country_name: str) -> Dict[str, Any]:
         """Get comprehensive country information."""
@@ -631,10 +661,37 @@ What destination are you most interested in?"""
         else:
             await self._handle_general_query(query, response_parts, context_parts)
         
-        # Generate comprehensive response using LLM only if no structured data
+        # Generate comprehensive response using LLM with structured data
         if response_parts:
-            # We have structured data, use it directly
-            final_response = "\n\n".join(response_parts)
+            # We have structured data, enhance it with LLM intelligence
+            structured_data = "\n\n".join(response_parts)
+            context = "\n".join(context_parts) if context_parts else "No additional context available."
+            
+            # Create enhanced prompt for LLM to analyze and improve the structured data
+            enhanced_prompt = f"""As a travel expert, analyze this travel data and provide intelligent insights and recommendations:
+
+QUERY: {query}
+
+STRUCTURED DATA:
+{structured_data}
+
+ADDITIONAL CONTEXT:
+{context}
+
+Please provide:
+1. A brief summary of the key information
+2. Intelligent insights and recommendations
+3. Any important considerations or tips
+4. Next steps or follow-up suggestions
+
+Keep your response concise but helpful, focusing on actionable advice."""
+
+            try:
+                llm_insights = self._call_llm(enhanced_prompt, "")
+                final_response = f"{structured_data}\n\n🤖 **AI Travel Insights:**\n{llm_insights}"
+            except Exception as e:
+                logger.error(f"LLM enhancement failed: {e}")
+                final_response = structured_data
         else:
             # No structured data, use LLM for general responses
             context = "\n".join(context_parts) if context_parts else "No specific context available."
