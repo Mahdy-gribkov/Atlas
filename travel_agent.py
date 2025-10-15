@@ -191,7 +191,7 @@ class TravelAgent:
     
     def _call_llm(self, prompt: str, context: str = "") -> str:
         """
-        Call the cloud LLM with optimized prompting for faster responses.
+        Call the cloud LLM with simple, effective prompting.
         
         Args:
             prompt: Main prompt for the LLM
@@ -203,22 +203,16 @@ class TravelAgent:
         start_time = time.time()
         
         try:
-            # Build conversation context
-            conversation_context = self._build_conversation_context()
-            
-            # Build user preferences context
-            preferences_context = self._build_preferences_context()
-            
-            # Build simple, clear prompt for better responses
-            enhanced_prompt = f"""You are a helpful travel assistant. Be concise and practical.
+            # Simple, effective prompt
+            enhanced_prompt = f"""You are a helpful travel assistant. Answer the user's question clearly and concisely.
 
-User request: {prompt}
+User: {prompt}
 
 Instructions:
-- Give clear, direct answers
-- Ask ONE specific question if you need more info
-- Don't repeat information
+- Give a direct, helpful answer
 - Be conversational but brief
+- Ask one clarifying question if needed
+- Don't use special formatting or symbols
 - Focus on what the user actually asked for
 
 Response:"""
@@ -234,7 +228,7 @@ Response:"""
             
         except Exception as e:
             logger.error(f"LLM call failed: {e}")
-            return f"I apologize, but I'm having trouble processing your request right now. Error: {str(e)}"
+            return "I can help you with travel planning. What specific information do you need?"
     
     def _call_cloud_llm_sync(self, prompt: str) -> str:
         """Call free cloud LLM synchronously for intelligent responses."""

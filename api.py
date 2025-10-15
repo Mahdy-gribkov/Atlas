@@ -130,14 +130,15 @@ async def generate_streaming_response(message: str, context: Optional[Dict[str, 
         # Cache the response
         await api_cache.set(cache_key, response, ttl=3600)  # 1 hour cache
         
-        # Stream the response faster
+        # Stream the response more naturally
         words = response.split()
-        chunk_size = 4
+        chunk_size = 2  # Smaller chunks for more natural streaming
         
         for i in range(0, len(words), chunk_size):
             chunk = ' '.join(words[i:i+chunk_size])
-            yield f"data: {json.dumps({'chunk': chunk, 'done': False})}\n\n"
-            await asyncio.sleep(0.02)  # Faster streaming
+            if chunk.strip():  # Only send non-empty chunks
+                yield f"data: {json.dumps({'chunk': chunk, 'done': False})}\n\n"
+                await asyncio.sleep(0.05)  # Slightly slower for readability
         
         yield f"data: {json.dumps({'chunk': '', 'done': True})}\n\n"
         

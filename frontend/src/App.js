@@ -7,7 +7,7 @@ function App() {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: 'Welcome! I\'m your travel planning assistant. I can help you with flights, hotels, weather, budgets, and destination information. Where would you like to go?'
+      content: 'Hi! I\'m your travel planning assistant. I can help you with flights, hotels, weather, and travel planning. What would you like help with?'
     }
   ]);
   const [input, setInput] = useState('');
@@ -54,64 +54,22 @@ function App() {
     return cleaned;
   };
 
-  // Function to render clean text formatting
+  // Function to render simple, clean text formatting
   const renderFormattedContent = (content) => {
     if (!content) return '';
     
-    // Split by lines and process each line
-    const lines = content.split('\n');
-    return lines.map((line, index) => {
-      if (line.trim() === '') return <br key={index} />;
-      
-      // Handle **bold** text and add proper line breaks
-      let formattedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      
-      // Add line breaks for better formatting
-      if (line.trim() && !line.match(/^\d+\./) && !line.trim().startsWith('•') && !line.trim().startsWith('-')) {
-        formattedLine += '<br/>';
-      }
-      
-      // Handle numbered lists
-      if (line.match(/^\d+\./)) {
-        return (
-          <div key={index} className="message-line list-item numbered" dangerouslySetInnerHTML={{__html: formattedLine}}>
-          </div>
-        );
-      }
-      
-      // Handle bullet points
-      if (line.trim().startsWith('•') || line.trim().startsWith('-')) {
-        return (
-          <div key={index} className="message-line list-item bullet" dangerouslySetInnerHTML={{__html: formattedLine}}>
-          </div>
-        );
-      }
-      
-      // Handle section headers (lines ending with colon)
-      if (line.match(/^[A-Z][^.]*:$/)) {
-        return (
-          <div key={index} className="message-line section-header" dangerouslySetInnerHTML={{__html: formattedLine}}>
-          </div>
-        );
-      }
-      
-      // Handle highlighted lines (with emojis)
-      if (line.includes('✈️') || line.includes('🏨') || line.includes('💰') || 
-          line.includes('🌤️') || line.includes('📅') || line.includes('🏛️') || 
-          line.includes('📋') || line.includes('🚗') || line.includes('💱') || 
-          line.includes('🗣️') || line.includes('🤖')) {
-        return (
-          <div key={index} className="message-line highlight" dangerouslySetInnerHTML={{__html: formattedLine}}>
-          </div>
-        );
-      }
-      
-      // Regular paragraphs
-      return (
-        <div key={index} className="message-line paragraph" dangerouslySetInnerHTML={{__html: formattedLine}}>
-        </div>
-      );
-    });
+    // Simple formatting - just clean text with line breaks
+    const cleaned = content
+      .replace(/<[^>]*>/g, '') // Remove HTML tags
+      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold formatting
+      .replace(/\n\n+/g, '\n\n') // Clean up multiple newlines
+      .trim();
+    
+    return (
+      <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
+        {cleaned}
+      </div>
+    );
   };
 
   // Function to format travel planning messages
@@ -341,30 +299,32 @@ function App() {
                 
                 assistantMessage += data.chunk + ' ';
                 
-                // Add new assistant message for streaming
-                setMessages(prev => {
-                  const newMessages = [...prev];
-                  // Check if we already have a streaming message
-                  const lastMessage = newMessages[newMessages.length - 1];
-                  if (lastMessage && lastMessage.role === 'assistant' && lastMessage.isStreaming) {
-                    // Update existing streaming message
-                    newMessages[newMessages.length - 1] = {
-                      role: 'assistant',
-                      content: assistantMessage,
-                      isTyping: false,
-                      isStreaming: true
-                    };
-                  } else {
-                    // Add new streaming message
-                    newMessages.push({
-                      role: 'assistant',
-                      content: assistantMessage,
-                      isTyping: false,
-                      isStreaming: true
-                    });
-                  }
-                  return newMessages;
-                });
+                // Only add message when we have actual content
+                if (assistantMessage.trim().length > 0) {
+                  setMessages(prev => {
+                    const newMessages = [...prev];
+                    // Check if we already have a streaming message
+                    const lastMessage = newMessages[newMessages.length - 1];
+                    if (lastMessage && lastMessage.role === 'assistant' && lastMessage.isStreaming) {
+                      // Update existing streaming message
+                      newMessages[newMessages.length - 1] = {
+                        role: 'assistant',
+                        content: assistantMessage,
+                        isTyping: false,
+                        isStreaming: true
+                      };
+                    } else {
+                      // Add new streaming message only when we have content
+                      newMessages.push({
+                        role: 'assistant',
+                        content: assistantMessage,
+                        isTyping: false,
+                        isStreaming: true
+                      });
+                    }
+                    return newMessages;
+                  });
+                }
               }
             } catch (e) {
               // Ignore parsing errors for incomplete chunks
