@@ -59,6 +59,7 @@ from src.apis import (
     RealFlightScraper, RealHotelScraper, RealAttractionsScraper
 )
 from src.mcp import TravelMCPClient
+from src.context import AdvancedContextManager, ConversationMemory, PreferenceLearningSystem
 
 # Configure logging
 os.makedirs('data', exist_ok=True)  # Create data directory if it doesn't exist
@@ -131,8 +132,17 @@ class TravelAgent:
         # Initialize MCP Client for advanced tool management
         self.mcp_client = TravelMCPClient()
         
+        # Initialize Advanced Context Manager for sophisticated conversation memory
+        self.context_manager = AdvancedContextManager(self.database)
+        
+        # Initialize Conversation Memory System for persistent memory
+        self.conversation_memory = ConversationMemory(self.database)
+        
+        # Initialize Preference Learning System for intelligent user adaptation
+        self.preference_learning = PreferenceLearningSystem(self.database)
+        
         # Log successful initialization
-        logger.info("Real Data APIs, Scrapers & MCP Client initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools")
+        logger.info("Real Data APIs, Scrapers, MCP Client & Advanced Context Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning")
         
         # Conversation memory
         self.conversation_history = []
@@ -845,18 +855,24 @@ What destination are you most interested in?"""
     
     async def process_query(self, query: str, context: Optional[Dict[str, Any]] = None) -> str:
         """
-        Process a travel query with comprehensive analysis.
+        Process a travel query with advanced context management and comprehensive analysis.
         
         Args:
             query: User's travel query
             context: User context including departure location, destination, etc.
             
         Returns:
-            Comprehensive travel response
+            Comprehensive travel response with intelligent context
         """
-        logger.info(f"Processing query: {query[:100]}...")
+        logger.info(f"Processing query with advanced context: {query[:100]}...")
         
-        # Store in conversation history
+        # Generate user ID from context or use default
+        user_id = context.get('user_id', 'default_user') if context else 'default_user'
+        
+        # Build intelligent context using advanced context manager
+        intelligent_context = await self.context_manager.build_intelligent_context(user_id, query)
+        
+        # Store in conversation history (legacy)
         self.conversation_history.append({
             'timestamp': datetime.now().isoformat(),
             'user': query,
@@ -980,12 +996,37 @@ Response:"""
             raw_response = self._call_llm(intelligent_prompt, context_text)
             final_response = self._format_llm_response(raw_response)
         
-        # Store response in conversation history
+        # Store response in conversation history (legacy)
         self.conversation_history.append({
             'timestamp': datetime.now().isoformat(),
             'assistant': final_response,
             'type': 'assistant'
         })
+        
+        # Add conversation turn to advanced context manager
+        await self.context_manager.add_conversation_turn(
+            user_id, query, final_response, intelligent_context
+        )
+        
+        # Store conversation in memory system
+        await self.conversation_memory.store_memory(
+            user_id, f"User: {query}\nAssistant: {final_response}", 
+            'conversation', importance=0.7, 
+            tags=intelligent_context.get('current_topics', []),
+            metadata=intelligent_context
+        )
+        
+        # Learn from conversation for preference adaptation
+        conversation_data = {
+            'user_messages': [{'content': query, 'context': intelligent_context}],
+            'assistant_messages': [{'content': final_response, 'context': intelligent_context}],
+            'context': intelligent_context,
+            'entities': intelligent_context.get('current_entities', {})
+        }
+        await self.preference_learning.learn_from_conversation(user_id, conversation_data)
+        
+        # Update MCP context with intelligent context
+        await self.mcp_client.update_context('intelligent_context', intelligent_context)
         
         return final_response
     
