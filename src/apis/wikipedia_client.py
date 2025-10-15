@@ -11,6 +11,7 @@ import json
 import urllib.parse
 
 from .rate_limiter import APIRateLimiter
+from ..utils.error_handler import error_handler
 
 class WikipediaClient:
     """
@@ -34,15 +35,25 @@ class WikipediaClient:
         Returns:
             List of article results
         """
+        circuit_key = f"wikipedia_search_{query[:20]}"
+        
+        # Check circuit breaker
+        if not error_handler.should_allow_request(circuit_key):
+            print(f"Circuit breaker OPEN for Wikipedia search: {query}")
+            return []
+        
         try:
             # Use Wikipedia search API (completely free, no API key)
             results = await self._search_wikipedia(query, limit)
             if results:
+                error_handler.record_success(circuit_key)
                 return results
             
+            error_handler.record_success(circuit_key)
             return []
             
         except Exception as e:
+            error_handler.record_failure(circuit_key)
             print(f"Wikipedia search error: {e}")
             return []
     

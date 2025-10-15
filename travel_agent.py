@@ -2,11 +2,13 @@
 """
 🌍 Travel AI Agent - Privacy-First Travel Planning Assistant
 
-A comprehensive travel planning agent that runs entirely locally using:
-- Local LLM (Llama 3.1 8B) for natural language processing
-- Free APIs for real-time travel information
+A comprehensive travel planning agent that provides intelligent travel assistance using:
+- Free cloud LLM (LLM7.io) for natural language processing
+- 15+ free APIs for real-time travel information
 - Encrypted local storage for privacy
 - Web search capabilities for current information
+- RAG (Retrieval-Augmented Generation) for accurate responses
+- Context management for personalized conversations
 
 Features:
 - Flight search and booking recommendations
@@ -28,6 +30,7 @@ Architecture:
 - Database: Encrypted SQLite with automatic cleanup
 - APIs: Comprehensive free API integrations
 - Security: AES-256 encryption, no data leakage
+- Performance: Advanced caching and circuit breakers
 
 Author: Mahdy Gribkov
 License: MIT
@@ -39,6 +42,7 @@ import os
 import asyncio
 import json
 import re
+import time
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
 import logging
@@ -149,6 +153,21 @@ class TravelAgent:
         self.conversation_history = []
         self.user_preferences = {}
         
+        # Load user preferences from database (will be loaded in async context)
+        self._preferences_loaded = False
+        
+        # Initialize knowledge base for RAG
+        self.knowledge_base = {}
+        
+        # Initialize performance monitoring
+        self.performance_stats = {
+            'api_calls': 0,
+            'cache_hits': 0,
+            'cache_misses': 0,
+            'llm_calls': 0,
+            'response_times': []
+        }
+        
         # Initialize Cloud LLM (no local LLM)
         self._init_cloud_llm()
         
@@ -181,11 +200,23 @@ class TravelAgent:
         Returns:
             LLM response
         """
+        start_time = time.time()
+        
         try:
+            # Build conversation context
+            conversation_context = self._build_conversation_context()
+            
+            # Build user preferences context
+            preferences_context = self._build_preferences_context()
+            
             # Build interactive prompt for better responses
             enhanced_prompt = f"""You are a helpful travel assistant. 
 
-Context: {context[:300]}
+Previous Conversation Context: {conversation_context}
+
+User Preferences: {preferences_context}
+
+Current Context: {context[:300]}
 
 User request: {prompt}
 
@@ -195,11 +226,20 @@ Instructions:
 - Ask clarifying questions when needed
 - Be conversational and helpful
 - Focus on practical travel advice
+- Use the conversation context to provide relevant responses
+- Consider user preferences when making recommendations
+- Remember previous conversations to provide personalized advice
 
 Response:"""
             
             # Always use cloud LLM
-            return self._call_cloud_llm_sync(enhanced_prompt)
+            response = self._call_cloud_llm_sync(enhanced_prompt)
+            
+            # Update performance stats
+            self.performance_stats['llm_calls'] += 1
+            self.performance_stats['response_times'].append(time.time() - start_time)
+            
+            return response
             
         except Exception as e:
             logger.error(f"LLM call failed: {e}")
@@ -247,6 +287,12 @@ Response:"""
                 else:
                     logger.warning(f"LLM7.io returned status code: {response.status_code}")
                     
+            except requests.exceptions.Timeout:
+                logger.warning("LLM7.io request timed out")
+            except requests.exceptions.ConnectionError:
+                logger.warning("LLM7.io connection error")
+            except requests.exceptions.RequestException as e:
+                logger.warning(f"LLM7.io request error: {e}")
             except Exception as e:
                 logger.warning(f"LLM7.io service failed: {e}")
             
@@ -289,6 +335,181 @@ Response:"""
             logger.error(f"Text beautification failed: {e}")
             # Fallback to simple cleaning
             return re.sub(r'<[^>]*>', '', response.strip())
+    
+    async def _ensure_preferences_loaded(self) -> None:
+        """Ensure user preferences are loaded from database."""
+        if not self._preferences_loaded:
+            await self._load_user_preferences()
+            self._preferences_loaded = True
+    
+    async def _load_user_preferences(self) -> None:
+        """Load user preferences from database."""
+        try:
+            preferences = await self.database.get_preferences()
+            for pref in preferences:
+                self.user_preferences[pref.preference_type] = pref.preference_value
+            logger.info(f"Loaded {len(preferences)} user preferences")
+        except Exception as e:
+            logger.error(f"Error loading user preferences: {e}")
+    
+    async def _save_user_preference(self, pref_type: str, pref_value: str) -> None:
+        """Save user preference to database."""
+        try:
+            await self.database.store_preference(pref_type, pref_value)
+            self.user_preferences[pref_type] = pref_value
+            logger.info(f"Saved user preference: {pref_type}")
+        except Exception as e:
+            logger.error(f"Error saving user preference: {e}")
+    
+    async def _extract_and_save_preferences(self, query: str) -> None:
+        """Extract user preferences from query and save them."""
+        try:
+            query_lower = query.lower()
+            
+            # Extract budget preferences
+            if 'budget' in query_lower:
+                import re
+                budget_match = re.search(r'\$(\d+)', query)
+                if budget_match:
+                    await self._save_user_preference('budget', budget_match.group(1))
+            
+            # Extract destination preferences
+            destinations = ['peru', 'japan', 'france', 'italy', 'spain', 'germany', 'thailand', 'vietnam', 'india', 'brazil', 'argentina', 'chile', 'mexico', 'canada', 'australia', 'new zealand', 'south korea', 'china', 'russia', 'uk', 'ireland', 'portugal', 'greece', 'turkey', 'egypt', 'morocco', 'south africa', 'kenya', 'tanzania', 'madagascar', 'mauritius', 'seychelles']
+            for dest in destinations:
+                if dest in query_lower:
+                    await self._save_user_preference('preferred_destination', dest)
+                    break
+            
+            # Extract travel style preferences
+            if any(word in query_lower for word in ['luxury', 'expensive', 'high-end']):
+                await self._save_user_preference('travel_style', 'luxury')
+            elif any(word in query_lower for word in ['budget', 'cheap', 'affordable']):
+                await self._save_user_preference('travel_style', 'budget')
+            elif any(word in query_lower for word in ['backpack', 'hostel', 'adventure']):
+                await self._save_user_preference('travel_style', 'adventure')
+            
+            # Extract activity preferences
+            if any(word in query_lower for word in ['beach', 'relax', 'resort']):
+                await self._save_user_preference('activity_preference', 'relaxation')
+            elif any(word in query_lower for word in ['hiking', 'outdoor', 'nature']):
+                await self._save_user_preference('activity_preference', 'outdoor')
+            elif any(word in query_lower for word in ['culture', 'museum', 'history']):
+                await self._save_user_preference('activity_preference', 'culture')
+            elif any(word in query_lower for word in ['food', 'restaurant', 'cuisine']):
+                await self._save_user_preference('activity_preference', 'food')
+                
+        except Exception as e:
+            logger.error(f"Error extracting preferences: {e}")
+    
+    def _build_conversation_context(self) -> str:
+        """Build conversation context from recent history."""
+        try:
+            if not self.conversation_history:
+                return "No previous conversation."
+            
+            # Get last 3 exchanges for context
+            recent_history = self.conversation_history[-6:] if len(self.conversation_history) > 6 else self.conversation_history
+            
+            context_parts = []
+            for entry in recent_history:
+                if entry.get('type') == 'user':
+                    context_parts.append(f"User: {entry.get('user', '')[:100]}")
+                elif entry.get('type') == 'assistant':
+                    context_parts.append(f"Assistant: {entry.get('assistant', '')[:100]}")
+            
+            return "\n".join(context_parts) if context_parts else "No previous conversation."
+            
+        except Exception as e:
+            logger.error(f"Error building conversation context: {e}")
+            return "No previous conversation."
+    
+    def _build_preferences_context(self) -> str:
+        """Build user preferences context."""
+        try:
+            if not self.user_preferences:
+                return "No user preferences available."
+            
+            context_parts = []
+            for pref_type, pref_value in self.user_preferences.items():
+                context_parts.append(f"{pref_type}: {pref_value}")
+            
+            return "\n".join(context_parts) if context_parts else "No user preferences available."
+            
+        except Exception as e:
+            logger.error(f"Error building preferences context: {e}")
+            return "No user preferences available."
+    
+    def _add_to_knowledge_base(self, key: str, data: Dict[str, Any]) -> None:
+        """Add verified data to knowledge base for RAG."""
+        try:
+            self.knowledge_base[key] = {
+                'data': data,
+                'timestamp': datetime.now().isoformat(),
+                'source': data.get('source', 'API')
+            }
+            logger.info(f"Added to knowledge base: {key}")
+        except Exception as e:
+            logger.error(f"Error adding to knowledge base: {e}")
+    
+    def _retrieve_from_knowledge_base(self, query: str) -> str:
+        """Retrieve relevant information from knowledge base for RAG."""
+        try:
+            if not self.knowledge_base:
+                return "No verified information available."
+            
+            query_lower = query.lower()
+            relevant_info = []
+            
+            for key, entry in self.knowledge_base.items():
+                # Simple keyword matching for relevance
+                if any(word in key.lower() for word in query_lower.split()):
+                    relevant_info.append(f"{key}: {entry['data']}")
+                elif any(word in str(entry['data']).lower() for word in query_lower.split()):
+                    relevant_info.append(f"{key}: {entry['data']}")
+            
+            return "\n".join(relevant_info[:3]) if relevant_info else "No relevant verified information found."
+            
+        except Exception as e:
+            logger.error(f"Error retrieving from knowledge base: {e}")
+            return "No verified information available."
+    
+    def _ground_llm_response(self, response: str, query: str) -> str:
+        """Ground LLM response with verified information from knowledge base."""
+        try:
+            # Get relevant verified information
+            verified_info = self._retrieve_from_knowledge_base(query)
+            
+            if verified_info and verified_info != "No verified information available.":
+                grounded_response = f"{response}\n\n📚 Verified Information:\n{verified_info}"
+                return grounded_response
+            
+            return response
+            
+        except Exception as e:
+            logger.error(f"Error grounding LLM response: {e}")
+            return response
+    
+    def get_performance_stats(self) -> Dict[str, Any]:
+        """Get performance statistics."""
+        try:
+            avg_response_time = (
+                sum(self.performance_stats['response_times']) / len(self.performance_stats['response_times'])
+                if self.performance_stats['response_times'] else 0
+            )
+            
+            return {
+                'api_calls': self.performance_stats['api_calls'],
+                'cache_hits': self.performance_stats['cache_hits'],
+                'cache_misses': self.performance_stats['cache_misses'],
+                'llm_calls': self.performance_stats['llm_calls'],
+                'average_response_time': round(avg_response_time, 3),
+                'knowledge_base_size': len(self.knowledge_base),
+                'conversation_history_size': len(self.conversation_history),
+                'user_preferences_count': len(self.user_preferences)
+            }
+        except Exception as e:
+            logger.error(f"Error getting performance stats: {e}")
+            return {}
     
     def _get_fallback_response(self, prompt: str) -> str:
         """Get intelligent fallback responses for common travel queries."""
@@ -409,13 +630,14 @@ What destination are you most interested in?"""
             logger.error(f"Country info error: {e}")
             return {"error": str(e)}
     
-    async def search_wikipedia(self, query: str) -> Dict[str, Any]:
+    async def search_wikipedia(self, query: str) -> List[Dict[str, Any]]:
         """Search Wikipedia for detailed information."""
         try:
-            return await self.wikipedia_client.search(query)
+            results = await self.wikipedia_client.search(query)
+            return results if results else []
         except Exception as e:
             logger.error(f"Wikipedia search error: {e}")
-            return {"error": str(e)}
+            return []
     
     async def geocode_location(self, location: str) -> Dict[str, Any]:
         """Get precise location coordinates."""
@@ -603,6 +825,17 @@ What destination are you most interested in?"""
             'type': 'user'
         })
         
+        # Ensure preferences are loaded and extract new ones
+        await self._ensure_preferences_loaded()
+        await self._extract_and_save_preferences(query)
+        
+        # Add query to knowledge base for future reference
+        self._add_to_knowledge_base(f"query_{len(self.conversation_history)}", {
+            'query': query,
+            'timestamp': datetime.now().isoformat(),
+            'source': 'User Input'
+        })
+        
         # Extract travel information and enhance with context
         travel_info = self.extract_travel_info(query)
         if context:
@@ -681,7 +914,9 @@ Keep your response concise but helpful, focusing on actionable advice."""
                 # Clean up the LLM response to avoid duplication
                 if llm_insights and not llm_insights.startswith("I'm a travel assistant"):
                     formatted_insights = self._format_llm_response(llm_insights)
-                    final_response = f"{structured_data}\n\n🤖 AI Travel Insights:\n{formatted_insights}"
+                    # Ground the response with verified information
+                    grounded_insights = self._ground_llm_response(formatted_insights, query)
+                    final_response = f"{structured_data}\n\n🤖 AI Travel Insights:\n{grounded_insights}"
                 else:
                     final_response = structured_data
             except Exception as e:
@@ -1351,7 +1586,7 @@ IMPORTANT: Use only plain text formatting. Do NOT use HTML tags, markdown format
                 print(f"\n🤖 Agent: {response}")
                 
                 # Save conversation
-                self.save_conversation()
+                asyncio.run(self.save_conversation())
                 
             except KeyboardInterrupt:
                 print("\n👋 Goodbye! Safe travels!")

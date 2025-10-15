@@ -13,16 +13,16 @@ from datetime import datetime
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from apis.flight_client import AviationStackClient
-from apis.free_weather_client import FreeWeatherClient
-from apis.food_client import FoodClient
-from apis.hotel_search_client import HotelSearchClient
-from apis.attractions_client import AttractionsClient
-from apis.country_client import RestCountriesClient
-from apis.wikipedia_client import WikipediaClient
-from apis.maps_client import NominatimClient
-from apis.web_search_client import WebSearchClient
-from apis.currency_api_client import CurrencyAPIClient
+from src.apis.flight_client import AviationStackClient
+from src.apis.free_weather_client import FreeWeatherClient
+from src.apis.food_client import FoodClient
+from src.apis.hotel_search_client import HotelSearchClient
+from src.apis.attractions_client import AttractionsClient
+from src.apis.country_client import RestCountriesClient
+from src.apis.wikipedia_client import WikipediaClient
+from src.apis.maps_client import NominatimClient
+from src.apis.web_search_client import WebSearchClient
+from src.apis.currency_api_client import CurrencyAPIClient
 
 class TestFreeAPIs:
     """Test suite for all free APIs."""
@@ -30,7 +30,7 @@ class TestFreeAPIs:
     @pytest.mark.asyncio
     async def test_weather_api(self):
         """Test weather API with real data."""
-        client = OpenWeatherClient()
+        client = FreeWeatherClient()
         
         # Test current weather
         weather = await client.get_current_weather('Tel Aviv')
@@ -177,7 +177,7 @@ class TestAPIIntegration:
     @pytest.mark.asyncio
     async def test_api_error_handling(self):
         """Test that APIs handle errors gracefully."""
-        client = OpenWeatherClient()
+        client = FreeWeatherClient()
         
         # Test with invalid city
         weather = await client.get_current_weather('InvalidCity12345')
@@ -187,7 +187,7 @@ class TestAPIIntegration:
     @pytest.mark.asyncio
     async def test_api_rate_limiting(self):
         """Test that APIs respect rate limiting."""
-        client = OpenWeatherClient()
+        client = FreeWeatherClient()
         
         # Make multiple requests quickly
         tasks = []
@@ -203,7 +203,7 @@ class TestAPIIntegration:
     @pytest.mark.asyncio
     async def test_api_data_consistency(self):
         """Test that APIs return consistent data formats."""
-        client = OpenWeatherClient()
+        client = FreeWeatherClient()
         
         weather = await client.get_current_weather('Tel Aviv')
         if weather:

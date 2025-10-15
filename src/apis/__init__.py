@@ -28,7 +28,6 @@ from .food_client import FoodClient
 
 __all__ = [
     # Core clients
-    'OpenWeatherClient',
     'AviationStackClient',
     'RestCountriesClient',
     'WikipediaClient',

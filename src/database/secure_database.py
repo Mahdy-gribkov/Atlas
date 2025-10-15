@@ -13,7 +13,7 @@ from cryptography.fernet import Fernet
 import json
 
 from .models import UserPreference, SearchHistory, TravelPlan, APICache
-from config import config
+from ..config import config
 
 class SecureDatabase:
     """
