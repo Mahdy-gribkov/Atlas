@@ -20,7 +20,7 @@ class FreeWeatherClient:
     
     async def get_current_weather(self, city: str) -> Optional[Dict[str, Any]]:
         """
-        Get current weather for a city using real free APIs.
+        Get current weather for a city using multiple real free APIs.
         
         Args:
             city: City name
@@ -29,20 +29,32 @@ class FreeWeatherClient:
             Current weather data from real APIs
         """
         try:
-            # Try wttr.in first (completely free, no key, real data)
-            weather_data = await self._get_wttr_weather(city)
-            if weather_data:
-                return weather_data
+            # Try multiple sources and combine data for accuracy
+            weather_sources = []
             
-            # Fallback to Open-Meteo (completely free, no key, real data)
-            weather_data = await self._get_open_meteo_weather(city)
-            if weather_data:
-                return weather_data
+            # Source 1: wttr.in (completely free, no key, real data)
+            wttr_data = await self._get_wttr_weather(city)
+            if wttr_data:
+                weather_sources.append(wttr_data)
             
-            # Final fallback to OpenWeatherLite (completely free, no key, real data)
-            weather_data = await self._get_openweatherlite_weather(city)
-            if weather_data:
-                return weather_data
+            # Source 2: Open-Meteo (completely free, no key, real data)
+            meteo_data = await self._get_open_meteo_weather(city)
+            if meteo_data:
+                weather_sources.append(meteo_data)
+            
+            # Source 3: WeatherAPI free tier (real data)
+            weatherapi_data = await self._get_weatherapi_weather(city)
+            if weatherapi_data:
+                weather_sources.append(weatherapi_data)
+            
+            # Source 4: OpenWeatherLite (completely free, no key, real data)
+            openweatherlite_data = await self._get_openweatherlite_weather(city)
+            if openweatherlite_data:
+                weather_sources.append(openweatherlite_data)
+            
+            if weather_sources:
+                # Combine data from multiple sources for accuracy
+                return self._combine_weather_data(weather_sources, city)
             
             return None
             
@@ -147,6 +159,40 @@ class FreeWeatherClient:
                         }
         except Exception as e:
             print(f"Open-Meteo error: {e}")
+            return None
+    
+    async def _get_weatherapi_weather(self, city: str) -> Optional[Dict[str, Any]]:
+        """Get real weather data from WeatherAPI free tier."""
+        try:
+            url = "http://api.weatherapi.com/v1/current.json"
+            params = {
+                'key': 'demo',  # Free tier demo key
+                'q': city,
+                'aqi': 'no'
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        current = data.get('current', {})
+                        
+                        return {
+                            'city': city,
+                            'temperature': current.get('temp_c', 'N/A'),
+                            'feels_like': current.get('feelslike_c', 'N/A'),
+                            'humidity': current.get('humidity', 'N/A'),
+                            'description': current.get('condition', {}).get('text', 'N/A'),
+                            'wind_speed': current.get('wind_kph', 'N/A'),
+                            'wind_direction': current.get('wind_degree', 'N/A'),
+                            'pressure': current.get('pressure_mb', 'N/A'),
+                            'visibility': current.get('vis_km', 'N/A'),
+                            'uv_index': current.get('uv', 'N/A'),
+                            'source': 'WeatherAPI Free (Real Data)',
+                            'timestamp': datetime.now().isoformat()
+                        }
+        except Exception as e:
+            print(f"WeatherAPI error: {e}")
             return None
     
     async def _get_openweatherlite_weather(self, city: str) -> Optional[Dict[str, Any]]:
@@ -301,3 +347,90 @@ class FreeWeatherClient:
             99: "Thunderstorm with heavy hail"
         }
         return weather_codes.get(code, "Unknown")
+    
+    def _combine_weather_data(self, weather_sources: List[Dict[str, Any]], city: str) -> Dict[str, Any]:
+        """Combine weather data from multiple sources for accuracy."""
+        try:
+            # Extract numeric values and calculate averages
+            temperatures = []
+            humidities = []
+            pressures = []
+            wind_speeds = []
+            descriptions = []
+            sources_used = []
+            
+            for source_data in weather_sources:
+                sources_used.append(source_data.get('source', 'Unknown'))
+                
+                # Temperature
+                temp = source_data.get('temperature')
+                if temp != 'N/A' and temp is not None:
+                    try:
+                        temperatures.append(float(temp))
+                    except (ValueError, TypeError):
+                        pass
+                
+                # Humidity
+                humidity = source_data.get('humidity')
+                if humidity != 'N/A' and humidity is not None:
+                    try:
+                        humidities.append(float(humidity))
+                    except (ValueError, TypeError):
+                        pass
+                
+                # Pressure
+                pressure = source_data.get('pressure')
+                if pressure != 'N/A' and pressure is not None:
+                    try:
+                        pressures.append(float(pressure))
+                    except (ValueError, TypeError):
+                        pass
+                
+                # Wind speed
+                wind = source_data.get('wind_speed')
+                if wind != 'N/A' and wind is not None:
+                    try:
+                        wind_speeds.append(float(wind))
+                    except (ValueError, TypeError):
+                        pass
+                
+                # Description
+                desc = source_data.get('description')
+                if desc != 'N/A' and desc:
+                    descriptions.append(desc)
+            
+            # Calculate averages
+            avg_temp = sum(temperatures) / len(temperatures) if temperatures else 'N/A'
+            avg_humidity = sum(humidities) / len(humidities) if humidities else 'N/A'
+            avg_pressure = sum(pressures) / len(pressures) if pressures else 'N/A'
+            avg_wind = sum(wind_speeds) / len(wind_speeds) if wind_speeds else 'N/A'
+            
+            # Get most common description
+            most_common_desc = max(set(descriptions), key=descriptions.count) if descriptions else 'Unknown'
+            
+            return {
+                'city': city,
+                'temperature': round(avg_temp, 1) if avg_temp != 'N/A' else 'N/A',
+                'feels_like': 'N/A',  # Would need to calculate from multiple sources
+                'humidity': round(avg_humidity, 1) if avg_humidity != 'N/A' else 'N/A',
+                'description': most_common_desc,
+                'wind_speed': round(avg_wind, 1) if avg_wind != 'N/A' else 'N/A',
+                'wind_direction': 'N/A',  # Would need to calculate from multiple sources
+                'pressure': round(avg_pressure, 1) if avg_pressure != 'N/A' else 'N/A',
+                'visibility': 'N/A',  # Would need to calculate from multiple sources
+                'uv_index': 'N/A',  # Would need to calculate from multiple sources
+                'sources_used': len(weather_sources),
+                'source': f'Enhanced Weather ({len(weather_sources)} Sources)',
+                'timestamp': datetime.now().isoformat(),
+                'raw_sources': sources_used
+            }
+            
+        except Exception as e:
+            print(f"Weather data combination error: {e}")
+            # Return the first available source as fallback
+            return weather_sources[0] if weather_sources else {
+                'city': city,
+                'error': str(e),
+                'source': 'Enhanced Weather (Error)',
+                'timestamp': datetime.now().isoformat()
+            }

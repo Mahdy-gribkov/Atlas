@@ -18,10 +18,13 @@ from .open_meteo_client import OpenMeteoClient
 # Additional service clients - REAL DATA ONLY
 from .currency_api_client import CurrencyAPIClient
 
-# Real Web Scrapers - NO API KEYS, NO PAYMENTS
+# Real Web Scrapers
 from .real_flight_scraper import RealFlightScraper
 from .real_hotel_scraper import RealHotelScraper
 from .real_attractions_scraper import RealAttractionsScraper
+
+# Enhanced API Clients - Multiple Free Sources
+# (Enhanced clients are integrated into existing clients)
 
 __all__ = [
     # Core clients - REAL DATA ONLY
@@ -39,8 +42,11 @@ __all__ = [
     # Service clients - REAL DATA ONLY
     'CurrencyAPIClient',
     
-    # Real Web Scrapers - NO API KEYS, NO PAYMENTS
+    # Real Web Scrapers
     'RealFlightScraper',
     'RealHotelScraper',
-    'RealAttractionsScraper'
+    'RealAttractionsScraper',
+    
+    # Enhanced API Clients - Multiple Free Sources
+    # (Enhanced clients are integrated into existing clients)
 ]

@@ -38,219 +38,226 @@ class TravelMCPClient:
             Tool response
         """
         try:
-            request = {
-                'method': 'tools/call',
-                'params': {
-                    'name': tool_name,
-                    'arguments': parameters
-                }
-            }
-            
-            # In a real implementation, this would make an HTTP request to the MCP server
-            # For now, we'll simulate the tool calls directly
-            response = await self._simulate_tool_call(tool_name, parameters)
-            
+            # Call the actual tool implementations directly
+            response = await self._call_real_tool(tool_name, parameters)
             return response
             
         except Exception as e:
             logger.error(f"MCP tool call error: {e}")
             return {'error': str(e)}
     
-    async def _simulate_tool_call(self, tool_name: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
-        """Simulate MCP tool calls for testing."""
+    async def _call_real_tool(self, tool_name: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """Call real tool implementations."""
         try:
             if tool_name == 'search_flights':
-                return await self._simulate_flight_search(parameters)
+                return await self._real_flight_search(parameters)
             elif tool_name == 'search_hotels':
-                return await self._simulate_hotel_search(parameters)
+                return await self._real_hotel_search(parameters)
             elif tool_name == 'search_attractions':
-                return await self._simulate_attractions_search(parameters)
+                return await self._real_attractions_search(parameters)
             elif tool_name == 'get_weather':
-                return await self._simulate_weather_search(parameters)
+                return await self._real_weather_search(parameters)
             elif tool_name == 'geocode_location':
-                return await self._simulate_geocode(parameters)
+                return await self._real_geocode(parameters)
             elif tool_name == 'convert_currency':
-                return await self._simulate_currency_conversion(parameters)
+                return await self._real_currency_conversion(parameters)
             elif tool_name == 'search_wikipedia':
-                return await self._simulate_wikipedia_search(parameters)
+                return await self._real_wikipedia_search(parameters)
             elif tool_name == 'web_search':
-                return await self._simulate_web_search(parameters)
+                return await self._real_web_search(parameters)
             elif tool_name == 'get_country_info':
-                return await self._simulate_country_info(parameters)
+                return await self._real_country_info(parameters)
             else:
                 return {'error': f'Unknown tool: {tool_name}'}
                 
         except Exception as e:
-            logger.error(f"Tool simulation error: {e}")
+            logger.error(f"Real tool call error: {e}")
             return {'error': str(e)}
     
-    async def _simulate_flight_search(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Simulate flight search results."""
-        return {
-            'flights': [
-                {
-                    'airline': 'El Al',
-                    'price': 450,
-                    'currency': 'USD',
-                    'duration': '4h 30m',
-                    'origin': params.get('origin', 'TLV'),
-                    'destination': params.get('destination', 'FCO'),
-                    'source': 'MCP Flight Tool (Simulated)',
+    async def _real_flight_search(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Real flight search using web scrapers."""
+        try:
+            from src.apis import RealFlightScraper
+            
+            async with RealFlightScraper() as scraper:
+                flights = await scraper.search_flights(
+                    origin=params.get('origin', ''),
+                    destination=params.get('destination', ''),
+                    date=params.get('date'),
+                    return_date=params.get('return_date'),
+                    passengers=params.get('passengers', 1)
+                )
+                
+                return {
+                    'flights': flights,
+                    'count': len(flights),
+                    'source': 'Real Web Scraping',
                     'timestamp': datetime.now().isoformat()
                 }
-            ],
-            'count': 1,
-            'source': 'MCP Flight Tool (Simulated)',
-            'timestamp': datetime.now().isoformat()
-        }
+        except Exception as e:
+            logger.error(f"Real flight search error: {e}")
+            return {'error': str(e), 'flights': []}
     
-    async def _simulate_hotel_search(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Simulate hotel search results."""
-        return {
-            'hotels': [
-                {
-                    'name': 'Hotel Roma Centro',
-                    'price_per_night': 120,
-                    'currency': 'USD',
-                    'rating': 4.2,
-                    'location': 'Rome City Center',
-                    'city': params.get('city', 'Rome'),
-                    'source': 'MCP Hotel Tool (Simulated)',
+    async def _real_hotel_search(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Real hotel search using web scrapers."""
+        try:
+            from src.apis import RealHotelScraper
+            
+            async with RealHotelScraper() as scraper:
+                hotels = await scraper.search_hotels(
+                    city=params.get('city', ''),
+                    check_in=params.get('check_in'),
+                    check_out=params.get('check_out'),
+                    guests=params.get('guests', 1),
+                    rooms=params.get('rooms', 1),
+                    budget=params.get('budget')
+                )
+                
+                return {
+                    'hotels': hotels,
+                    'count': len(hotels),
+                    'source': 'Real Web Scraping',
                     'timestamp': datetime.now().isoformat()
                 }
-            ],
-            'count': 1,
-            'source': 'MCP Hotel Tool (Simulated)',
-            'timestamp': datetime.now().isoformat()
-        }
+        except Exception as e:
+            logger.error(f"Real hotel search error: {e}")
+            return {'error': str(e), 'hotels': []}
     
-    async def _simulate_attractions_search(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Simulate attractions search results."""
-        return {
-            'attractions': [
-                {
-                    'name': 'Colosseum',
-                    'rating': 4.8,
-                    'description': 'Ancient Roman amphitheater',
-                    'category': 'Historical Site',
-                    'city': params.get('city', 'Rome'),
-                    'source': 'MCP Attractions Tool (Simulated)',
+    async def _real_attractions_search(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Real attractions search using web scrapers."""
+        try:
+            from src.apis import RealAttractionsScraper
+            
+            async with RealAttractionsScraper() as scraper:
+                attractions = await scraper.search_attractions(
+                    city=params.get('city', ''),
+                    category=params.get('category', 'all'),
+                    limit=params.get('limit', 20)
+                )
+                
+                return {
+                    'attractions': attractions,
+                    'count': len(attractions),
+                    'source': 'Real Web Scraping',
                     'timestamp': datetime.now().isoformat()
                 }
-            ],
-            'count': 1,
-            'source': 'MCP Attractions Tool (Simulated)',
-            'timestamp': datetime.now().isoformat()
-        }
+        except Exception as e:
+            logger.error(f"Real attractions search error: {e}")
+            return {'error': str(e), 'attractions': []}
     
-    async def _simulate_weather_search(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Simulate weather search results."""
-        return {
-            'weather': {
-                'location': params.get('location', 'Rome'),
-                'temperature': 22,
-                'condition': 'Sunny',
-                'humidity': 65,
-                'source': 'MCP Weather Tool (Simulated)',
+    async def _real_weather_search(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Real weather search using free APIs."""
+        try:
+            from src.apis import FreeWeatherClient
+            
+            weather_client = FreeWeatherClient()
+            weather = await weather_client.get_current_weather(params.get('location', ''))
+            
+            return {
+                'weather': weather,
+                'source': 'Free Weather API',
                 'timestamp': datetime.now().isoformat()
-            },
-            'source': 'MCP Weather Tool (Simulated)',
-            'timestamp': datetime.now().isoformat()
-        }
+            }
+        except Exception as e:
+            logger.error(f"Real weather search error: {e}")
+            return {'error': str(e), 'weather': {}}
     
-    async def _simulate_geocode(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Simulate geocoding results."""
-        return {
-            'location': {
-                'address': params.get('address', 'Rome, Italy'),
-                'latitude': 41.9028,
-                'longitude': 12.4964,
-                'source': 'MCP Geocoding Tool (Simulated)',
+    async def _real_geocode(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Real geocoding using free APIs."""
+        try:
+            from src.apis import NominatimClient
+            
+            maps_client = NominatimClient()
+            location = await maps_client.geocode(params.get('address', ''))
+            
+            return {
+                'location': location,
+                'source': 'OpenStreetMap',
                 'timestamp': datetime.now().isoformat()
-            },
-            'source': 'MCP Geocoding Tool (Simulated)',
-            'timestamp': datetime.now().isoformat()
-        }
+            }
+        except Exception as e:
+            logger.error(f"Real geocoding error: {e}")
+            return {'error': str(e), 'location': {}}
     
-    async def _simulate_currency_conversion(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Simulate currency conversion results."""
-        amount = params.get('amount', 100)
-        from_currency = params.get('from_currency', 'USD')
-        to_currency = params.get('to_currency', 'EUR')
-        
-        # Simple conversion rates for simulation
-        rates = {
-            'USD': 1.0,
-            'EUR': 0.85,
-            'GBP': 0.73,
-            'ILS': 3.7
-        }
-        
-        converted_amount = amount * (rates.get(to_currency, 1.0) / rates.get(from_currency, 1.0))
-        
-        return {
-            'conversion': {
-                'amount': amount,
-                'from_currency': from_currency,
-                'to_currency': to_currency,
-                'converted_amount': round(converted_amount, 2),
-                'rate': round(converted_amount / amount, 4),
-                'source': 'MCP Currency Tool (Simulated)',
+    async def _real_currency_conversion(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Real currency conversion using free APIs."""
+        try:
+            from src.apis import CurrencyAPIClient
+            
+            currency_client = CurrencyAPIClient()
+            conversion = await currency_client.convert_currency(
+                amount=params.get('amount', 0),
+                from_currency=params.get('from_currency', 'USD'),
+                to_currency=params.get('to_currency', 'EUR')
+            )
+            
+            return {
+                'conversion': conversion,
+                'source': 'Free Currency API',
                 'timestamp': datetime.now().isoformat()
-            },
-            'source': 'MCP Currency Tool (Simulated)',
-            'timestamp': datetime.now().isoformat()
-        }
+            }
+        except Exception as e:
+            logger.error(f"Real currency conversion error: {e}")
+            return {'error': str(e), 'conversion': {}}
     
-    async def _simulate_wikipedia_search(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Simulate Wikipedia search results."""
-        return {
-            'results': [
-                {
-                    'title': f"Travel Guide: {params.get('query', 'Rome')}",
-                    'extract': f"Comprehensive travel information about {params.get('query', 'Rome')}",
-                    'url': f"https://en.wikipedia.org/wiki/{params.get('query', 'Rome')}",
-                    'source': 'MCP Wikipedia Tool (Simulated)',
-                    'timestamp': datetime.now().isoformat()
-                }
-            ],
-            'count': 1,
-            'source': 'MCP Wikipedia Tool (Simulated)',
-            'timestamp': datetime.now().isoformat()
-        }
-    
-    async def _simulate_web_search(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Simulate web search results."""
-        return {
-            'results': [
-                {
-                    'title': f"Travel Information: {params.get('query', 'Rome travel')}",
-                    'url': f"https://example.com/{params.get('query', 'rome-travel')}",
-                    'snippet': f"Comprehensive travel guide for {params.get('query', 'Rome')}",
-                    'source': 'MCP Web Search Tool (Simulated)',
-                    'timestamp': datetime.now().isoformat()
-                }
-            ],
-            'count': 1,
-            'source': 'MCP Web Search Tool (Simulated)',
-            'timestamp': datetime.now().isoformat()
-        }
-    
-    async def _simulate_country_info(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Simulate country information results."""
-        return {
-            'country_info': {
-                'name': params.get('country', 'Italy'),
-                'capital': 'Rome',
-                'currency': 'EUR',
-                'language': 'Italian',
-                'population': '60 million',
-                'source': 'MCP Country Info Tool (Simulated)',
+    async def _real_wikipedia_search(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Real Wikipedia search using free APIs."""
+        try:
+            from src.apis import WikipediaClient
+            
+            wikipedia_client = WikipediaClient()
+            results = await wikipedia_client.search(
+                query=params.get('query', ''),
+                limit=params.get('limit', 10)
+            )
+            
+            return {
+                'results': results,
+                'count': len(results),
+                'source': 'Wikipedia API',
                 'timestamp': datetime.now().isoformat()
-            },
-            'source': 'MCP Country Info Tool (Simulated)',
-            'timestamp': datetime.now().isoformat()
-        }
+            }
+        except Exception as e:
+            logger.error(f"Real Wikipedia search error: {e}")
+            return {'error': str(e), 'results': []}
+    
+    async def _real_web_search(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Real web search using free APIs."""
+        try:
+            from src.apis import WebSearchClient
+            
+            web_search_client = WebSearchClient()
+            results = await web_search_client.search(
+                query=params.get('query', ''),
+                max_results=params.get('max_results', 10)
+            )
+            
+            return {
+                'results': results,
+                'count': len(results),
+                'source': 'DuckDuckGo',
+                'timestamp': datetime.now().isoformat()
+            }
+        except Exception as e:
+            logger.error(f"Real web search error: {e}")
+            return {'error': str(e), 'results': []}
+    
+    async def _real_country_info(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Real country information using free APIs."""
+        try:
+            from src.apis import RestCountriesClient
+            
+            country_client = RestCountriesClient()
+            country_info = await country_client.get_country_info(params.get('country', ''))
+            
+            return {
+                'country_info': country_info,
+                'source': 'REST Countries API',
+                'timestamp': datetime.now().isoformat()
+            }
+        except Exception as e:
+            logger.error(f"Real country info error: {e}")
+            return {'error': str(e), 'country_info': {}}
     
     async def update_context(self, key: str, value: Any) -> bool:
         """Update conversation context."""

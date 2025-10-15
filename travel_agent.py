@@ -121,10 +121,12 @@ class TravelAgent:
         self.open_meteo_client = OpenMeteoClient()
         self.currency_client = CurrencyAPIClient()
         
-        # Initialize Real Web Scrapers - NO API KEYS, NO PAYMENTS
+        # Initialize Real Web Scrapers
         self.real_flight_scraper = RealFlightScraper()
         self.real_hotel_scraper = RealHotelScraper()
         self.real_attractions_scraper = RealAttractionsScraper()
+        
+        # Enhanced API Clients are integrated into existing clients
         
         # Initialize MCP Client for advanced tool management
         self.mcp_client = TravelMCPClient()
