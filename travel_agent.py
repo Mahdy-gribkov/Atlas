@@ -209,26 +209,17 @@ class TravelAgent:
             # Build user preferences context
             preferences_context = self._build_preferences_context()
             
-            # Build interactive prompt for better responses
-            enhanced_prompt = f"""You are a helpful travel assistant. 
-
-Previous Conversation Context: {conversation_context}
-
-User Preferences: {preferences_context}
-
-Current Context: {context[:300]}
+            # Build simple, clear prompt for better responses
+            enhanced_prompt = f"""You are a helpful travel assistant. Be concise and practical.
 
 User request: {prompt}
 
 Instructions:
-- If the request is vague (like "plan a trip"), ask for specific details (dates, budget, interests, duration)
-- Provide specific, actionable information
-- Ask clarifying questions when needed
-- Be conversational and helpful
-- Focus on practical travel advice
-- Use the conversation context to provide relevant responses
-- Consider user preferences when making recommendations
-- Remember previous conversations to provide personalized advice
+- Give clear, direct answers
+- Ask ONE specific question if you need more info
+- Don't repeat information
+- Be conversational but brief
+- Focus on what the user actually asked for
 
 Response:"""
             
@@ -512,40 +503,32 @@ Response:"""
             return {}
     
     def _get_fallback_response(self, prompt: str) -> str:
-        """Get intelligent fallback responses for common travel queries."""
+        """Get simple fallback responses for common travel queries."""
         prompt_lower = prompt.lower()
         
-        # Rome trip planning
-        if "rome" in prompt_lower and ("israel" in prompt_lower or "from" in prompt_lower):
-            return self._generate_rome_trip_plan()
-        
-        # General trip planning
-        elif any(word in prompt_lower for word in ["trip", "travel", "plan", "itinerary"]):
-            return self._generate_generic_trip_plan(prompt)
+        # General greeting
+        if any(word in prompt_lower for word in ["hello", "hi", "hey", "help"]):
+            return "Hi! I can help you plan trips, find flights, hotels, and provide travel information. What would you like help with?"
         
         # Weather queries
         elif "weather" in prompt_lower:
-            return "I can help you check weather for your destination. Please specify which city you'd like weather information for."
+            return "I can help you check weather. Which city would you like weather information for?"
         
         # Flight queries
         elif "flight" in prompt_lower:
-            return "I can help you find flights. Please provide your departure city, destination, and travel dates."
+            return "I can help you find flights. What's your departure city, destination, and travel dates?"
         
         # Hotel queries
         elif "hotel" in prompt_lower:
-            return "I can help you find hotels. Please specify your destination city and travel dates."
+            return "I can help you find hotels. Which city and dates are you looking for?"
         
         # Attractions queries
         elif "attraction" in prompt_lower or "things to do" in prompt_lower:
-            return "I can help you find attractions and activities. Please specify which city you're interested in."
-        
-        # General greeting
-        elif any(word in prompt_lower for word in ["hello", "hi", "hey", "help"]):
-            return "I'm your travel planning assistant! I can help you with:\n• Trip planning and itineraries\n• Flight information\n• Hotel recommendations\n• Weather forecasts\n• Budget planning\n• Destination information\n\nWhat would you like help with?"
+            return "I can help you find attractions. Which city are you interested in?"
         
         # Default response
         else:
-            return "I'm a travel assistant. I can help you plan trips, find flights, hotels, and provide travel information. How can I assist you today?"
+            return "I can help you with travel planning. What specific information do you need?"
     
     def _process_travel_request(self, prompt: str) -> str:
         """Process travel requests with structured responses."""
@@ -914,9 +897,8 @@ Keep your response concise but helpful, focusing on actionable advice."""
                 # Clean up the LLM response to avoid duplication
                 if llm_insights and not llm_insights.startswith("I'm a travel assistant"):
                     formatted_insights = self._format_llm_response(llm_insights)
-                    # Ground the response with verified information
-                    grounded_insights = self._ground_llm_response(formatted_insights, query)
-                    final_response = f"{structured_data}\n\n🤖 AI Travel Insights:\n{grounded_insights}"
+                    # Use simple LLM response without RAG clutter
+                    final_response = f"{structured_data}\n\n{formatted_insights}"
                 else:
                     final_response = structured_data
             except Exception as e:
@@ -926,33 +908,19 @@ Keep your response concise but helpful, focusing on actionable advice."""
             # No structured data, use LLM for intelligent responses
             context_text = "\n".join(context_parts) if context_parts else "No specific context available."
             
-            # Create intelligent prompt based on user context
-            if context and isinstance(context, dict) and context.get('departureLocation'):
-                intelligent_prompt = f"""You are a professional travel assistant. The user is traveling from {context['departureLocation']}. 
+            # Create simple, clear prompt
+            intelligent_prompt = f"""You are a helpful travel assistant. Answer the user's question clearly and concisely.
 
 User Query: {query}
 
-Structure your response with:
-1. Brief introduction
-2. Key information in numbered sections
-3. Specific recommendations with bullet points
-4. Next steps for planning
-5. Questions to help plan further
+Instructions:
+- Give a direct, helpful answer
+- Be conversational but brief
+- Don't use special formatting or symbols
+- Ask one clarifying question if needed
+- Focus on what the user actually asked for
 
-IMPORTANT: Use only plain text formatting. Do NOT use HTML tags, markdown formatting, or any special characters like ** or *. Just use regular text with line breaks and simple formatting."""
-            else:
-                intelligent_prompt = f"""You are a professional travel assistant. 
-
-User Query: {query}
-
-Structure your response with:
-1. Brief introduction
-2. Key information in numbered sections  
-3. Specific recommendations with bullet points
-4. Next steps for planning
-5. Questions to help plan further
-
-IMPORTANT: Use only plain text formatting. Do NOT use HTML tags, markdown formatting, or any special characters like ** or *. Just use regular text with line breaks and simple formatting."""
+Response:"""
             
             raw_response = self._call_llm(intelligent_prompt, context_text)
             final_response = self._format_llm_response(raw_response)
@@ -1066,7 +1034,7 @@ IMPORTANT: Use only plain text formatting. Do NOT use HTML tags, markdown format
 - Book directly with airlines for better customer service
 - Consider flexible dates for better deals
 
-*Note: For real-time flight data, API keys are required.*
+*Note: Flight data is based on typical routes and pricing.*
             """
             
             return flight_info.strip()

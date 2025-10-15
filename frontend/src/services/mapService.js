@@ -74,8 +74,18 @@ export const mapService = {
   // Fallback geocoding using a free service if backend is not available
   async fallbackGeocode(address) {
     try {
+      // Make address more specific for common cities
+      let searchQuery = address;
+      if (address.toLowerCase().includes('rome') && !address.toLowerCase().includes('italy')) {
+        searchQuery = 'Rome, Italy';
+      } else if (address.toLowerCase().includes('paris') && !address.toLowerCase().includes('france')) {
+        searchQuery = 'Paris, France';
+      } else if (address.toLowerCase().includes('london') && !address.toLowerCase().includes('england')) {
+        searchQuery = 'London, England';
+      }
+      
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`
       );
       
       if (!response.ok) {

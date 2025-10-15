@@ -205,7 +205,7 @@ python api.py
 # Frontend
 cd frontend
 npm install
-npm run build
+npm run start
 ```
 
 ### **Environment Setup**
@@ -296,8 +296,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 👨‍💻 **Author**
 
 **Mahdy Gribkov**
-- GitHub: [@yourusername](https://github.com/yourusername)
-- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yourprofile)
+- GitHub: [@yourusername](https://github.com/mahdy-gribkov)
+- LinkedIn: [Your LinkedIn](https://linkedin.com/in/mahdy-gribkov)
 - Email: your.email@example.com
 
 ## 🙏 **Acknowledgments**
@@ -331,6 +331,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **⭐ If you found this project helpful, please give it a star!**
 
-**🐛 Found a bug? Please report it in the [Issues](https://github.com/yourusername/Travel_Agent/issues) section.**
+**🐛 Found a bug? Please report it in the [Issues](https://github.com/mahdy-gribkov/Travel_Agent/issues) section.**
 
-**💡 Have a feature request? We'd love to hear from you!**
+**💡 Have a feature request? i'd love to hear from you!**

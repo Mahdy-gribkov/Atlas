@@ -289,3 +289,20 @@
 2025-10-16 00:46:29,428 - INFO - Free APIs initialized: Weather (wttr.in, Open-Meteo), Flights, Currency, Hotels, Attractions, Car Rental, Events, Insurance, Transportation, Food
 2025-10-16 00:46:29,428 - INFO - Free LLM (LLM7.io) (LLM7.io (GPT-3.5-turbo)) initialized
 2025-10-16 00:46:29,428 - INFO - Travel agent initialized successfully
+2025-10-16 00:50:12,762 - INFO - Free Flight API client initialized
+2025-10-16 00:50:12,762 - INFO - Free Weather API client initialized
+2025-10-16 00:50:12,762 - INFO - Free APIs initialized: Weather (wttr.in, Open-Meteo), Flights, Currency, Hotels, Attractions, Car Rental, Events, Insurance, Transportation, Food
+2025-10-16 00:50:12,762 - INFO - Free LLM (LLM7.io) (LLM7.io (GPT-3.5-turbo)) initialized
+2025-10-16 00:50:12,763 - INFO - Travel agent initialized successfully
+2025-10-16 00:50:46,678 - INFO - Processing new request: rome...
+2025-10-16 00:50:46,679 - INFO - Processing query: rome...
+2025-10-16 00:50:46,688 - INFO - Loaded 0 user preferences
+2025-10-16 00:50:46,688 - INFO - Added to knowledge base: query_1
+2025-10-16 00:50:46,690 - INFO - Searching for general information...
+2025-10-16 00:50:52,870 - INFO - Successfully received LLM response from LLM7.io
+2025-10-16 00:53:11,831 - INFO - Processing new request: i have 3k usd and travel alone in jan 26 to rime, italy. i want a full plan for 4 days/...
+2025-10-16 00:53:11,832 - INFO - Processing query: i have 3k usd and travel alone in jan 26 to rime, italy. i want a full plan for 4 days/...
+2025-10-16 00:53:11,833 - INFO - Saved user preference: preferred_destination
+2025-10-16 00:53:11,834 - INFO - Added to knowledge base: query_3
+2025-10-16 00:53:11,834 - INFO - Searching for flight information...
+2025-10-16 00:53:16,410 - INFO - Successfully received LLM response from LLM7.io
