@@ -58,6 +58,7 @@ from src.apis import (
     AviationStackClient, FreeWeatherClient, OpenMeteoClient, CurrencyAPIClient,
     RealFlightScraper, RealHotelScraper, RealAttractionsScraper
 )
+from src.mcp import TravelMCPClient
 
 # Configure logging
 os.makedirs('data', exist_ok=True)  # Create data directory if it doesn't exist
@@ -125,8 +126,11 @@ class TravelAgent:
         self.real_hotel_scraper = RealHotelScraper()
         self.real_attractions_scraper = RealAttractionsScraper()
         
+        # Initialize MCP Client for advanced tool management
+        self.mcp_client = TravelMCPClient()
+        
         # Log successful initialization
-        logger.info("Real Data APIs & Scrapers initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers")
+        logger.info("Real Data APIs, Scrapers & MCP Client initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools")
         
         # Conversation memory
         self.conversation_history = []
@@ -361,6 +365,9 @@ Response:"""
                 await self._save_user_preference('activity_preference', 'culture')
             elif any(word in query_lower for word in ['food', 'restaurant', 'cuisine']):
                 await self._save_user_preference('activity_preference', 'food')
+            
+            # Update MCP context with preferences
+            await self.mcp_client.update_context('user_preferences', self.user_preferences)
                 
         except Exception as e:
             logger.error(f"Error extracting preferences: {e}")
@@ -473,6 +480,79 @@ Response:"""
             }
         except Exception as e:
             logger.error(f"Error getting performance stats: {e}")
+            return {}
+    
+    async def _get_mcp_flight_data(self, origin: str, destination: str, date: str = None) -> List[Dict[str, Any]]:
+        """Get flight data using MCP tools."""
+        try:
+            response = await self.mcp_client.call_tool('search_flights', {
+                'origin': origin,
+                'destination': destination,
+                'date': date
+            })
+            
+            if 'flights' in response:
+                return response['flights']
+            return []
+            
+        except Exception as e:
+            logger.error(f"MCP flight data error: {e}")
+            return []
+    
+    async def _get_mcp_hotel_data(self, city: str, check_in: str = None, check_out: str = None) -> List[Dict[str, Any]]:
+        """Get hotel data using MCP tools."""
+        try:
+            response = await self.mcp_client.call_tool('search_hotels', {
+                'city': city,
+                'check_in': check_in,
+                'check_out': check_out
+            })
+            
+            if 'hotels' in response:
+                return response['hotels']
+            return []
+            
+        except Exception as e:
+            logger.error(f"MCP hotel data error: {e}")
+            return []
+    
+    async def _get_mcp_attractions_data(self, city: str, category: str = "all") -> List[Dict[str, Any]]:
+        """Get attractions data using MCP tools."""
+        try:
+            response = await self.mcp_client.call_tool('search_attractions', {
+                'city': city,
+                'category': category
+            })
+            
+            if 'attractions' in response:
+                return response['attractions']
+            return []
+            
+        except Exception as e:
+            logger.error(f"MCP attractions data error: {e}")
+            return []
+    
+    async def _get_mcp_weather_data(self, location: str) -> Dict[str, Any]:
+        """Get weather data using MCP tools."""
+        try:
+            response = await self.mcp_client.call_tool('get_weather', {
+                'location': location
+            })
+            
+            if 'weather' in response:
+                return response['weather']
+            return {}
+            
+        except Exception as e:
+            logger.error(f"MCP weather data error: {e}")
+            return {}
+    
+    async def _get_mcp_context_data(self) -> Dict[str, Any]:
+        """Get all MCP context data."""
+        try:
+            return await self.mcp_client.get_all_context()
+        except Exception as e:
+            logger.error(f"MCP context data error: {e}")
             return {}
     
     def _get_fallback_response(self, prompt: str) -> str:

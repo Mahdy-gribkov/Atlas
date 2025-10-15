@@ -311,3 +311,6 @@
 2025-10-16 00:57:50,388 - INFO - Added to knowledge base: query_5
 2025-10-16 00:57:50,388 - INFO - Searching for general information...
 2025-10-16 00:57:57,030 - INFO - Successfully received LLM response from LLM7.io
+2025-10-16 01:51:10,061 - INFO - Real Data APIs, Scrapers & MCP Client initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools
+2025-10-16 01:51:10,061 - INFO - Free LLM (LLM7.io) (LLM7.io (GPT-3.5-turbo)) initialized
+2025-10-16 01:51:10,061 - INFO - Travel agent initialized successfully
