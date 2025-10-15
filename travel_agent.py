@@ -60,6 +60,10 @@ from src.apis import (
 )
 from src.mcp import TravelMCPClient
 from src.context import AdvancedContextManager, ConversationMemory, PreferenceLearningSystem
+from src.performance import (
+    AdvancedCache, PerformanceMonitor, ResponseOptimizer,
+    record_metric, record_response_time, performance_timer
+)
 
 # Configure logging
 os.makedirs('data', exist_ok=True)  # Create data directory if it doesn't exist
@@ -141,8 +145,13 @@ class TravelAgent:
         # Initialize Preference Learning System for intelligent user adaptation
         self.preference_learning = PreferenceLearningSystem(self.database)
         
+        # Initialize Performance Optimization Systems
+        self.advanced_cache = AdvancedCache()
+        self.performance_monitor = PerformanceMonitor()
+        self.response_optimizer = ResponseOptimizer(self.advanced_cache)
+        
         # Log successful initialization
-        logger.info("Real Data APIs, Scrapers, MCP Client & Advanced Context Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning")
+        logger.info("Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization")
         
         # Conversation memory
         self.conversation_history = []
@@ -494,9 +503,17 @@ Response:"""
             logger.error(f"Error getting performance stats: {e}")
             return {}
     
+    @performance_timer('mcp_flight_data')
     async def _get_mcp_flight_data(self, origin: str, destination: str, date: str = None) -> List[Dict[str, Any]]:
-        """Get flight data using MCP tools."""
+        """Get flight data using MCP tools with performance monitoring."""
         try:
+            # Check cache first
+            cache_key = f"flights_{origin}_{destination}_{date}"
+            cached_flights = await self.advanced_cache.get(cache_key)
+            if cached_flights:
+                await record_metric('flight_data_cache_hit', 1.0)
+                return cached_flights
+            
             response = await self.mcp_client.call_tool('search_flights', {
                 'origin': origin,
                 'destination': destination,
@@ -504,11 +521,16 @@ Response:"""
             })
             
             if 'flights' in response:
-                return response['flights']
+                flights = response['flights']
+                # Cache the results for 30 minutes
+                await self.advanced_cache.set(cache_key, flights, ttl=1800, tags=['flights', 'mcp'])
+                await record_metric('flight_data_cache_miss', 1.0)
+                return flights
             return []
             
         except Exception as e:
             logger.error(f"MCP flight data error: {e}")
+            await record_error('mcp_flight_data', str(e))
             return []
     
     async def _get_mcp_hotel_data(self, city: str, check_in: str = None, check_out: str = None) -> List[Dict[str, Any]]:
@@ -853,24 +875,30 @@ What destination are you most interested in?"""
         else:
             return 'general'
     
+    @performance_timer('process_query')
     async def process_query(self, query: str, context: Optional[Dict[str, Any]] = None) -> str:
         """
-        Process a travel query with advanced context management and comprehensive analysis.
+        Process a travel query with advanced context management, performance optimization, and comprehensive analysis.
         
         Args:
             query: User's travel query
             context: User context including departure location, destination, etc.
             
         Returns:
-            Comprehensive travel response with intelligent context
+            Comprehensive travel response with intelligent context and performance optimization
         """
-        logger.info(f"Processing query with advanced context: {query[:100]}...")
+        logger.info(f"Processing query with advanced systems: {query[:100]}...")
         
         # Generate user ID from context or use default
         user_id = context.get('user_id', 'default_user') if context else 'default_user'
         
         # Build intelligent context using advanced context manager
         intelligent_context = await self.context_manager.build_intelligent_context(user_id, query)
+        
+        # Add performance context
+        intelligent_context['performance_optimization'] = True
+        intelligent_context['cache_enabled'] = True
+        intelligent_context['user_id'] = user_id
         
         # Store in conversation history (legacy)
         self.conversation_history.append({
@@ -993,8 +1021,15 @@ Instructions:
 
 Response:"""
             
-            raw_response = self._call_llm(intelligent_prompt, context_text)
-            final_response = self._format_llm_response(raw_response)
+            # Generate response using LLM with intelligent context and performance optimization
+            async def generate_response(query: str, context: Dict[str, Any]) -> str:
+                raw_response = self._call_llm(intelligent_prompt, context_text)
+                return self._format_llm_response(raw_response)
+            
+            # Use response optimizer for intelligent caching and optimization
+            final_response = await self.response_optimizer.optimize_response(
+                query, intelligent_context, generate_response
+            )
         
         # Store response in conversation history (legacy)
         self.conversation_history.append({
