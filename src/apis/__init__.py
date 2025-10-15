@@ -11,23 +11,20 @@ from .maps_client import NominatimClient
 from .web_search_client import WebSearchClient
 from .rate_limiter import APIRateLimiter
 
-# Free API clients (no keys required)
+# Free API clients (no keys required) - REAL DATA ONLY
 from .free_weather_client import FreeWeatherClient
-from .free_flight_client import FreeFlightClient
 from .open_meteo_client import OpenMeteoClient
 
-# Additional service clients
+# Additional service clients - REAL DATA ONLY
 from .currency_api_client import CurrencyAPIClient
-from .hotel_search_client import HotelSearchClient
-from .attractions_client import AttractionsClient
-from .car_rental_client import CarRentalClient
-from .events_client import EventsClient
-from .insurance_client import InsuranceClient
-from .transportation_client import TransportationClient
-from .food_client import FoodClient
+
+# Real Web Scrapers - NO API KEYS, NO PAYMENTS
+from .real_flight_scraper import RealFlightScraper
+from .real_hotel_scraper import RealHotelScraper
+from .real_attractions_scraper import RealAttractionsScraper
 
 __all__ = [
-    # Core clients
+    # Core clients - REAL DATA ONLY
     'AviationStackClient',
     'RestCountriesClient',
     'WikipediaClient',
@@ -35,18 +32,15 @@ __all__ = [
     'WebSearchClient',
     'APIRateLimiter',
     
-    # Free clients
+    # Free clients - REAL DATA ONLY
     'FreeWeatherClient',
-    'FreeFlightClient',
     'OpenMeteoClient',
     
-    # Service clients
+    # Service clients - REAL DATA ONLY
     'CurrencyAPIClient',
-    'HotelSearchClient',
-    'AttractionsClient',
-    'CarRentalClient',
-    'EventsClient',
-    'InsuranceClient',
-    'TransportationClient',
-    'FoodClient'
+    
+    # Real Web Scrapers - NO API KEYS, NO PAYMENTS
+    'RealFlightScraper',
+    'RealHotelScraper',
+    'RealAttractionsScraper'
 ]

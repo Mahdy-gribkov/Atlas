@@ -55,9 +55,8 @@ from src.database.secure_database import SecureDatabase
 from src.utils.text_beautifier import TextBeautifier
 from src.apis import (
     RestCountriesClient, WikipediaClient, NominatimClient, WebSearchClient, 
-    AviationStackClient, FreeWeatherClient, FreeFlightClient,
-    OpenMeteoClient, CurrencyAPIClient, HotelSearchClient, AttractionsClient,
-    CarRentalClient, EventsClient, InsuranceClient, TransportationClient, FoodClient
+    AviationStackClient, FreeWeatherClient, OpenMeteoClient, CurrencyAPIClient,
+    RealFlightScraper, RealHotelScraper, RealAttractionsScraper
 )
 
 # Configure logging
@@ -111,43 +110,23 @@ class TravelAgent:
     def __init__(self):
         """Initialize the travel agent with all components."""
         self.database = SecureDatabase()
+        # Initialize API clients - REAL DATA ONLY
         self.country_client = RestCountriesClient()
         self.wikipedia_client = WikipediaClient()
         self.maps_client = NominatimClient()
-        self.web_search = WebSearchClient()
-        
-        # Initialize API clients - always available free clients + optional paid clients
-        self.flight_client = None
-        self.weather_client = None
-        
-        # Free API clients (always available)
-        self.free_flight_client = FreeFlightClient()
-        self.free_weather_client = FreeWeatherClient()
+        self.web_search_client = WebSearchClient()
+        self.flight_client = AviationStackClient()
+        self.weather_client = FreeWeatherClient()
         self.open_meteo_client = OpenMeteoClient()
         self.currency_client = CurrencyAPIClient()
-        self.hotel_client = HotelSearchClient()
-        self.attractions_client = AttractionsClient()
-        self.car_rental_client = CarRentalClient()
-        self.events_client = EventsClient()
-        self.insurance_client = InsuranceClient()
-        self.transportation_client = TransportationClient()
-        self.food_client = FoodClient()
         
-        # Initialize free API clients (no keys required)
-        try:
-            self.flight_client = AviationStackClient()
-            logger.info("Free Flight API client initialized")
-        except Exception as e:
-            logger.warning(f"Flight API not available: {e}")
+        # Initialize Real Web Scrapers - NO API KEYS, NO PAYMENTS
+        self.real_flight_scraper = RealFlightScraper()
+        self.real_hotel_scraper = RealHotelScraper()
+        self.real_attractions_scraper = RealAttractionsScraper()
         
-        try:
-            self.weather_client = FreeWeatherClient()
-            logger.info("Free Weather API client initialized")
-        except Exception as e:
-            logger.warning(f"Weather API not available: {e}")
-        
-        # Log available free APIs
-        logger.info("Free APIs initialized: Weather (wttr.in, Open-Meteo), Flights, Currency, Hotels, Attractions, Car Rental, Events, Insurance, Transportation, Food")
+        # Log successful initialization
+        logger.info("Real Data APIs & Scrapers initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers")
         
         # Conversation memory
         self.conversation_history = []
