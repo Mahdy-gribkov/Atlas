@@ -4,16 +4,12 @@ import TravelMap from './components/TravelMap';
 import { mapService } from './services/mapService';
 
 function App() {
-  const [messages, setMessages] = useState([
-    {
-      role: 'assistant',
-      content: 'Hi! I\'m your travel planning assistant. I can help you with flights, hotels, weather, and travel planning. What would you like help with?'
-    }
-  ]);
+  const [messages, setMessages] = useState([]);
+  const [isFirstMessageLoading, setIsFirstMessageLoading] = useState(true);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [userLocation, setUserLocation] = useState('');
-  const [showLocationPrompt, setShowLocationPrompt] = useState(true);
+  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [currentLocation, setCurrentLocation] = useState(null);
@@ -38,6 +34,19 @@ function App() {
     transportation: null
   });
   const [mapWidth, setMapWidth] = useState(40); // Map width percentage
+
+  // Show first message loading animation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsFirstMessageLoading(false);
+      setMessages([{
+        role: 'assistant',
+        content: 'Hi! I\'m your travel planning assistant. I can help you with flights, hotels, weather, and travel planning. What would you like help with?'
+      }]);
+    }, 2000); // 2 second loading animation
+
+    return () => clearTimeout(timer);
+  }, []);
 
   // Utility function to clean and format message content
   const formatMessageContent = (content) => {
@@ -713,8 +722,22 @@ function App() {
         />
 
         <div className="chat-container" style={{ width: `${100 - mapWidth}%` }}>
-          <div className="messages">
-            {messages.map((message, index) => (
+        <div className="messages">
+          {isFirstMessageLoading && (
+            <div className="message assistant">
+              <div className="message-avatar">🤖</div>
+              <div className="message-content">
+                <div className="message-text">
+                  <div className="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {messages.map((message, index) => (
               <div key={index} className={`message ${message.role}`}>
                 <div className="message-avatar">
                   {message.role === 'user' ? (

@@ -121,8 +121,8 @@ const TravelMap = ({ currentLocation, destinationLocation, suggestedLocations })
         setMapCenter([centerLat / pointCount, centerLng / pointCount]);
       }
     } else {
-      // Default to a reasonable center if no locations
-      setMapCenter([40.7128, -74.0060]); // New York City
+      // Default to Tel Aviv if no locations
+      setMapCenter([32.0853, 34.7818]); // Tel Aviv, Israel
     }
 
     // Create route if we have both current and destination
