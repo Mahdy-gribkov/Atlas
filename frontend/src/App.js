@@ -197,52 +197,11 @@ function App() {
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
 
     // Check if the message contains a location and update map
-    // Check if message contains location keywords
-    const locationKeywords = ['rome', 'paris', 'tokyo', 'london', 'new york', 'iceland', 'spain', 'france', 'italy', 'japan', 'germany', 'australia', 'canada', 'mexico', 'brazil', 'india', 'china', 'thailand', 'singapore', 'dubai', 'egypt', 'greece', 'turkey', 'russia', 'south korea', 'vietnam', 'indonesia', 'philippines', 'malaysia', 'south africa', 'morocco', 'kenya', 'tanzania', 'ethiopia', 'nigeria', 'ghana', 'senegal', 'tunisia', 'algeria', 'libya', 'sudan', 'chad', 'niger', 'mali', 'burkina faso', 'ivory coast', 'guinea', 'sierra leone', 'liberia', 'gambia', 'guinea-bissau', 'cape verde', 'sao tome', 'equatorial guinea', 'gabon', 'congo', 'cameroon', 'central african republic', 'democratic republic of congo', 'angola', 'zambia', 'zimbabwe', 'botswana', 'namibia', 'lesotho', 'swaziland', 'madagascar', 'mauritius', 'seychelles', 'comoros', 'djibouti', 'somalia', 'eritrea', 'uganda', 'rwanda', 'burundi', 'malawi', 'mozambique'];
+    // REAL DATA ONLY - Let the backend handle location detection via APIs
+    // No more hardcoded location lists
     
-    const lowerMessage = userMessage.toLowerCase();
-    const foundLocation = locationKeywords.find(location => lowerMessage.includes(location));
-    
-    console.log('Checking location:', lowerMessage, 'Found:', foundLocation);
-    
-    if (foundLocation) {
-      try {
-        const geocodedLocation = await mapService.geocodeAddress(foundLocation);
-        if (geocodedLocation && geocodedLocation.lat && geocodedLocation.lng) {
-          setDestinationLocation({
-            name: geocodedLocation.name || foundLocation,
-            lat: geocodedLocation.lat,
-            lng: geocodedLocation.lng
-          });
-          
-          // Update travel plan
-          setTravelPlan(prev => ({
-            ...prev,
-            destination: geocodedLocation.name || foundLocation,
-            activities: ['Travel planning', 'Destination research']
-          }));
-          
-          console.log('Updated travel plan with destination:', geocodedLocation.name || foundLocation);
-          
-          // Store in database via API
-          try {
-            await fetch('/api/travel-plan', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                destination: geocodedLocation.name || foundLocation,
-                lat: geocodedLocation.lat,
-                lng: geocodedLocation.lng
-              })
-            });
-          } catch (error) {
-            console.log('Could not store destination:', error);
-          }
-        }
-      } catch (error) {
-        console.log('Could not geocode location:', foundLocation);
-      }
-    }
+    // Location detection will be handled by the extractTravelPlanData function
+    // when the assistant response is received
 
     // Add placeholder for assistant response
     setMessages(prev => [...prev, { role: 'assistant', content: '', isStreaming: true }]);
@@ -488,13 +447,16 @@ function App() {
   const extractTravelPlanData = async (response, userMessage) => {
     try {
       // Check if this is a travel planning response
-      if (response.includes('Flight Options') || response.includes('Hotel Options') || response.includes('Itinerary')) {
+      if (response.includes('Flight Options') || response.includes('Hotel Options') || response.includes('Itinerary') || response.includes('Budget Breakdown')) {
         const newTravelPlan = { ...travelPlan };
         
-        // Extract destination from response
-        const destinationMatch = response.match(/Flight Options to (\w+)/);
+        // Extract destination from response - improved regex
+        const destinationMatch = response.match(/Flight Options to ([A-Za-z\s]+)/) || 
+                                response.match(/Itinerary for ([A-Za-z\s]+)/) ||
+                                response.match(/Hotel Options in ([A-Za-z\s]+)/);
+        
         if (destinationMatch) {
-          const destination = destinationMatch[1];
+          const destination = destinationMatch[1].trim();
           newTravelPlan.destination = destination;
           
           // Use real geocoding to set destination location on map
@@ -513,31 +475,84 @@ function App() {
           }
         }
         
-        // Extract budget from user message or response
-        const budgetMatch = userMessage.match(/(\d+)\s*(usd|dollars?|\$)/i) || response.match(/Budget.*?\$(\d+)/);
+        // Extract budget from user message or response - improved
+        const budgetMatch = userMessage.match(/(\d+(?:,\d{3})*(?:\.\d{2})?)\s*(usd|dollars?|\$)/i) || 
+                           response.match(/Budget.*?\$(\d+(?:,\d{3})*(?:\.\d{2})?)/) ||
+                           response.match(/Total.*?\$(\d+(?:,\d{3})*(?:\.\d{2})?)/);
+        
         if (budgetMatch) {
           newTravelPlan.budget = `$${budgetMatch[1]}`;
         }
         
-        // Extract dates from user message
-        const dateMatch = userMessage.match(/(\w+)\s+(\d{4})/i);
+        // Extract dates from user message - improved
+        const dateMatch = userMessage.match(/(\w+)\s+(\d{4})/i) ||
+                         response.match(/Departure Date.*?(\d{4}-\d{2}-\d{2})/) ||
+                         response.match(/Travel Date.*?(\d{4}-\d{2}-\d{2})/);
+        
         if (dateMatch) {
-          newTravelPlan.dates = `${dateMatch[1]} ${dateMatch[2]}`;
+          if (dateMatch[1] && dateMatch[2]) {
+            newTravelPlan.dates = `${dateMatch[1]} ${dateMatch[2]}`;
+          } else if (dateMatch[1]) {
+            newTravelPlan.dates = dateMatch[1];
+          }
         }
         
-        // Extract activities from response
+        // Extract flight information
+        const flightMatches = response.match(/- Airline: ([^\n]+)/g);
+        if (flightMatches) {
+          newTravelPlan.flights = flightMatches.map(match => 
+            match.replace('- Airline: ', '').trim()
+          ).slice(0, 3);
+        }
+        
+        // Extract hotel information
+        const hotelMatches = response.match(/- Name: ([^\n]+)/g);
+        if (hotelMatches) {
+          newTravelPlan.hotels = hotelMatches.map(match => 
+            match.replace('- Name: ', '').trim()
+          ).slice(0, 3);
+        }
+        
+        // Extract activities from itinerary - improved
         const activities = [];
-        const activityMatches = response.match(/- ([^-]+)/g);
-        if (activityMatches) {
-          activityMatches.forEach(match => {
-            const activity = match.replace('- ', '').trim();
-            if (activity && !activity.includes('Option') && !activity.includes('Price')) {
-              activities.push(activity);
+        const dayMatches = response.match(/### Day \d+\n([\s\S]*?)(?=### Day \d+|\n\n|$)/g);
+        if (dayMatches) {
+          dayMatches.forEach(dayMatch => {
+            const activityMatches = dayMatch.match(/- \*\*([^*]+)\*\*: ([^\n]+)/g);
+            if (activityMatches) {
+              activityMatches.forEach(match => {
+                const activity = match.replace(/- \*\*([^*]+)\*\*: /, '').trim();
+                if (activity && !activity.includes('Option') && !activity.includes('Price')) {
+                  activities.push(activity);
+                }
+              });
             }
           });
         }
-        newTravelPlan.activities = activities.slice(0, 5); // Limit to 5 activities
         
+        // Fallback: extract from bullet points
+        if (activities.length === 0) {
+          const activityMatches = response.match(/- ([^-]+)/g);
+          if (activityMatches) {
+            activityMatches.forEach(match => {
+              const activity = match.replace('- ', '').trim();
+              if (activity && !activity.includes('Option') && !activity.includes('Price') && 
+                  !activity.includes('Airline') && !activity.includes('Name')) {
+                activities.push(activity);
+              }
+            });
+          }
+        }
+        
+        newTravelPlan.activities = activities.slice(0, 8); // More activities
+        
+        // Extract weather information
+        const weatherMatch = response.match(/Temperature: ([^\n]+)/);
+        if (weatherMatch) {
+          newTravelPlan.weather = weatherMatch[1].trim();
+        }
+        
+        console.log('Extracted travel plan data:', newTravelPlan);
         setTravelPlan(newTravelPlan);
       }
     } catch (error) {

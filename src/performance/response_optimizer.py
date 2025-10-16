@@ -156,9 +156,14 @@ class ResponseOptimizer:
                     query_hash = self._generate_query_hash(query, context_template)
                     
                     if query_hash not in self.precomputed_responses:
-                        # This would be implemented with actual response generation
-                        # For now, we'll create a placeholder
-                        self.precomputed_responses[query_hash] = f"Precomputed response for: {query}"
+                        # Generate actual response using the provided generator function
+                        try:
+                            response = await generate_response(query, context_template)
+                            self.precomputed_responses[query_hash] = response
+                        except Exception as e:
+                            logger.error(f"Error precomputing response for {query}: {e}")
+                            # Fallback to a generic response
+                            self.precomputed_responses[query_hash] = f"I can help you with travel planning. What specific information do you need about {query}?"
             
             logger.info(f"✅ Precomputed {len(self.precomputed_responses)} responses")
             
