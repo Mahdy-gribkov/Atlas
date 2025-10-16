@@ -666,3 +666,38 @@
 2025-10-16 05:55:04,695 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
 2025-10-16 05:55:04,696 - INFO - LLM Service initialized with multiple fallbacks
 2025-10-16 05:55:04,696 - INFO - Travel agent initialized successfully
+2025-10-16 05:55:14,981 - INFO - Processing query with intelligent routing: Hello...
+2025-10-16 05:55:14,983 - INFO - Query routed: unknown -> direct_llm (latency: 200ms)
+2025-10-16 05:55:14,984 - INFO - Query routed: unknown -> direct_llm (latency: 200ms)
+2025-10-16 05:55:15,699 - WARNING - LLM7.io error: 400, message:
+  Can not decode content-encoding: zstd
+2025-10-16 05:55:15,929 - WARNING - Hugging Face returned status 401
+2025-10-16 05:55:15,930 - INFO - Using intelligent fallback in 0.95s
+2025-10-16 05:55:22,023 - INFO - Processing new request: i want a 3 day trip plan to iceland on jan 26. im on my own and i start the journey in tel aviv...
+2025-10-16 05:55:22,024 - INFO - Processing query with intelligent routing: i want a 3 day trip plan to iceland on jan 26. im on my own and i start the journey in tel aviv...
+2025-10-16 05:55:22,028 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-16 05:55:22,029 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-16 05:55:22,032 - ERROR - Error getting user context: name 'logger' is not defined
+2025-10-16 05:55:22,035 - ERROR - Error getting conversation context: name 'logger' is not defined
+2025-10-16 05:55:22,037 - INFO - Loaded user preferences for default_user
+2025-10-16 05:55:22,038 - INFO - Added to knowledge base: query_1
+2025-10-16 05:55:22,039 - INFO - Searching for general information...
+2025-10-16 05:55:26,157 - WARNING - LLM7.io error: 400, message:
+  Can not decode content-encoding: zstd
+2025-10-16 05:55:26,758 - WARNING - Hugging Face returned status 401
+2025-10-16 05:55:26,762 - INFO - Using intelligent fallback in 4.13s
+2025-10-16 05:55:26,764 - INFO - Metric recorded: response_optimizer_duration=4.135925054550171, tags=None
+2025-10-16 05:55:26,767 - INFO - Metric recorded: response_optimizer_error=1.0, tags=None
+2025-10-16 05:55:26,768 - ERROR - Error in full processing logic: object NoneType can't be used in 'await' expression
+2025-10-16 05:59:57,252 - INFO - Travel MCP Client initialized
+2025-10-16 05:59:57,253 - INFO - Intent Router initialized with pattern matching
+2025-10-16 05:59:57,253 - INFO - Database Context Provider initialized
+2025-10-16 05:59:57,253 - INFO - Conversation Memory System initialized
+2025-10-16 05:59:57,253 - INFO - Preference Learning System initialized
+2025-10-16 05:59:57,253 - INFO - Advanced Cache System initialized
+2025-10-16 05:59:57,254 - INFO - Simple Performance Monitor initialized
+2025-10-16 05:59:57,254 - INFO - Initialized 5 optimization rules
+2025-10-16 05:59:57,254 - INFO - Response Optimizer initialized
+2025-10-16 05:59:57,254 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
+2025-10-16 05:59:57,254 - INFO - LLM Service initialized with multiple fallbacks
+2025-10-16 05:59:57,254 - INFO - Travel agent initialized successfully

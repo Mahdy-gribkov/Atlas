@@ -655,9 +655,9 @@ What destination are you most interested in?"""
             logger.error(f"Web search error: {e}")
             return []
     
-    def extract_travel_info(self, query: str) -> Dict[str, Any]:
+    async def extract_travel_info(self, query: str) -> Dict[str, Any]:
         """
-        Extract travel planning information from user query.
+        Extract travel planning information from user query using APIs.
         
         Args:
             query: User's travel query
@@ -667,13 +667,28 @@ What destination are you most interested in?"""
         """
         query_lower = query.lower()
         
-        # Extract destination
-        destinations = ['peru', 'japan', 'france', 'italy', 'spain', 'germany', 'thailand', 'vietnam', 'india', 'brazil', 'argentina', 'chile', 'mexico', 'canada', 'australia', 'new zealand', 'south korea', 'china', 'russia', 'uk', 'ireland', 'portugal', 'greece', 'turkey', 'egypt', 'morocco', 'south africa', 'kenya', 'tanzania', 'madagascar', 'mauritius', 'seychelles']
+        # Extract destination using maps API
         destination = None
-        for dest in destinations:
-            if dest in query_lower:
-                destination = dest.title()
-                break
+        try:
+            # Try to find destination using maps client
+            maps_result = await self.maps_client.search_location(query)
+            if maps_result and len(maps_result) > 0:
+                # Get the first result and extract country
+                location = maps_result[0]
+                if 'country' in location:
+                    destination = location['country']
+                elif 'name' in location:
+                    destination = location['name']
+        except Exception as e:
+            logger.warning(f"Error extracting destination from maps API: {e}")
+            
+        # Fallback: try to extract from common country names in query
+        if not destination:
+            common_countries = ['iceland', 'japan', 'france', 'italy', 'spain', 'germany', 'thailand', 'vietnam', 'india', 'brazil', 'argentina', 'chile', 'mexico', 'canada', 'australia', 'new zealand', 'south korea', 'china', 'russia', 'uk', 'ireland', 'portugal', 'greece', 'turkey', 'egypt', 'morocco', 'south africa', 'kenya', 'tanzania', 'madagascar', 'mauritius', 'seychelles', 'norway', 'sweden', 'finland', 'denmark', 'netherlands', 'belgium', 'switzerland', 'austria', 'poland', 'czech republic', 'hungary', 'croatia', 'slovenia', 'slovakia', 'romania', 'bulgaria', 'serbia', 'montenegro', 'bosnia', 'albania', 'macedonia', 'moldova', 'ukraine', 'belarus', 'lithuania', 'latvia', 'estonia', 'luxembourg', 'malta', 'cyprus', 'israel', 'jordan', 'lebanon', 'syria', 'iraq', 'iran', 'saudi arabia', 'uae', 'qatar', 'kuwait', 'bahrain', 'oman', 'yemen', 'afghanistan', 'pakistan', 'bangladesh', 'sri lanka', 'maldives', 'nepal', 'bhutan', 'myanmar', 'laos', 'cambodia', 'malaysia', 'singapore', 'indonesia', 'philippines', 'brunei', 'east timor', 'mongolia', 'kazakhstan', 'uzbekistan', 'turkmenistan', 'tajikistan', 'kyrgyzstan', 'georgia', 'armenia', 'azerbaijan']
+            for country in common_countries:
+                if country in query_lower:
+                    destination = country.title()
+                    break
         
         # Extract budget
         budget_match = re.search(r'\$(\d+(?:,\d{3})*(?:\.\d{2})?)', query)
@@ -995,7 +1010,7 @@ Just ask me anything about travel, and I'll help you plan the perfect trip!"""
             })
             
             # Extract travel information and enhance with context
-            travel_info = self.extract_travel_info(query)
+            travel_info = await self.extract_travel_info(query)
             if intelligent_context:
                 # Enhance travel info with context
                 if intelligent_context.get('departureLocation') and not travel_info.get('origin'):

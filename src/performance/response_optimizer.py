@@ -125,14 +125,14 @@ class ResponseOptimizer:
             self.optimization_stats['optimization_applied'] += 1
             
             record_response_time('response_optimization', duration)
-            await record_metric('response_optimizer_duration', duration)
+            record_metric('response_optimizer_duration', duration)
             
             return optimized_response
             
         except Exception as e:
             duration = time.time() - start_time
             record_response_time('response_optimization', duration)
-            await record_metric('response_optimizer_error', 1.0)
+            record_metric('response_optimizer_error', 1.0)
             logger.error(f"Response optimization error: {e}")
             
             # Fallback to direct response generation

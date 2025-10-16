@@ -7,12 +7,15 @@ import sqlite3
 import os
 import hashlib
 import asyncio
+import logging
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 from cryptography.fernet import Fernet
 import json
 
 from .models import UserPreference, SearchHistory, TravelPlan, APICache
+
+logger = logging.getLogger(__name__)
 from ..config import config
 
 class SecureDatabase:
