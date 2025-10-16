@@ -1109,12 +1109,15 @@ Just ask me anything about travel, and I'll help you plan the perfect trip!"""
             
             # Generate comprehensive response using LLM with structured data
             if response_parts:
-                # We have structured data, enhance it with LLM intelligence
-                structured_data = "\n\n".join(response_parts)
-                # Clean up any HTML tags from structured data
-                structured_data = re.sub(r'<[^>]*>', '', structured_data)
-                structured_data = re.sub(r'\*\*(.*?)\*\*', r'\1', structured_data)
-                structured_data = re.sub(r'\*(.*?)\*', r'\1', structured_data)
+                # Format structured data with proper markdown and clear sections
+                formatted_sections = []
+                
+                for part in response_parts:
+                    if part.strip():
+                        formatted_sections.append(part.strip())
+                
+                # Join sections with proper spacing
+                structured_data = "\n\n".join(formatted_sections)
                 context_text = "\n".join(context_parts) if context_parts else "No additional context available."
                 
                 # Create enhanced prompt for LLM to analyze and improve the structured data
@@ -1128,21 +1131,21 @@ STRUCTURED DATA:
 ADDITIONAL CONTEXT:
 {context_text}
 
-Please provide:
-1. A brief summary of the key information
-2. Intelligent insights and recommendations
-3. Any important considerations or tips
-4. Next steps or follow-up suggestions
+Please provide a well-structured response with:
+1. **Brief Summary** - Key information about the trip
+2. **Intelligent Insights** - Smart recommendations and tips
+3. **Important Considerations** - Things to keep in mind
+4. **Next Steps** - Actionable follow-up suggestions
 
-Keep your response concise but helpful, focusing on actionable advice."""
+Format your response with clear markdown headers (##, ###) and bullet points for easy reading."""
 
                 try:
                     llm_insights = await self._call_llm(enhanced_prompt, "")
                     # Clean up the LLM response to avoid duplication
                     if llm_insights and not llm_insights.startswith("I'm a travel assistant"):
                         formatted_insights = self._format_llm_response(llm_insights)
-                        # Use simple LLM response without RAG clutter
-                        final_response = f"{structured_data}\n\n{formatted_insights}"
+                        # Combine structured data with insights in a clean format
+                        final_response = f"{structured_data}\n\n---\n\n{formatted_insights}"
                     else:
                         final_response = structured_data
                 except Exception as e:
@@ -1802,19 +1805,27 @@ Response:"""
             days = int(duration)
             itinerary = f"## 📅 {days}-Day Itinerary for {destination}\n\n"
             
+            # Get destination-specific activities
+            destination_activities = self._get_destination_activities(destination)
+            
             for day in range(1, days + 1):
                 itinerary += f"### Day {day}\n"
                 if day == 1:
-                    itinerary += "- Arrival and check-in\n"
-                    itinerary += "- Explore city center\n"
-                    itinerary += "- Local dinner\n"
+                    itinerary += "- **Morning:** Arrival and hotel check-in\n"
+                    itinerary += "- **Afternoon:** Explore city center and get oriented\n"
+                    itinerary += "- **Evening:** Welcome dinner at local restaurant\n"
                 elif day == days:
-                    itinerary += "- Final day activities\n"
-                    itinerary += "- Check-out and departure\n"
+                    itinerary += "- **Morning:** Final sightseeing or shopping\n"
+                    itinerary += "- **Afternoon:** Hotel check-out and departure\n"
                 else:
-                    itinerary += "- Morning: Visit attractions\n"
-                    itinerary += "- Afternoon: Local experiences\n"
-                    itinerary += "- Evening: Cultural activities\n"
+                    # Use destination-specific activities
+                    morning_activity = destination_activities.get('morning', 'Visit local attractions')
+                    afternoon_activity = destination_activities.get('afternoon', 'Explore local culture')
+                    evening_activity = destination_activities.get('evening', 'Enjoy local cuisine')
+                    
+                    itinerary += f"- **Morning:** {morning_activity}\n"
+                    itinerary += f"- **Afternoon:** {afternoon_activity}\n"
+                    itinerary += f"- **Evening:** {evening_activity}\n"
                 itinerary += "\n"
             
             if attractions_data:
@@ -1829,6 +1840,55 @@ Response:"""
         except Exception as e:
             logger.error(f"Itinerary creation error: {e}")
             return f"## 📅 Itinerary for {destination}\nError creating itinerary: {str(e)}"
+    
+    def _get_destination_activities(self, destination: str) -> Dict[str, str]:
+        """Get destination-specific activities."""
+        destination_lower = destination.lower()
+        
+        activities_map = {
+            'iceland': {
+                'morning': 'Northern Lights tour or Blue Lagoon visit',
+                'afternoon': 'Golden Circle tour (Geysir, Gullfoss, Thingvellir)',
+                'evening': 'Northern Lights hunting or Reykjavik nightlife'
+            },
+            'japan': {
+                'morning': 'Visit temples and shrines',
+                'afternoon': 'Explore traditional neighborhoods',
+                'evening': 'Experience local cuisine and culture'
+            },
+            'france': {
+                'morning': 'Visit museums and landmarks',
+                'afternoon': 'Explore local markets and cafes',
+                'evening': 'Enjoy French cuisine and wine'
+            },
+            'italy': {
+                'morning': 'Visit historical sites and museums',
+                'afternoon': 'Explore local neighborhoods and shops',
+                'evening': 'Enjoy authentic Italian dining'
+            },
+            'spain': {
+                'morning': 'Visit architectural landmarks',
+                'afternoon': 'Explore local markets and tapas bars',
+                'evening': 'Experience flamenco and nightlife'
+            },
+            'thailand': {
+                'morning': 'Visit temples and cultural sites',
+                'afternoon': 'Explore local markets and street food',
+                'evening': 'Enjoy Thai cuisine and night markets'
+            }
+        }
+        
+        # Return specific activities if found, otherwise generic ones
+        for key, activities in activities_map.items():
+            if key in destination_lower:
+                return activities
+        
+        # Default activities
+        return {
+            'morning': 'Visit local attractions and landmarks',
+            'afternoon': 'Explore local culture and neighborhoods',
+            'evening': 'Enjoy local cuisine and entertainment'
+        }
     
     async def _create_budget_breakdown(self, budget: float, flight_data: str, hotel_data: str, duration: str) -> str:
         """Create a budget breakdown."""
