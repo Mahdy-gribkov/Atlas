@@ -63,9 +63,10 @@ from src.context import AdvancedContextManager, ConversationMemory, PreferenceLe
 from src.context.context_provider import ContextProvider
 from src.routing import IntentRouter, IntentType
 from src.performance import (
-    AdvancedCache, PerformanceMonitor, ResponseOptimizer,
-    record_metric, record_response_time, performance_timer
+    AdvancedCache, ResponseOptimizer, SimplePerformanceMonitor,
+    record_metric, record_response_time, get_performance_stats, get_health_status
 )
+from src.services.llm_service import LLMService
 
 # Configure logging
 os.makedirs('data', exist_ok=True)  # Create data directory if it doesn't exist
@@ -156,7 +157,7 @@ class TravelAgent:
         
         # Initialize Performance Optimization Systems
         self.advanced_cache = AdvancedCache()
-        self.performance_monitor = PerformanceMonitor()
+        self.performance_monitor = SimplePerformanceMonitor()
         self.response_optimizer = ResponseOptimizer(self.advanced_cache)
         
         # Log successful initialization
@@ -181,8 +182,8 @@ class TravelAgent:
             'response_times': []
         }
         
-        # Initialize Cloud LLM (no local LLM)
-        self._init_cloud_llm()
+        # Initialize LLM Service with multiple fallbacks
+        self.llm_service = LLMService()
         
         # Initialize text beautifier
         self.text_beautifier = TextBeautifier()
@@ -190,25 +191,15 @@ class TravelAgent:
         logger.info("Travel agent initialized successfully")
     
     
-    def _init_cloud_llm(self):
-        """Initialize free cloud LLM (no API key required)."""
-        try:
-            self.llm_type = "cloud"
-            self.model_name = config.CLOUD_LLM_MODEL
-            self.cloud_llm_url = config.CLOUD_LLM_URL
-            # No API key needed for free cloud LLM
-            logger.info(f"Free LLM (LLM7.io) ({self.model_name}) initialized")
-        except Exception as e:
-            logger.error(f"Cloud LLM initialization failed: {e}")
-            # Don't raise, just log and continue with fallback
     
-    def _call_llm(self, prompt: str, context: str = "") -> str:
+    async def _call_llm(self, prompt: str, context: str = "", user_id: str = None) -> str:
         """
-        Call the cloud LLM with simple, effective prompting.
+        Call the LLM service with robust fallback handling.
         
         Args:
             prompt: Main prompt for the LLM
             context: Additional context information
+            user_id: User identifier for personalization
             
         Returns:
             LLM response
@@ -216,22 +207,8 @@ class TravelAgent:
         start_time = time.time()
         
         try:
-            # Simple, effective prompt
-            enhanced_prompt = f"""You are a helpful travel assistant. Answer the user's question clearly and concisely.
-
-User: {prompt}
-
-Instructions:
-- Give a direct, helpful answer
-- Be conversational but brief
-- Ask one clarifying question if needed
-- Don't use special formatting or symbols
-- Focus on what the user actually asked for
-
-Response:"""
-            
-            # Always use cloud LLM
-            response = self._call_cloud_llm_sync(enhanced_prompt)
+            # Use the robust LLM service
+            response = await self.llm_service.get_response(prompt, context, user_id)
             
             # Update performance stats
             self.performance_stats['llm_calls'] += 1
@@ -243,64 +220,6 @@ Response:"""
             logger.error(f"LLM call failed: {e}")
             return "I can help you with travel planning. What specific information do you need?"
     
-    def _call_cloud_llm_sync(self, prompt: str) -> str:
-        """Call free cloud LLM synchronously for intelligent responses."""
-        try:
-            import requests
-            import json
-            
-            # Use LLM7.io - completely free LLM service that doesn't require API keys
-            llm7_payload = {
-                'model': 'gpt-3.5-turbo',
-                'messages': [
-                    {
-                        'role': 'system',
-                        'content': 'You are a helpful travel planning assistant. Provide concise, practical travel advice and recommendations.'
-                    },
-                    {
-                        'role': 'user',
-                        'content': prompt
-                    }
-                ],
-                'max_tokens': 300,
-                'temperature': 0.7
-            }
-            
-            try:
-                response = requests.post(
-                    'https://api.llm7.io/v1/chat/completions',
-                    json=llm7_payload,
-                    headers={'Content-Type': 'application/json'},
-                    timeout=15
-                )
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    if 'choices' in data and len(data['choices']) > 0:
-                        content = data['choices'][0]['message']['content']
-                        logger.info("Successfully received LLM response from LLM7.io")
-                        return content.strip()
-                    else:
-                        logger.warning("LLM7.io returned unexpected response format")
-                else:
-                    logger.warning(f"LLM7.io returned status code: {response.status_code}")
-                    
-            except requests.exceptions.Timeout:
-                logger.warning("LLM7.io request timed out")
-            except requests.exceptions.ConnectionError:
-                logger.warning("LLM7.io connection error")
-            except requests.exceptions.RequestException as e:
-                logger.warning(f"LLM7.io request error: {e}")
-            except Exception as e:
-                logger.warning(f"LLM7.io service failed: {e}")
-            
-            # If LLM7.io fails, use intelligent fallback
-            logger.info("Using intelligent fallback response")
-            return self._get_fallback_response(prompt)
-                
-        except Exception as e:
-            logger.error(f"Free LLM call failed: {e}")
-            return self._get_fallback_response(prompt)
     
     def _format_llm_response(self, response: str) -> str:
         """Format LLM response using the text beautifier service."""
@@ -496,21 +415,19 @@ Response:"""
     def get_performance_stats(self) -> Dict[str, Any]:
         """Get performance statistics."""
         try:
-            avg_response_time = (
-                sum(self.performance_stats['response_times']) / len(self.performance_stats['response_times'])
-                if self.performance_stats['response_times'] else 0
-            )
+            # Get stats from the simple performance monitor
+            monitor_stats = self.performance_monitor.get_stats()
             
-            return {
-                'api_calls': self.performance_stats['api_calls'],
-                'cache_hits': self.performance_stats['cache_hits'],
-                'cache_misses': self.performance_stats['cache_misses'],
-                'llm_calls': self.performance_stats['llm_calls'],
-                'average_response_time': round(avg_response_time, 3),
+            # Add additional agent-specific stats
+            agent_stats = {
                 'knowledge_base_size': len(self.knowledge_base),
                 'conversation_history_size': len(self.conversation_history),
-                'user_preferences_count': len(self.user_preferences)
+                'user_preferences_count': len(self.user_preferences),
+                'llm_service_stats': self.llm_service.get_service_stats()
             }
+            
+            # Combine both stats
+            return {**monitor_stats, **agent_stats}
         except Exception as e:
             logger.error(f"Error getting performance stats: {e}")
             return {}
