@@ -690,8 +690,12 @@ What destination are you most interested in?"""
                     destination = country.title()
                     break
         
-        # Extract budget
+        # Extract budget - handle both $2000 and 2000usd formats
         budget_match = re.search(r'\$(\d+(?:,\d{3})*(?:\.\d{2})?)', query)
+        if not budget_match:
+            # Try without $ sign (e.g., "2000usd", "2000 USD")
+            budget_match = re.search(r'(\d+(?:,\d{3})*(?:\.\d{2})?)\s*(?:usd|dollars?)', query_lower)
+        
         budget = float(budget_match.group(1).replace(',', '')) if budget_match else None
         
         # Extract duration
@@ -722,6 +726,23 @@ What destination are you most interested in?"""
             'travelers': travelers,
             'query_type': self._classify_query_type(query_lower)
         }
+    
+    def _is_comprehensive_travel_plan(self, query: str, travel_info: Dict[str, Any]) -> bool:
+        """Check if this is a comprehensive travel planning request."""
+        query_lower = query.lower()
+        
+        # Check for comprehensive planning keywords
+        planning_keywords = ['plan', 'trip', 'itinerary', 'travel to', 'visit', 'vacation']
+        has_planning = any(keyword in query_lower for keyword in planning_keywords)
+        
+        # Check if we have destination and duration (indicating a full trip plan)
+        has_destination = travel_info.get('destination') is not None
+        has_duration = travel_info.get('duration') is not None
+        
+        # Check for budget (often indicates comprehensive planning)
+        has_budget = travel_info.get('budget') is not None
+        
+        return has_planning and has_destination and (has_duration or has_budget)
     
     def _parse_travel_date(self, query: str) -> Optional[str]:
         """
@@ -759,12 +780,20 @@ What destination are you most interested in?"""
             next_month = next_month.replace(day=1)
             return next_month.strftime('%Y-%m-%d')
         
-        # Specific month patterns
+        # Specific month patterns (full names and abbreviations)
         month_patterns = [
-            (r'january\s+(\d+)', 1), (r'february\s+(\d+)', 2), (r'march\s+(\d+)', 3),
-            (r'april\s+(\d+)', 4), (r'may\s+(\d+)', 5), (r'june\s+(\d+)', 6),
-            (r'july\s+(\d+)', 7), (r'august\s+(\d+)', 8), (r'september\s+(\d+)', 9),
-            (r'october\s+(\d+)', 10), (r'november\s+(\d+)', 11), (r'december\s+(\d+)', 12)
+            (r'january\s+(\d+)', 1), (r'jan\s+(\d+)', 1),
+            (r'february\s+(\d+)', 2), (r'feb\s+(\d+)', 2),
+            (r'march\s+(\d+)', 3), (r'mar\s+(\d+)', 3),
+            (r'april\s+(\d+)', 4), (r'apr\s+(\d+)', 4),
+            (r'may\s+(\d+)', 5),
+            (r'june\s+(\d+)', 6), (r'jun\s+(\d+)', 6),
+            (r'july\s+(\d+)', 7), (r'jul\s+(\d+)', 7),
+            (r'august\s+(\d+)', 8), (r'aug\s+(\d+)', 8),
+            (r'september\s+(\d+)', 9), (r'sep\s+(\d+)', 9),
+            (r'october\s+(\d+)', 10), (r'oct\s+(\d+)', 10),
+            (r'november\s+(\d+)', 11), (r'nov\s+(\d+)', 11),
+            (r'december\s+(\d+)', 12), (r'dec\s+(\d+)', 12)
         ]
         
         for pattern, month_num in month_patterns:
@@ -780,6 +809,29 @@ What destination are you most interested in?"""
                     return date_obj.strftime('%Y-%m-%d')
                 except ValueError:
                     continue
+        
+        # Handle month + year patterns (e.g., "jan 2026", "january 2026")
+        month_year_patterns = [
+            (r'january\s+(\d{4})', 1), (r'jan\s+(\d{4})', 1),
+            (r'february\s+(\d{4})', 2), (r'feb\s+(\d{4})', 2),
+            (r'march\s+(\d{4})', 3), (r'mar\s+(\d{4})', 3),
+            (r'april\s+(\d{4})', 4), (r'apr\s+(\d{4})', 4),
+            (r'may\s+(\d{4})', 5),
+            (r'june\s+(\d{4})', 6), (r'jun\s+(\d{4})', 6),
+            (r'july\s+(\d{4})', 7), (r'jul\s+(\d{4})', 7),
+            (r'august\s+(\d{4})', 8), (r'aug\s+(\d{4})', 8),
+            (r'september\s+(\d{4})', 9), (r'sep\s+(\d{4})', 9),
+            (r'october\s+(\d{4})', 10), (r'oct\s+(\d{4})', 10),
+            (r'november\s+(\d{4})', 11), (r'nov\s+(\d{4})', 11),
+            (r'december\s+(\d{4})', 12), (r'dec\s+(\d{4})', 12)
+        ]
+        
+        for pattern, month_num in month_year_patterns:
+            match = re.search(pattern, query)
+            if match:
+                year = int(match.group(1))
+                # Return first day of the month
+                return datetime(year, month_num, 1).strftime('%Y-%m-%d')
         
         return None
     
@@ -1028,7 +1080,9 @@ Just ask me anything about travel, and I'll help you plan the perfect trip!"""
             context_parts = []
             
             # Handle different types of queries
-            if travel_info['query_type'] == 'weather':
+            if self._is_comprehensive_travel_plan(query, travel_info):
+                await self._handle_comprehensive_travel_plan(query, travel_info, response_parts, context_parts)
+            elif travel_info['query_type'] == 'weather':
                 await self._handle_weather_query(query, response_parts, context_parts)
             elif travel_info['query_type'] == 'flights':
                 await self._handle_flight_query(query, travel_info, response_parts, context_parts)
@@ -1610,6 +1664,306 @@ Response:"""
         except Exception as e:
             logger.error(f"Budget data error: {e}")
             return None
+    
+    async def _handle_comprehensive_travel_plan(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
+        """Handle comprehensive travel planning with real API searches."""
+        destination = travel_info.get('destination', 'Unknown')
+        budget = travel_info.get('budget', 0)
+        duration = travel_info.get('duration', '3')
+        date = travel_info.get('date', 'Not specified')
+        travelers = travel_info.get('travelers', 1)
+        
+        logger.info(f"Creating comprehensive travel plan for {destination}")
+        
+        try:
+            # 1. Search for flights
+            flight_data = await self._search_real_flights(destination, date, travelers)
+            if flight_data:
+                response_parts.append(flight_data)
+            
+            # 2. Search for hotels
+            hotel_data = await self._search_real_hotels(destination, date, duration, budget, travelers)
+            if hotel_data:
+                response_parts.append(hotel_data)
+            
+            # 3. Get attractions and activities
+            attractions_data = await self._get_attractions_data(destination)
+            if attractions_data:
+                response_parts.append(attractions_data)
+            
+            # 4. Get weather information
+            weather_data = await self._get_weather_data(destination, date)
+            if weather_data:
+                response_parts.append(weather_data)
+            
+            # 5. Create day-by-day itinerary
+            itinerary = await self._create_daily_itinerary(destination, duration, attractions_data)
+            if itinerary:
+                response_parts.append(itinerary)
+            
+            # 6. Budget breakdown
+            budget_breakdown = await self._create_budget_breakdown(budget, flight_data, hotel_data, duration)
+            if budget_breakdown:
+                response_parts.append(budget_breakdown)
+                
+        except Exception as e:
+            logger.error(f"Error in comprehensive travel planning: {e}")
+            response_parts.append(f"Error creating travel plan: {str(e)}")
+    
+    async def _search_real_flights(self, destination: str, date: str, travelers: int) -> str:
+        """Search for real flights using available APIs."""
+        try:
+            # Use the flight client to search for flights
+            flights = await self.flight_client.search_flights(
+                origin="TLV",  # Tel Aviv
+                destination=self._get_airport_code(destination),
+                departure_date=date,
+                passengers=travelers
+            )
+            
+            if flights and len(flights) > 0:
+                flight_info = f"## ✈️ Flight Options to {destination}\n"
+                flight_info += f"**Departure Date:** {date}\n"
+                flight_info += f"**Passengers:** {travelers}\n\n"
+                
+                for i, flight in enumerate(flights[:3], 1):  # Show top 3 options
+                    flight_info += f"**Option {i}:**\n"
+                    flight_info += f"- Airline: {flight.get('airline', 'N/A')}\n"
+                    flight_info += f"- Price: ${flight.get('price', 'N/A')}\n"
+                    flight_info += f"- Duration: {flight.get('duration', 'N/A')}\n"
+                    flight_info += f"- Departure: {flight.get('departure_time', 'N/A')}\n"
+                    flight_info += f"- Arrival: {flight.get('arrival_time', 'N/A')}\n\n"
+                
+                return flight_info
+            else:
+                return f"## ✈️ Flight Options to {destination}\nNo flights found. Please check alternative dates or contact airlines directly."
+                
+        except Exception as e:
+            logger.error(f"Flight search error: {e}")
+            return f"## ✈️ Flight Options to {destination}\nError searching flights: {str(e)}"
+    
+    async def _search_real_hotels(self, destination: str, date: str, duration: str, budget: float, travelers: int) -> str:
+        """Search for real hotels using available APIs."""
+        try:
+            # Use the hotel scraper to search for hotels
+            hotels = await self.real_hotel_scraper.search_hotels(
+                destination=destination,
+                check_in=date,
+                nights=int(duration),
+                guests=travelers
+            )
+            
+            if hotels and len(hotels) > 0:
+                hotel_info = f"## 🏨 Hotel Options in {destination}\n"
+                hotel_info += f"**Check-in:** {date}\n"
+                hotel_info += f"**Nights:** {duration}\n"
+                hotel_info += f"**Guests:** {travelers}\n\n"
+                
+                for i, hotel in enumerate(hotels[:3], 1):  # Show top 3 options
+                    hotel_info += f"**Option {i}:**\n"
+                    hotel_info += f"- Name: {hotel.get('name', 'N/A')}\n"
+                    hotel_info += f"- Price: ${hotel.get('price', 'N/A')}/night\n"
+                    hotel_info += f"- Rating: {hotel.get('rating', 'N/A')}\n"
+                    hotel_info += f"- Location: {hotel.get('location', 'N/A')}\n"
+                    if hotel.get('booking_url'):
+                        hotel_info += f"- [Book Now]({hotel['booking_url']})\n"
+                    hotel_info += "\n"
+                
+                return hotel_info
+            else:
+                return f"## 🏨 Hotel Options in {destination}\nNo hotels found. Please check alternative dates or contact hotels directly."
+                
+        except Exception as e:
+            logger.error(f"Hotel search error: {e}")
+            return f"## 🏨 Hotel Options in {destination}\nError searching hotels: {str(e)}"
+    
+    async def _get_weather_data(self, destination: str, date: str) -> str:
+        """Get weather information for the destination."""
+        try:
+            weather = await self.weather_client.get_weather(destination)
+            if weather and "error" not in weather:
+                weather_info = f"## 🌤️ Weather in {destination}\n"
+                weather_info += f"**Temperature:** {weather.get('temperature', 'N/A')}°C\n"
+                weather_info += f"**Condition:** {weather.get('condition', 'N/A')}\n"
+                weather_info += f"**Humidity:** {weather.get('humidity', 'N/A')}%\n"
+                weather_info += f"**Wind:** {weather.get('wind_speed', 'N/A')} km/h\n"
+                return weather_info
+            else:
+                return f"## 🌤️ Weather in {destination}\nWeather information not available."
+        except Exception as e:
+            logger.error(f"Weather data error: {e}")
+            return f"## 🌤️ Weather in {destination}\nError getting weather data: {str(e)}"
+    
+    async def _create_daily_itinerary(self, destination: str, duration: str, attractions_data: str) -> str:
+        """Create a day-by-day itinerary."""
+        try:
+            days = int(duration)
+            itinerary = f"## 📅 {days}-Day Itinerary for {destination}\n\n"
+            
+            for day in range(1, days + 1):
+                itinerary += f"### Day {day}\n"
+                if day == 1:
+                    itinerary += "- Arrival and check-in\n"
+                    itinerary += "- Explore city center\n"
+                    itinerary += "- Local dinner\n"
+                elif day == days:
+                    itinerary += "- Final day activities\n"
+                    itinerary += "- Check-out and departure\n"
+                else:
+                    itinerary += "- Morning: Visit attractions\n"
+                    itinerary += "- Afternoon: Local experiences\n"
+                    itinerary += "- Evening: Cultural activities\n"
+                itinerary += "\n"
+            
+            if attractions_data:
+                itinerary += "### Recommended Attractions:\n"
+                # Extract attraction names from attractions_data
+                lines = attractions_data.split('\n')
+                for line in lines[:5]:  # Show top 5 attractions
+                    if line.strip() and not line.startswith('#'):
+                        itinerary += f"- {line.strip()}\n"
+            
+            return itinerary
+        except Exception as e:
+            logger.error(f"Itinerary creation error: {e}")
+            return f"## 📅 Itinerary for {destination}\nError creating itinerary: {str(e)}"
+    
+    async def _create_budget_breakdown(self, budget: float, flight_data: str, hotel_data: str, duration: str) -> str:
+        """Create a budget breakdown."""
+        try:
+            breakdown = f"## 💰 Budget Breakdown (Total: ${budget})\n\n"
+            
+            # Estimate costs based on available data
+            flight_cost = 800  # Default estimate
+            hotel_cost = 150 * int(duration)  # $150/night estimate
+            food_cost = 50 * int(duration)  # $50/day estimate
+            activities_cost = 100 * int(duration)  # $100/day estimate
+            transport_cost = 200  # Local transport estimate
+            
+            total_estimated = flight_cost + hotel_cost + food_cost + activities_cost + transport_cost
+            
+            breakdown += f"- **Flights:** ${flight_cost}\n"
+            breakdown += f"- **Accommodation:** ${hotel_cost} ({duration} nights)\n"
+            breakdown += f"- **Food & Dining:** ${food_cost}\n"
+            breakdown += f"- **Activities:** ${activities_cost}\n"
+            breakdown += f"- **Local Transport:** ${transport_cost}\n"
+            breakdown += f"- **Total Estimated:** ${total_estimated}\n\n"
+            
+            if total_estimated <= budget:
+                breakdown += f"✅ **Within Budget!** You have ${budget - total_estimated} remaining for extras.\n"
+            else:
+                breakdown += f"⚠️ **Over Budget** by ${total_estimated - budget}. Consider adjusting plans.\n"
+            
+            return breakdown
+        except Exception as e:
+            logger.error(f"Budget breakdown error: {e}")
+            return f"## 💰 Budget Breakdown\nError creating budget breakdown: {str(e)}"
+    
+    def _get_airport_code(self, destination: str) -> str:
+        """Get airport code for destination."""
+        airport_codes = {
+            'iceland': 'KEF',
+            'japan': 'NRT',
+            'france': 'CDG',
+            'italy': 'FCO',
+            'spain': 'MAD',
+            'germany': 'FRA',
+            'thailand': 'BKK',
+            'vietnam': 'SGN',
+            'india': 'DEL',
+            'brazil': 'GRU',
+            'argentina': 'EZE',
+            'chile': 'SCL',
+            'mexico': 'MEX',
+            'canada': 'YYZ',
+            'australia': 'SYD',
+            'new zealand': 'AKL',
+            'south korea': 'ICN',
+            'china': 'PEK',
+            'russia': 'SVO',
+            'uk': 'LHR',
+            'ireland': 'DUB',
+            'portugal': 'LIS',
+            'greece': 'ATH',
+            'turkey': 'IST',
+            'egypt': 'CAI',
+            'morocco': 'CMN',
+            'south africa': 'JNB',
+            'kenya': 'NBO',
+            'tanzania': 'DAR',
+            'madagascar': 'TNR',
+            'mauritius': 'MRU',
+            'seychelles': 'SEZ',
+            'norway': 'OSL',
+            'sweden': 'ARN',
+            'finland': 'HEL',
+            'denmark': 'CPH',
+            'netherlands': 'AMS',
+            'belgium': 'BRU',
+            'switzerland': 'ZUR',
+            'austria': 'VIE',
+            'poland': 'WAW',
+            'czech republic': 'PRG',
+            'hungary': 'BUD',
+            'croatia': 'ZAG',
+            'slovenia': 'LJU',
+            'slovakia': 'BTS',
+            'romania': 'OTP',
+            'bulgaria': 'SOF',
+            'serbia': 'BEG',
+            'montenegro': 'TGD',
+            'bosnia': 'SJJ',
+            'albania': 'TIA',
+            'macedonia': 'SKP',
+            'moldova': 'KIV',
+            'ukraine': 'KBP',
+            'belarus': 'MSQ',
+            'lithuania': 'VNO',
+            'latvia': 'RIX',
+            'estonia': 'TLL',
+            'luxembourg': 'LUX',
+            'malta': 'MLA',
+            'cyprus': 'LCA',
+            'israel': 'TLV',
+            'jordan': 'AMM',
+            'lebanon': 'BEY',
+            'syria': 'DAM',
+            'iraq': 'BGW',
+            'iran': 'IKA',
+            'saudi arabia': 'RUH',
+            'uae': 'DXB',
+            'qatar': 'DOH',
+            'kuwait': 'KWI',
+            'bahrain': 'BAH',
+            'oman': 'MCT',
+            'yemen': 'SAH',
+            'afghanistan': 'KBL',
+            'pakistan': 'KHI',
+            'bangladesh': 'DAC',
+            'sri lanka': 'CMB',
+            'maldives': 'MLE',
+            'nepal': 'KTM',
+            'bhutan': 'PBH',
+            'myanmar': 'RGN',
+            'laos': 'VTE',
+            'cambodia': 'PNH',
+            'malaysia': 'KUL',
+            'singapore': 'SIN',
+            'indonesia': 'CGK',
+            'philippines': 'MNL',
+            'brunei': 'BWN',
+            'east timor': 'DIL',
+            'mongolia': 'ULN',
+            'kazakhstan': 'ALA',
+            'uzbekistan': 'TAS',
+            'turkmenistan': 'ASB',
+            'tajikistan': 'DYU',
+            'kyrgyzstan': 'FRU',
+            'georgia': 'TBS',
+            'armenia': 'EVN',
+            'azerbaijan': 'GYD'
+        }
+        return airport_codes.get(destination.lower(), 'UNK')
     
     async def _handle_destination_query(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
         """Handle destination-specific queries with attractions."""

@@ -701,3 +701,104 @@
 2025-10-16 05:59:57,254 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
 2025-10-16 05:59:57,254 - INFO - LLM Service initialized with multiple fallbacks
 2025-10-16 05:59:57,254 - INFO - Travel agent initialized successfully
+2025-10-16 06:00:05,810 - INFO - Processing query with intelligent routing: Hello...
+2025-10-16 06:00:05,811 - INFO - Query routed: unknown -> direct_llm (latency: 200ms)
+2025-10-16 06:00:05,811 - INFO - Query routed: unknown -> direct_llm (latency: 200ms)
+2025-10-16 06:00:06,678 - WARNING - LLM7.io error: 400, message:
+  Can not decode content-encoding: zstd
+2025-10-16 06:00:06,913 - WARNING - Hugging Face returned status 401
+2025-10-16 06:00:06,914 - INFO - Using intelligent fallback in 1.10s
+2025-10-16 06:00:10,581 - INFO - Processing new request: i want a 3 day trip plan to iceland on jan 26. im on my own and i start the journey in tel aviv...
+2025-10-16 06:00:10,581 - INFO - Processing query with intelligent routing: i want a 3 day trip plan to iceland on jan 26. im on my own and i start the journey in tel aviv...
+2025-10-16 06:00:10,584 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-16 06:00:10,584 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-16 06:00:10,585 - ERROR - Error getting conversation history: no such column: created_at
+2025-10-16 06:00:10,585 - ERROR - Error getting conversation history: no such column: created_at
+2025-10-16 06:00:10,587 - INFO - Loaded user preferences for default_user
+2025-10-16 06:00:10,587 - INFO - Added to knowledge base: query_1
+2025-10-16 06:00:10,587 - WARNING - Error extracting destination from maps API: 'NominatimClient' object has no attribute 'search_location'
+2025-10-16 06:00:10,590 - INFO - Getting information about Iceland...
+2025-10-16 06:00:10,591 - ERROR - Destination query error: 'TravelAgent' object has no attribute 'attractions_client'
+2025-10-16 06:00:13,403 - WARNING - LLM7.io error: 400, message:
+  Can not decode content-encoding: zstd
+2025-10-16 06:00:13,645 - WARNING - Hugging Face returned status 401
+2025-10-16 06:00:13,646 - INFO - Using intelligent fallback in 3.05s
+2025-10-16 06:00:13,648 - INFO - Metric recorded: response_optimizer_duration=3.0570056438446045, tags=None
+2025-10-16 06:00:13,664 - INFO - Memory tables initialized
+2025-10-16 06:00:13,664 - INFO - Memory stored: default_user_conversation_20251016060013_46c17ad8 for user default_user
+2025-10-16 06:01:02,697 - INFO - Travel MCP Client initialized
+2025-10-16 06:01:02,698 - INFO - Intent Router initialized with pattern matching
+2025-10-16 06:01:02,698 - INFO - Database Context Provider initialized
+2025-10-16 06:01:02,698 - INFO - Conversation Memory System initialized
+2025-10-16 06:01:02,698 - INFO - Preference Learning System initialized
+2025-10-16 06:01:02,698 - INFO - Advanced Cache System initialized
+2025-10-16 06:01:02,698 - INFO - Simple Performance Monitor initialized
+2025-10-16 06:01:02,699 - INFO - Initialized 5 optimization rules
+2025-10-16 06:01:02,699 - INFO - Response Optimizer initialized
+2025-10-16 06:01:02,699 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
+2025-10-16 06:01:02,699 - INFO - LLM Service initialized with multiple fallbacks
+2025-10-16 06:01:02,699 - INFO - Travel agent initialized successfully
+2025-10-16 06:02:05,513 - INFO - Processing new request: plan me 3 day trip to Iceland on jan 2026 just from. i start in israel and have 2000usd...
+2025-10-16 06:02:05,514 - INFO - Processing query with intelligent routing: plan me 3 day trip to Iceland on jan 2026 just from. i start in israel and have 2000usd...
+2025-10-16 06:02:05,516 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-16 06:02:05,516 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-16 06:02:05,517 - ERROR - Error getting conversation history: no such column: created_at
+2025-10-16 06:02:05,517 - ERROR - Error getting conversation history: no such column: created_at
+2025-10-16 06:02:05,518 - INFO - Loaded user preferences for default_user
+2025-10-16 06:02:05,519 - INFO - Added to knowledge base: query_1
+2025-10-16 06:02:05,519 - WARNING - Error extracting destination from maps API: 'NominatimClient' object has no attribute 'search_location'
+2025-10-16 06:02:05,520 - INFO - Searching for flight information...
+2025-10-16 06:02:10,146 - INFO - LLM response from llm7 in 4.63s
+2025-10-16 06:02:10,149 - INFO - Memory tables initialized
+2025-10-16 06:02:10,149 - INFO - Memory stored: default_user_conversation_20251016060210_b5c7039c for user default_user
+2025-10-16 06:05:04,700 - INFO - Travel MCP Client initialized
+2025-10-16 06:05:04,700 - INFO - Intent Router initialized with pattern matching
+2025-10-16 06:05:04,700 - INFO - Database Context Provider initialized
+2025-10-16 06:05:04,700 - INFO - Conversation Memory System initialized
+2025-10-16 06:05:04,700 - INFO - Preference Learning System initialized
+2025-10-16 06:05:04,701 - INFO - Advanced Cache System initialized
+2025-10-16 06:05:04,701 - INFO - Simple Performance Monitor initialized
+2025-10-16 06:05:04,701 - INFO - Initialized 5 optimization rules
+2025-10-16 06:05:04,701 - INFO - Response Optimizer initialized
+2025-10-16 06:05:04,701 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
+2025-10-16 06:05:04,702 - INFO - LLM Service initialized with multiple fallbacks
+2025-10-16 06:05:04,702 - INFO - Travel agent initialized successfully
+2025-10-16 06:05:04,702 - WARNING - Error extracting destination from maps API: 'NominatimClient' object has no attribute 'search_location'
+2025-10-16 06:06:45,095 - INFO - Travel MCP Client initialized
+2025-10-16 06:06:45,099 - INFO - Intent Router initialized with pattern matching
+2025-10-16 06:06:45,101 - INFO - Database Context Provider initialized
+2025-10-16 06:06:45,102 - INFO - Conversation Memory System initialized
+2025-10-16 06:06:45,102 - INFO - Preference Learning System initialized
+2025-10-16 06:06:45,103 - INFO - Advanced Cache System initialized
+2025-10-16 06:06:45,104 - INFO - Simple Performance Monitor initialized
+2025-10-16 06:06:45,104 - INFO - Initialized 5 optimization rules
+2025-10-16 06:06:45,105 - INFO - Response Optimizer initialized
+2025-10-16 06:06:45,105 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
+2025-10-16 06:06:45,105 - INFO - LLM Service initialized with multiple fallbacks
+2025-10-16 06:06:45,105 - INFO - Travel agent initialized successfully
+2025-10-16 06:06:45,106 - WARNING - Error extracting destination from maps API: 'NominatimClient' object has no attribute 'search_location'
+2025-10-16 06:07:44,793 - INFO - Travel MCP Client initialized
+2025-10-16 06:07:44,793 - INFO - Intent Router initialized with pattern matching
+2025-10-16 06:07:44,793 - INFO - Database Context Provider initialized
+2025-10-16 06:07:44,793 - INFO - Conversation Memory System initialized
+2025-10-16 06:07:44,793 - INFO - Preference Learning System initialized
+2025-10-16 06:07:44,794 - INFO - Advanced Cache System initialized
+2025-10-16 06:07:44,794 - INFO - Simple Performance Monitor initialized
+2025-10-16 06:07:44,794 - INFO - Initialized 5 optimization rules
+2025-10-16 06:07:44,794 - INFO - Response Optimizer initialized
+2025-10-16 06:07:44,794 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
+2025-10-16 06:07:44,795 - INFO - LLM Service initialized with multiple fallbacks
+2025-10-16 06:07:44,795 - INFO - Travel agent initialized successfully
+2025-10-16 06:07:44,795 - WARNING - Error extracting destination from maps API: 'NominatimClient' object has no attribute 'search_location'
+2025-10-16 06:08:36,822 - INFO - Travel MCP Client initialized
+2025-10-16 06:08:36,822 - INFO - Intent Router initialized with pattern matching
+2025-10-16 06:08:36,823 - INFO - Database Context Provider initialized
+2025-10-16 06:08:36,823 - INFO - Conversation Memory System initialized
+2025-10-16 06:08:36,823 - INFO - Preference Learning System initialized
+2025-10-16 06:08:36,823 - INFO - Advanced Cache System initialized
+2025-10-16 06:08:36,824 - INFO - Simple Performance Monitor initialized
+2025-10-16 06:08:36,824 - INFO - Initialized 5 optimization rules
+2025-10-16 06:08:36,824 - INFO - Response Optimizer initialized
+2025-10-16 06:08:36,824 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
+2025-10-16 06:08:36,824 - INFO - LLM Service initialized with multiple fallbacks
+2025-10-16 06:08:36,824 - INFO - Travel agent initialized successfully
