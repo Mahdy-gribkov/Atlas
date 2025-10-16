@@ -708,9 +708,33 @@ class PreferenceLearningSystem:
     async def _load_user_profile(self, user_id: str) -> UserProfile:
         """Load user profile from database."""
         try:
-            # This would integrate with the existing SecureDatabase
-            # For now, return default profile
-            return self._create_default_profile(user_id)
+            if self.database:
+                # Load user profile from the database
+                profile_data = await self.database.get_user_profile(user_id)
+                if profile_data:
+                    # Convert database data to UserProfile object
+                    profile = UserProfile(
+                        user_id=profile_data['user_id'],
+                        travel_style=profile_data.get('travel_style', 'general'),
+                        budget_range=tuple(profile_data.get('budget_range', [1000, 5000])),
+                        preferred_destinations=profile_data.get('preferred_destinations', []),
+                        preferred_activities=profile_data.get('preferred_activities', []),
+                        preferred_accommodations=profile_data.get('preferred_accommodations', []),
+                        preferred_transportation=profile_data.get('preferred_transportation', []),
+                        dietary_preferences=profile_data.get('dietary_preferences', []),
+                        accessibility_needs=profile_data.get('accessibility_needs', []),
+                        language_preferences=profile_data.get('language_preferences', []),
+                        last_updated=datetime.fromisoformat(profile_data.get('last_updated', datetime.now().isoformat())),
+                        confidence_scores=profile_data.get('confidence_scores', {})
+                    )
+                    logger.debug(f"Loaded user profile for: {user_id}")
+                    return profile
+                else:
+                    logger.debug(f"No profile found for user: {user_id}, creating default")
+                    return self._create_default_profile(user_id)
+            else:
+                logger.warning("Database not available, returning default profile")
+                return self._create_default_profile(user_id)
         except Exception as e:
             logger.error(f"Error loading user profile: {e}")
             return self._create_default_profile(user_id)
@@ -718,8 +742,29 @@ class PreferenceLearningSystem:
     async def _save_user_profile(self, profile: UserProfile) -> None:
         """Save user profile to database."""
         try:
-            # This would integrate with the existing SecureDatabase
-            # For now, update cache
+            if self.database:
+                # Save user profile to the database
+                profile_data = {
+                    'user_id': profile.user_id,
+                    'travel_style': profile.travel_style,
+                    'budget_range': list(profile.budget_range),
+                    'preferred_destinations': profile.preferred_destinations,
+                    'preferred_activities': profile.preferred_activities,
+                    'preferred_accommodations': profile.preferred_accommodations,
+                    'preferred_transportation': profile.preferred_transportation,
+                    'dietary_preferences': profile.dietary_preferences,
+                    'accessibility_needs': profile.accessibility_needs,
+                    'language_preferences': profile.language_preferences,
+                    'last_updated': profile.last_updated.isoformat(),
+                    'confidence_scores': profile.confidence_scores
+                }
+                
+                await self.database.save_user_profile(profile_data)
+                logger.debug(f"Saved user profile for: {profile.user_id}")
+            else:
+                logger.warning("Database not available, profile not saved")
+            
+            # Update cache regardless
             self.user_profiles[profile.user_id] = profile
         except Exception as e:
             logger.error(f"Error saving user profile: {e}")

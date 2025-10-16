@@ -60,6 +60,8 @@ from src.apis import (
 )
 from src.mcp import TravelMCPClient
 from src.context import AdvancedContextManager, ConversationMemory, PreferenceLearningSystem
+from src.context.context_provider import ContextProvider
+from src.routing import IntentRouter, IntentType
 from src.performance import (
     AdvancedCache, PerformanceMonitor, ResponseOptimizer,
     record_metric, record_response_time, performance_timer
@@ -83,12 +85,16 @@ class TravelAgent:
     """
     Advanced Travel AI Agent with comprehensive travel planning capabilities.
     
-    This is the main class that orchestrates all travel planning functionality.
-    It integrates multiple APIs, manages conversation state, and provides
-    intelligent travel recommendations using local LLM processing.
+    This is the Main Decision Process (MDP) that orchestrates all travel planning functionality.
+    It follows clean architecture principles with clear separation of concerns:
+    
+    Architecture:
+    - MDP (this class): Pure business logic and decision making
+    - ContextProvider: Data access and context aggregation (no direct DB access)
+    - Database: Pure data persistence layer
     
     Features:
-    - Local LLM integration (Llama 3.1 8B) for natural language processing
+    - Free cloud LLM integration for natural language processing
     - Real-time web search for current information
     - Country information lookup via REST Countries API
     - Wikipedia integration for detailed destination information
@@ -101,7 +107,7 @@ class TravelAgent:
     - Rate limiting and circuit breaker patterns
     
     Attributes:
-        database (SecureDatabase): Encrypted local database instance
+        context_provider (ContextProvider): Context data provider interface
         conversation_history (List[Dict]): Chat conversation history
         user_preferences (Dict): User preferences and settings
         llm_type (str): Type of LLM being used ('local' or 'openai')
@@ -136,8 +142,11 @@ class TravelAgent:
         # Initialize MCP Client for advanced tool management
         self.mcp_client = TravelMCPClient()
         
-        # Initialize Advanced Context Manager for sophisticated conversation memory
-        self.context_manager = AdvancedContextManager(self.database)
+        # Initialize Intent Router for intelligent query routing
+        self.intent_router = IntentRouter()
+        
+        # Initialize Context Provider (implements ContextProvider interface)
+        self.context_provider: ContextProvider = AdvancedContextManager(self.database)
         
         # Initialize Conversation Memory System for persistent memory
         self.conversation_memory = ConversationMemory(self.database)
@@ -331,20 +340,23 @@ Response:"""
             await self._load_user_preferences()
             self._preferences_loaded = True
     
-    async def _load_user_preferences(self) -> None:
-        """Load user preferences from database."""
+    async def _load_user_preferences(self, user_id: str = "default_user") -> None:
+        """Load user preferences using ContextProvider."""
         try:
-            preferences = await self.database.get_preferences()
-            for pref in preferences:
-                self.user_preferences[pref.preference_type] = pref.preference_value
-            logger.info(f"Loaded {len(preferences)} user preferences")
+            preferences = await self.context_provider.get_preferences_context(user_id)
+            self.user_preferences.update(preferences)
+            logger.info(f"Loaded user preferences for {user_id}")
         except Exception as e:
             logger.error(f"Error loading user preferences: {e}")
     
-    async def _save_user_preference(self, pref_type: str, pref_value: str) -> None:
-        """Save user preference to database."""
+    async def _save_user_preference(self, pref_type: str, pref_value: str, user_id: str = "default_user") -> None:
+        """Save user preference using ContextProvider."""
         try:
-            await self.database.store_preference(pref_type, pref_value)
+            # Store preference through context provider
+            interaction_data = {
+                'preferences': {pref_type: pref_value}
+            }
+            await self.context_provider.store_interaction_context(user_id, interaction_data)
             self.user_preferences[pref_type] = pref_value
             logger.info(f"Saved user preference: {pref_type}")
         except Exception as e:
@@ -878,102 +890,248 @@ What destination are you most interested in?"""
     @performance_timer('process_query')
     async def process_query(self, query: str, context: Optional[Dict[str, Any]] = None) -> str:
         """
-        Process a travel query with advanced context management, performance optimization, and comprehensive analysis.
+        Process a travel query with intelligent routing and context management.
+        
+        This method now uses the IntentRouter to determine the optimal processing path,
+        addressing the "Centralized Core Bottleneck" by bypassing unnecessary context
+        processing for simple queries.
         
         Args:
             query: User's travel query
             context: User context including departure location, destination, etc.
             
         Returns:
-            Comprehensive travel response with intelligent context and performance optimization
+            Comprehensive travel response with intelligent routing and context optimization
         """
-        logger.info(f"Processing query with advanced systems: {query[:100]}...")
+        logger.info(f"Processing query with intelligent routing: {query[:100]}...")
         
         # Generate user ID from context or use default
         user_id = context.get('user_id', 'default_user') if context else 'default_user'
         
-        # Build intelligent context using advanced context manager
-        intelligent_context = await self.context_manager.build_intelligent_context(user_id, query)
+        # Route the query to determine optimal processing path
+        routing_decision = await self.intent_router.route_query(query, user_id)
         
-        # Add performance context
-        intelligent_context['performance_optimization'] = True
-        intelligent_context['cache_enabled'] = True
-        intelligent_context['user_id'] = user_id
+        logger.info(f"Query routed: {routing_decision['intent']} -> {routing_decision['routing_path']} (latency: {routing_decision['estimated_latency']}ms)")
         
-        # Store in conversation history (legacy)
-        self.conversation_history.append({
-            'timestamp': datetime.now().isoformat(),
-            'user': query,
-            'type': 'user'
-        })
-        
-        # Ensure preferences are loaded and extract new ones
-        await self._ensure_preferences_loaded()
-        await self._extract_and_save_preferences(query)
-        
-        # Add query to knowledge base for future reference
-        self._add_to_knowledge_base(f"query_{len(self.conversation_history)}", {
-            'query': query,
-            'timestamp': datetime.now().isoformat(),
-            'source': 'User Input'
-        })
-        
-        # Extract travel information and enhance with context
-        travel_info = self.extract_travel_info(query)
-        if context:
-            # Enhance travel info with context
-            if context.get('departureLocation') and not travel_info.get('origin'):
-                travel_info['origin'] = context['departureLocation']
-            if context.get('destination') and not travel_info.get('destination'):
-                travel_info['destination'] = context['destination']
-            if context.get('travelDates') and not travel_info.get('dates'):
-                travel_info['dates'] = context['travelDates']
-            if context.get('budget') and not travel_info.get('budget'):
-                travel_info['budget'] = context['budget']
-        
-        query_lower = query.lower()
-        
-        response_parts = []
-        context_parts = []
-        
-        # Handle different types of queries
-        if travel_info['query_type'] == 'weather':
-            await self._handle_weather_query(query, response_parts, context_parts)
-        elif travel_info['query_type'] == 'flights':
-            await self._handle_flight_query(query, travel_info, response_parts, context_parts)
-        elif travel_info['query_type'] == 'accommodation':
-            await self._handle_accommodation_query(query, travel_info, response_parts, context_parts)
-        elif travel_info['query_type'] == 'budget':
-            await self._handle_budget_query(query, travel_info, response_parts, context_parts)
-        elif travel_info['query_type'] == 'attractions':
-            await self._handle_attractions_query(query, travel_info, response_parts, context_parts)
-        elif travel_info['query_type'] == 'food':
-            await self._handle_food_query(query, travel_info, response_parts, context_parts)
-        elif travel_info['query_type'] == 'transportation':
-            await self._handle_transportation_query(query, travel_info, response_parts, context_parts)
-        elif travel_info['query_type'] == 'car_rental':
-            await self._handle_car_rental_query(query, travel_info, response_parts, context_parts)
-        elif travel_info['query_type'] == 'events':
-            await self._handle_events_query(query, travel_info, response_parts, context_parts)
-        elif travel_info['query_type'] == 'insurance':
-            await self._handle_insurance_query(query, travel_info, response_parts, context_parts)
-        elif travel_info['destination']:
-            await self._handle_destination_query(query, travel_info, response_parts, context_parts)
+        # Process based on routing decision
+        if routing_decision['bypass_context']:
+            return await self._process_bypass_query(query, routing_decision, user_id)
         else:
-            await self._handle_general_query(query, response_parts, context_parts)
+            return await self._process_context_query(query, routing_decision, user_id)
+    
+    async def _process_bypass_query(self, query: str, routing_decision: Dict[str, Any], user_id: str) -> str:
+        """
+        Process queries that bypass full context management for faster responses.
         
-        # Generate comprehensive response using LLM with structured data
-        if response_parts:
-            # We have structured data, enhance it with LLM intelligence
-            structured_data = "\n\n".join(response_parts)
-            # Clean up any HTML tags from structured data
-            structured_data = re.sub(r'<[^>]*>', '', structured_data)
-            structured_data = re.sub(r'\*\*(.*?)\*\*', r'\1', structured_data)
-            structured_data = re.sub(r'\*(.*?)\*', r'\1', structured_data)
-            context = "\n".join(context_parts) if context_parts else "No additional context available."
+        Args:
+            query: User's query
+            routing_decision: Routing decision from intent router
+            user_id: User identifier
             
-            # Create enhanced prompt for LLM to analyze and improve the structured data
-            enhanced_prompt = f"""As a travel expert, analyze this travel data and provide intelligent insights and recommendations:
+        Returns:
+            Fast response without full context processing
+        """
+        try:
+            routing_path = routing_decision['routing_path']
+            intent = routing_decision['intent']
+            entities = routing_decision['entities']
+            
+            if routing_path == 'direct_llm':
+                # Simple queries that can be handled directly by LLM
+                return await self._handle_direct_llm_query(query, intent, entities, user_id)
+            
+            elif routing_path == 'system_handler':
+                # System commands
+                return await self._handle_system_command(query, intent, entities, user_id)
+            
+            elif routing_path == 'weather_api':
+                # Weather queries with direct API calls
+                return await self._handle_weather_query(query, intent, entities, user_id)
+            
+            else:
+                # Fallback to full context processing
+                logger.warning(f"Unknown bypass routing path: {routing_path}, falling back to full context")
+                return await self._process_context_query(query, routing_decision, user_id)
+                
+        except Exception as e:
+            logger.error(f"Error in bypass query processing: {e}")
+            # Fallback to full context processing
+            return await self._process_context_query(query, routing_decision, user_id)
+    
+    async def _process_context_query(self, query: str, routing_decision: Dict[str, Any], user_id: str) -> str:
+        """
+        Process queries that require full context management.
+        
+        Args:
+            query: User's query
+            routing_decision: Routing decision from intent router
+            user_id: User identifier
+            
+        Returns:
+            Comprehensive response with full context processing
+        """
+        try:
+            # Get complete context from ContextProvider (no direct database access)
+            intelligent_context = await self.context_provider.orchestrate_context_flow(user_id, query)
+            
+            # Add performance context
+            intelligent_context['performance_optimization'] = True
+            intelligent_context['cache_enabled'] = True
+            intelligent_context['user_id'] = user_id
+            
+            # Continue with the rest of the original processing logic
+            return await self._continue_full_processing(query, intelligent_context, user_id)
+            
+        except Exception as e:
+            logger.error(f"Error in context query processing: {e}")
+            return f"I apologize, but I encountered an error processing your request: {str(e)}"
+    
+    async def _handle_direct_llm_query(self, query: str, intent: str, entities: Dict[str, Any], user_id: str) -> str:
+        """Handle simple queries directly with LLM for fast responses."""
+        try:
+            # Create a simple prompt for direct LLM processing
+            if intent == 'greeting':
+                return "Hello! I'm your AI travel assistant. How can I help you plan your next adventure?"
+            elif intent == 'thanks':
+                return "You're welcome! I'm here to help with all your travel needs. Is there anything else I can assist you with?"
+            elif intent == 'goodbye':
+                return "Goodbye! Safe travels and I hope you have wonderful adventures ahead!"
+            else:
+                # For other simple queries, use a lightweight LLM call
+                return await self._call_llm(query, "")
+                
+        except Exception as e:
+            logger.error(f"Error in direct LLM query handling: {e}")
+            return "I'm here to help with your travel needs. How can I assist you today?"
+    
+    async def _handle_system_command(self, query: str, intent: str, entities: Dict[str, Any], user_id: str) -> str:
+        """Handle system commands."""
+        try:
+            query_lower = query.lower()
+            
+            if 'help' in query_lower or 'what can you do' in query_lower:
+                return """I'm your AI travel assistant! Here's what I can help you with:
+
+🗺️ **Travel Planning**: Create detailed itineraries and travel plans
+✈️ **Flight Search**: Find and compare flight options
+🏨 **Hotel Booking**: Search for accommodations
+🌤️ **Weather Information**: Get current weather and forecasts
+🍽️ **Restaurant Recommendations**: Find great places to eat
+🎯 **Attractions & Activities**: Discover things to do
+💰 **Budget Planning**: Help with travel costs and budgeting
+🌍 **Destination Information**: Learn about countries and cities
+📱 **Real-time Data**: Get current information from multiple sources
+
+Just ask me anything about travel, and I'll help you plan the perfect trip!"""
+            
+            elif 'settings' in query_lower or 'preferences' in query_lower:
+                return "I can help you set travel preferences like budget range, travel style, and preferred destinations. What would you like to configure?"
+            
+            elif 'clear' in query_lower or 'reset' in query_lower:
+                return "I can help you start fresh. What would you like to plan for your next trip?"
+            
+            else:
+                return "I'm here to help with your travel needs. How can I assist you today?"
+                
+        except Exception as e:
+            logger.error(f"Error in system command handling: {e}")
+            return "I'm here to help with your travel needs. How can I assist you today?"
+    
+    async def _handle_weather_query(self, query: str, intent: str, entities: Dict[str, Any], user_id: str) -> str:
+        """Handle weather queries with direct API calls."""
+        try:
+            location = entities.get('location', '')
+            if not location:
+                return "I'd be happy to help with weather information! Please specify a location (e.g., 'What's the weather in Paris?')."
+            
+            # Use the weather client directly for fast response
+            weather_data = await self.weather_client.get_weather(location)
+            if weather_data:
+                return f"Here's the current weather in {location.title()}:\n\n{weather_data}"
+            else:
+                return f"I couldn't retrieve weather information for {location}. Please try again or specify a different location."
+                
+        except Exception as e:
+            logger.error(f"Error in weather query handling: {e}")
+            return "I'm having trouble getting weather information right now. Please try again later."
+    
+    async def _continue_full_processing(self, query: str, intelligent_context: Dict[str, Any], user_id: str) -> str:
+        """Continue with the original full processing logic."""
+        try:
+            # Store in conversation history (legacy)
+            self.conversation_history.append({
+                'timestamp': datetime.now().isoformat(),
+                'user': query,
+                'type': 'user'
+            })
+            
+            # Ensure preferences are loaded and extract new ones
+            await self._ensure_preferences_loaded()
+            await self._extract_and_save_preferences(query)
+            
+            # Add query to knowledge base for future reference
+            self._add_to_knowledge_base(f"query_{len(self.conversation_history)}", {
+                'query': query,
+                'timestamp': datetime.now().isoformat(),
+                'source': 'User Input'
+            })
+            
+            # Extract travel information and enhance with context
+            travel_info = self.extract_travel_info(query)
+            if context:
+                # Enhance travel info with context
+                if context.get('departureLocation') and not travel_info.get('origin'):
+                    travel_info['origin'] = context['departureLocation']
+                if context.get('destination') and not travel_info.get('destination'):
+                    travel_info['destination'] = context['destination']
+                if context.get('travelDates') and not travel_info.get('dates'):
+                    travel_info['dates'] = context['travelDates']
+                if context.get('budget') and not travel_info.get('budget'):
+                    travel_info['budget'] = context['budget']
+            
+            query_lower = query.lower()
+            
+            response_parts = []
+            context_parts = []
+            
+            # Handle different types of queries
+            if travel_info['query_type'] == 'weather':
+                await self._handle_weather_query(query, response_parts, context_parts)
+            elif travel_info['query_type'] == 'flights':
+                await self._handle_flight_query(query, travel_info, response_parts, context_parts)
+            elif travel_info['query_type'] == 'accommodation':
+                await self._handle_accommodation_query(query, travel_info, response_parts, context_parts)
+            elif travel_info['query_type'] == 'budget':
+                await self._handle_budget_query(query, travel_info, response_parts, context_parts)
+            elif travel_info['query_type'] == 'attractions':
+                await self._handle_attractions_query(query, travel_info, response_parts, context_parts)
+            elif travel_info['query_type'] == 'food':
+                await self._handle_food_query(query, travel_info, response_parts, context_parts)
+            elif travel_info['query_type'] == 'transportation':
+                await self._handle_transportation_query(query, travel_info, response_parts, context_parts)
+            elif travel_info['query_type'] == 'car_rental':
+                await self._handle_car_rental_query(query, travel_info, response_parts, context_parts)
+            elif travel_info['query_type'] == 'events':
+                await self._handle_events_query(query, travel_info, response_parts, context_parts)
+            elif travel_info['query_type'] == 'insurance':
+                await self._handle_insurance_query(query, travel_info, response_parts, context_parts)
+            elif travel_info['destination']:
+                await self._handle_destination_query(query, travel_info, response_parts, context_parts)
+            else:
+                await self._handle_general_query(query, response_parts, context_parts)
+            
+            # Generate comprehensive response using LLM with structured data
+            if response_parts:
+                # We have structured data, enhance it with LLM intelligence
+                structured_data = "\n\n".join(response_parts)
+                # Clean up any HTML tags from structured data
+                structured_data = re.sub(r'<[^>]*>', '', structured_data)
+                structured_data = re.sub(r'\*\*(.*?)\*\*', r'\1', structured_data)
+                structured_data = re.sub(r'\*(.*?)\*', r'\1', structured_data)
+                context_text = "\n".join(context_parts) if context_parts else "No additional context available."
+                
+                # Create enhanced prompt for LLM to analyze and improve the structured data
+                enhanced_prompt = f"""As a travel expert, analyze this travel data and provide intelligent insights and recommendations:
 
 QUERY: {query}
 
@@ -981,7 +1139,7 @@ STRUCTURED DATA:
 {structured_data}
 
 ADDITIONAL CONTEXT:
-{context}
+{context_text}
 
 Please provide:
 1. A brief summary of the key information
@@ -991,24 +1149,24 @@ Please provide:
 
 Keep your response concise but helpful, focusing on actionable advice."""
 
-            try:
-                llm_insights = self._call_llm(enhanced_prompt, "")
-                # Clean up the LLM response to avoid duplication
-                if llm_insights and not llm_insights.startswith("I'm a travel assistant"):
-                    formatted_insights = self._format_llm_response(llm_insights)
-                    # Use simple LLM response without RAG clutter
-                    final_response = f"{structured_data}\n\n{formatted_insights}"
-                else:
+                try:
+                    llm_insights = await self._call_llm(enhanced_prompt, "")
+                    # Clean up the LLM response to avoid duplication
+                    if llm_insights and not llm_insights.startswith("I'm a travel assistant"):
+                        formatted_insights = self._format_llm_response(llm_insights)
+                        # Use simple LLM response without RAG clutter
+                        final_response = f"{structured_data}\n\n{formatted_insights}"
+                    else:
+                        final_response = structured_data
+                except Exception as e:
+                    logger.error(f"LLM enhancement failed: {e}")
                     final_response = structured_data
-            except Exception as e:
-                logger.error(f"LLM enhancement failed: {e}")
-                final_response = structured_data
-        else:
-            # No structured data, use LLM for intelligent responses
-            context_text = "\n".join(context_parts) if context_parts else "No specific context available."
+            else:
+                # No structured data, use LLM for intelligent responses
+                context_text = "\n".join(context_parts) if context_parts else "No specific context available."
             
-            # Create simple, clear prompt
-            intelligent_prompt = f"""You are a helpful travel assistant. Answer the user's question clearly and concisely.
+                # Create simple, clear prompt
+                intelligent_prompt = f"""You are a helpful travel assistant. Answer the user's question clearly and concisely.
 
 User Query: {query}
 
@@ -1020,50 +1178,63 @@ Instructions:
 - Focus on what the user actually asked for
 
 Response:"""
+                
+                # Generate response using LLM with intelligent context and performance optimization
+                async def generate_response(query: str, context: Dict[str, Any]) -> str:
+                    raw_response = await self._call_llm(intelligent_prompt, context_text)
+                    return self._format_llm_response(raw_response)
+                
+                # Use response optimizer for intelligent caching and optimization
+                final_response = await self.response_optimizer.optimize_response(
+                    query, intelligent_context, generate_response
+                )
+        
+            # Store response in conversation history (legacy)
+            self.conversation_history.append({
+                'timestamp': datetime.now().isoformat(),
+                'assistant': final_response,
+                'type': 'assistant'
+            })
             
-            # Generate response using LLM with intelligent context and performance optimization
-            async def generate_response(query: str, context: Dict[str, Any]) -> str:
-                raw_response = self._call_llm(intelligent_prompt, context_text)
-                return self._format_llm_response(raw_response)
-            
-            # Use response optimizer for intelligent caching and optimization
-            final_response = await self.response_optimizer.optimize_response(
-                query, intelligent_context, generate_response
+            # Add conversation turn to advanced context manager
+            await self.context_provider.store_interaction_context(
+                user_id, 
+                {
+                    'user_message': query, 
+                    'assistant_response': final_response, 
+                    'context_data': intelligent_context,
+                    'intent': intelligent_context.get('query_context', {}).get('intent', 'unknown'),
+                    'entities': intelligent_context.get('query_context', {}).get('entities', {}),
+                    'sentiment': intelligent_context.get('query_context', {}).get('sentiment', 'neutral'),
+                    'topics': intelligent_context.get('current_topics', [])
+                }
             )
+            
+            # Store conversation in memory system
+            await self.conversation_memory.store_memory(
+                user_id, f"User: {query}\nAssistant: {final_response}", 
+                'conversation', importance=0.7, 
+                tags=intelligent_context.get('current_topics', []),
+                metadata=intelligent_context
+            )
+            
+            # Learn from conversation for preference adaptation
+            conversation_data = {
+                'user_messages': [{'content': query, 'context': intelligent_context}],
+                'assistant_messages': [{'content': final_response, 'context': intelligent_context}],
+                'context': intelligent_context,
+                'entities': intelligent_context.get('current_entities', {})
+            }
+            await self.preference_learning.learn_from_conversation(user_id, conversation_data)
+            
+            # Update MCP context with intelligent context
+            await self.mcp_client.update_context('intelligent_context', intelligent_context)
+            
+            return final_response
         
-        # Store response in conversation history (legacy)
-        self.conversation_history.append({
-            'timestamp': datetime.now().isoformat(),
-            'assistant': final_response,
-            'type': 'assistant'
-        })
-        
-        # Add conversation turn to advanced context manager
-        await self.context_manager.add_conversation_turn(
-            user_id, query, final_response, intelligent_context
-        )
-        
-        # Store conversation in memory system
-        await self.conversation_memory.store_memory(
-            user_id, f"User: {query}\nAssistant: {final_response}", 
-            'conversation', importance=0.7, 
-            tags=intelligent_context.get('current_topics', []),
-            metadata=intelligent_context
-        )
-        
-        # Learn from conversation for preference adaptation
-        conversation_data = {
-            'user_messages': [{'content': query, 'context': intelligent_context}],
-            'assistant_messages': [{'content': final_response, 'context': intelligent_context}],
-            'context': intelligent_context,
-            'entities': intelligent_context.get('current_entities', {})
-        }
-        await self.preference_learning.learn_from_conversation(user_id, conversation_data)
-        
-        # Update MCP context with intelligent context
-        await self.mcp_client.update_context('intelligent_context', intelligent_context)
-        
-        return final_response
+        except Exception as e:
+            logger.error(f"Error in full processing logic: {e}")
+            return f"I apologize, but I encountered an error processing your request: {str(e)}"
     
     async def _handle_weather_query(self, query: str, response_parts: List[str], context_parts: List[str]):
         """Handle weather-related queries with real API data."""
@@ -1635,14 +1806,21 @@ Response:"""
         
         return "\n".join(summary_parts)
     
-    async def save_conversation(self):
-        """Save conversation to database."""
+    async def save_conversation(self, user_id: str = "default_user"):
+        """Save conversation using ContextProvider."""
         try:
-            await self.database.save_conversation(
-                user_id="default",
-                user_message=self.conversation_history[-2]['user'] if len(self.conversation_history) >= 2 else "",
-                assistant_response=self.conversation_history[-1]['assistant'] if self.conversation_history else ""
-            )
+            if len(self.conversation_history) >= 2:
+                interaction_data = {
+                    'user_message': self.conversation_history[-2]['user'],
+                    'assistant_response': self.conversation_history[-1]['assistant'],
+                    'context_data': {'conversation_length': len(self.conversation_history)},
+                    'intent': 'conversation',
+                    'entities': {},
+                    'sentiment': 'neutral',
+                    'confidence': 0.8
+                }
+                await self.context_provider.store_interaction_context(user_id, interaction_data)
+                logger.debug(f"Saved conversation for user {user_id}")
         except Exception as e:
             logger.error(f"Failed to save conversation: {e}")
     

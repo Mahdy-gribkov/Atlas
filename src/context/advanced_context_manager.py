@@ -14,6 +14,7 @@ from dataclasses import dataclass, asdict
 from collections import defaultdict, deque
 
 from ..database.secure_database import SecureDatabase
+from .context_provider import ContextProvider, ContextData
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +55,7 @@ class ContextSummary:
     relevance_score: float
 
 
-class AdvancedContextManager:
+class AdvancedContextManager(ContextProvider):
     """
     Advanced context manager for sophisticated conversation memory.
     Provides genius-level context preservation and user preference learning.
@@ -73,6 +74,227 @@ class AdvancedContextManager:
         self.preference_confidence_threshold = 0.7
         
         logger.info("🧠 Advanced Context Manager initialized")
+    
+    # ContextProvider Interface Implementation
+    async def get_user_context(self, user_id: str) -> Dict[str, Any]:
+        """
+        Get complete user context for decision making.
+        
+        This is the main method that aggregates all user-related data
+        needed for the MDP to make informed decisions.
+        
+        Args:
+            user_id: Unique user identifier
+            
+        Returns:
+            Complete user context including preferences, history, and patterns
+        """
+        try:
+            logger.debug(f"Getting complete user context for: {user_id}")
+            
+            # Create context data object
+            context_data = ContextData(user_id)
+            
+            # Aggregate all context data
+            context_data.preferences = await self.get_user_preferences(user_id)
+            context_data.conversation_history = await self._load_conversation_turns(user_id, 10)
+            context_data.memory_context = await self.get_relevant_memories(user_id, "")
+            context_data.preference_patterns = await self._get_preference_patterns(user_id)
+            context_data.context_summary = await self.get_context_summary(user_id, "general")
+            
+            # Extract derived context
+            if context_data.preferences:
+                context_data.travel_style = context_data.preferences.get('travel_style', 'general')
+                context_data.budget_range = tuple(context_data.preferences.get('budget_range', [1000, 5000]))
+                context_data.preferred_destinations = context_data.preferences.get('preferred_destinations', [])
+                context_data.preferred_activities = context_data.preferences.get('preferred_activities', [])
+                context_data.confidence_scores = context_data.preferences.get('confidence_scores', {})
+            
+            # Calculate context quality
+            context_data.calculate_context_quality()
+            
+            logger.debug(f"Retrieved complete context for {user_id} (quality: {context_data.context_quality:.2f})")
+            return context_data.to_dict()
+            
+        except Exception as e:
+            logger.error(f"Error getting user context for {user_id}: {e}")
+            return {}
+    
+    async def get_conversation_context(self, user_id: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        Get recent conversation context for the user.
+        
+        Args:
+            user_id: Unique user identifier
+            limit: Maximum number of conversation turns to retrieve
+            
+        Returns:
+            List of recent conversation turns with context data
+        """
+        try:
+            turns = await self._load_conversation_turns(user_id, limit)
+            return [turn.__dict__ for turn in turns]
+        except Exception as e:
+            logger.error(f"Error getting conversation context for {user_id}: {e}")
+            return []
+    
+    async def get_preferences_context(self, user_id: str) -> Dict[str, Any]:
+        """
+        Get user preferences context for personalization.
+        
+        Args:
+            user_id: Unique user identifier
+            
+        Returns:
+            User preferences including travel style, budget, activities, etc.
+        """
+        try:
+            return await self.get_user_preferences(user_id)
+        except Exception as e:
+            logger.error(f"Error getting preferences context for {user_id}: {e}")
+            return {}
+    
+    async def get_memory_context(self, user_id: str, query: str = None) -> List[Dict[str, Any]]:
+        """
+        Get relevant memory context for the user.
+        
+        Args:
+            user_id: Unique user identifier
+            query: Optional query to filter relevant memories
+            
+        Returns:
+            List of relevant memory entries
+        """
+        try:
+            memories = await self.get_relevant_memories(user_id, query or "")
+            return [memory.__dict__ for memory in memories]
+        except Exception as e:
+            logger.error(f"Error getting memory context for {user_id}: {e}")
+            return []
+    
+    async def get_preference_patterns(self, user_id: str) -> List[Dict[str, Any]]:
+        """
+        Get learned preference patterns for the user.
+        
+        Args:
+            user_id: Unique user identifier
+            
+        Returns:
+            List of learned preference patterns with confidence scores
+        """
+        try:
+            return await self._get_preference_patterns(user_id)
+        except Exception as e:
+            logger.error(f"Error getting preference patterns for {user_id}: {e}")
+            return []
+    
+    async def orchestrate_context_flow(self, user_id: str, query: str) -> Dict[str, Any]:
+        """
+        Orchestrate the complete context flow for MDP.
+        
+        This is the main orchestration method that coordinates all context
+        retrieval and provides a complete context package to the MDP.
+        
+        Args:
+            user_id: Unique user identifier
+            query: Current user query for context relevance
+            
+        Returns:
+            Complete orchestrated context for MDP decision making
+        """
+        try:
+            logger.info(f"Orchestrating context flow for user {user_id}")
+            
+            # Get complete user context
+            user_context = await self.get_user_context(user_id)
+            
+            # Enhance with query-specific context
+            if query:
+                # Get query-relevant memories
+                relevant_memories = await self.get_relevant_memories(user_id, query)
+                user_context['query_relevant_memories'] = [memory.__dict__ for memory in relevant_memories]
+                
+                # Analyze query intent and context
+                query_context = await self._analyze_query_context(query)
+                user_context['query_context'] = query_context
+            
+            # Add orchestration metadata
+            user_context['orchestration_timestamp'] = datetime.now().isoformat()
+            user_context['context_provider'] = 'AdvancedContextManager'
+            
+            logger.info(f"Context orchestration complete for user {user_id}")
+            return user_context
+            
+        except Exception as e:
+            logger.error(f"Error orchestrating context flow for {user_id}: {e}")
+            return {}
+    
+    async def store_interaction_context(self, user_id: str, interaction_data: Dict[str, Any]) -> bool:
+        """
+        Store interaction context for future use.
+        
+        Args:
+            user_id: Unique user identifier
+            interaction_data: Interaction data to store
+            
+        Returns:
+            Success status of storage operation
+        """
+        try:
+            # Store conversation turn
+            if 'user_message' in interaction_data and 'assistant_response' in interaction_data:
+                turn = ConversationTurn(
+                    user_id=user_id,
+                    timestamp=datetime.now(),
+                    user_message=interaction_data['user_message'],
+                    assistant_response=interaction_data['assistant_response'],
+                    context_data=interaction_data.get('context_data', {}),
+                    intent=interaction_data.get('intent', 'unknown'),
+                    entities=interaction_data.get('entities', {}),
+                    sentiment=interaction_data.get('sentiment', 'neutral'),
+                    topics=interaction_data.get('topics', [])
+                )
+                await self.store_conversation_turn(turn)
+            
+            # Store preferences if any
+            if 'preferences' in interaction_data:
+                await self._store_user_preferences(user_id, interaction_data['preferences'])
+            
+            # Store memory if any
+            if 'memory' in interaction_data:
+                memory_data = interaction_data['memory']
+                await self.store_memory(
+                    user_id,
+                    memory_data.get('content', ''),
+                    memory_data.get('content_type', 'interaction'),
+                    memory_data.get('importance', 0.5),
+                    memory_data.get('tags', []),
+                    memory_data.get('metadata', {})
+                )
+            
+            logger.debug(f"Stored interaction context for user {user_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error storing interaction context for {user_id}: {e}")
+            return False
+    
+    async def get_context_summary(self, user_id: str, summary_type: str = "general") -> Optional[str]:
+        """
+        Get context summary for the user.
+        
+        Args:
+            user_id: Unique user identifier
+            summary_type: Type of summary to retrieve
+            
+        Returns:
+            Context summary string or None if not available
+        """
+        try:
+            return await self._load_context_summary(user_id, summary_type)
+        except Exception as e:
+            logger.error(f"Error getting context summary for {user_id}: {e}")
+            return None
     
     async def add_conversation_turn(self, user_id: str, user_message: str, 
                                   assistant_response: str, context_data: Dict[str, Any] = None) -> bool:
@@ -216,6 +438,165 @@ class AdvancedContextManager:
         except Exception as e:
             logger.error(f"Error getting context summary: {e}")
             return None
+    
+    async def _get_preference_patterns(self, user_id: str) -> List[Dict[str, Any]]:
+        """
+        Get learned preference patterns for the user.
+        
+        Args:
+            user_id: Unique user identifier
+            
+        Returns:
+            List of learned preference patterns with confidence scores
+        """
+        try:
+            # This would integrate with the preference learning system
+            # For now, return empty list - can be enhanced later
+            return []
+        except Exception as e:
+            logger.error(f"Error getting preference patterns for {user_id}: {e}")
+            return []
+    
+    async def get_relevant_memories(self, user_id: str, query: str = "", limit: int = 10) -> List[Any]:
+        """
+        Get relevant memories for a user based on query.
+        
+        Args:
+            user_id: Unique user identifier
+            query: Query to find relevant memories
+            limit: Maximum number of memories to return
+            
+        Returns:
+            List of relevant memory entries
+        """
+        try:
+            # This would integrate with the conversation memory system
+            # For now, return empty list - can be enhanced later
+            return []
+        except Exception as e:
+            logger.error(f"Error getting relevant memories for {user_id}: {e}")
+            return []
+    
+    async def store_conversation_turn(self, turn: ConversationTurn) -> bool:
+        """
+        Store a conversation turn.
+        
+        Args:
+            turn: ConversationTurn object to store
+            
+        Returns:
+            Success status
+        """
+        try:
+            if self.database:
+                conversation_data = {
+                    'user_id': turn.user_id,
+                    'timestamp': turn.timestamp.isoformat(),
+                    'user_message': turn.user_message,
+                    'assistant_response': turn.assistant_response,
+                    'context_data': turn.context_data,
+                    'intent': turn.intent,
+                    'entities': turn.entities,
+                    'sentiment': turn.sentiment,
+                    'confidence': 0.8  # Default confidence
+                }
+                return await self.database.store_conversation_data(conversation_data)
+            return False
+        except Exception as e:
+            logger.error(f"Error storing conversation turn: {e}")
+            return False
+    
+    async def _store_user_preferences(self, user_id: str, preferences: Dict[str, Any]) -> bool:
+        """
+        Store user preferences.
+        
+        Args:
+            user_id: User identifier
+            preferences: Dictionary of preferences to store
+            
+        Returns:
+            Success status
+        """
+        try:
+            if self.database:
+                for pref_type, pref_value in preferences.items():
+                    preference_data = {
+                        'user_id': user_id,
+                        'preference_type': pref_type,
+                        'preference_value': str(pref_value),
+                        'confidence': 0.8,
+                        'source': 'user',
+                        'usage_count': 1,
+                        'timestamp': datetime.now().isoformat()
+                    }
+                    await self.database.store_user_preference(preference_data)
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Error storing user preferences: {e}")
+            return False
+    
+    async def _analyze_query_context(self, query: str) -> Dict[str, Any]:
+        """
+        Analyze query context and extract intent, entities, and sentiment.
+        
+        Args:
+            query: User query to analyze
+            
+        Returns:
+            Query context analysis
+        """
+        try:
+            # Simple query analysis - can be enhanced with NLP
+            query_lower = query.lower()
+            
+            # Extract intent
+            intent = "general"
+            if any(word in query_lower for word in ["plan", "trip", "travel", "visit"]):
+                intent = "travel_planning"
+            elif any(word in query_lower for word in ["weather", "climate"]):
+                intent = "weather_inquiry"
+            elif any(word in query_lower for word in ["hotel", "accommodation", "stay"]):
+                intent = "accommodation_inquiry"
+            elif any(word in query_lower for word in ["flight", "airline", "fly"]):
+                intent = "flight_inquiry"
+            
+            # Extract entities (simple keyword extraction)
+            entities = {}
+            destinations = ["paris", "tokyo", "london", "new york", "rome", "japan", "france", "italy", "spain"]
+            for dest in destinations:
+                if dest in query_lower:
+                    entities["destination"] = dest.title()
+                    break
+            
+            # Extract sentiment
+            sentiment = "neutral"
+            positive_words = ["love", "great", "amazing", "wonderful", "excellent", "fantastic"]
+            negative_words = ["hate", "terrible", "awful", "bad", "horrible", "disappointing"]
+            
+            if any(word in query_lower for word in positive_words):
+                sentiment = "positive"
+            elif any(word in query_lower for word in negative_words):
+                sentiment = "negative"
+            
+            return {
+                "intent": intent,
+                "entities": entities,
+                "sentiment": sentiment,
+                "confidence": 0.7,
+                "query_length": len(query),
+                "keywords": [word for word in query_lower.split() if len(word) > 3]
+            }
+        except Exception as e:
+            logger.error(f"Error analyzing query context: {e}")
+            return {
+                "intent": "unknown",
+                "entities": {},
+                "sentiment": "neutral",
+                "confidence": 0.0,
+                "query_length": len(query),
+                "keywords": []
+            }
     
     async def build_intelligent_context(self, user_id: str, current_query: str) -> Dict[str, Any]:
         """
@@ -583,18 +964,55 @@ class AdvancedContextManager:
     async def _store_conversation_turn(self, turn: ConversationTurn) -> None:
         """Store conversation turn in database."""
         try:
-            # This would integrate with the existing SecureDatabase
-            # For now, we'll use a simple storage approach
-            pass
+            if self.database:
+                # Store conversation data in the database
+                conversation_data = {
+                    'user_id': turn.user_id,
+                    'timestamp': turn.timestamp.isoformat(),
+                    'user_message': turn.user_message,
+                    'assistant_response': turn.assistant_response,
+                    'context_data': json.dumps(turn.context_data),
+                    'intent': turn.intent,
+                    'entities': json.dumps(turn.entities),
+                    'sentiment': turn.sentiment,
+                    'confidence': turn.confidence
+                }
+                
+                # Use the database's store method
+                await self.database.store_conversation_data(conversation_data)
+                logger.debug(f"Stored conversation turn for user {turn.user_id}")
+            else:
+                logger.warning("Database not available, conversation turn not stored")
         except Exception as e:
             logger.error(f"Error storing conversation turn: {e}")
     
     async def _load_conversation_turns(self, user_id: str, max_turns: int) -> List[ConversationTurn]:
         """Load conversation turns from database."""
         try:
-            # This would integrate with the existing SecureDatabase
-            # For now, return empty list
-            return []
+            if self.database:
+                # Load conversation data from the database
+                conversation_data = await self.database.get_conversation_data(user_id, max_turns)
+                
+                turns = []
+                for data in conversation_data:
+                    turn = ConversationTurn(
+                        user_id=data['user_id'],
+                        timestamp=datetime.fromisoformat(data['timestamp']),
+                        user_message=data['user_message'],
+                        assistant_response=data['assistant_response'],
+                        context_data=json.loads(data['context_data']),
+                        intent=data['intent'],
+                        entities=json.loads(data['entities']),
+                        sentiment=data.get('sentiment', 'neutral'),
+                        confidence=data.get('confidence', 0.5)
+                    )
+                    turns.append(turn)
+                
+                logger.debug(f"Loaded {len(turns)} conversation turns for user {user_id}")
+                return turns
+            else:
+                logger.warning("Database not available, returning empty conversation turns")
+                return []
         except Exception as e:
             logger.error(f"Error loading conversation turns: {e}")
             return []
@@ -602,9 +1020,14 @@ class AdvancedContextManager:
     async def _load_user_preferences(self, user_id: str) -> Dict[str, Any]:
         """Load user preferences from database."""
         try:
-            # This would integrate with the existing SecureDatabase
-            # For now, return empty dict
-            return {}
+            if self.database:
+                # Load user preferences from the database
+                preferences = await self.database.get_user_preferences(user_id)
+                logger.debug(f"Loaded preferences for user {user_id}")
+                return preferences
+            else:
+                logger.warning("Database not available, returning empty preferences")
+                return {}
         except Exception as e:
             logger.error(f"Error loading user preferences: {e}")
             return {}
@@ -614,18 +1037,36 @@ class AdvancedContextManager:
                               source: str, usage_count: int) -> None:
         """Store preference in database."""
         try:
-            # This would integrate with the existing SecureDatabase
-            # For now, we'll use in-memory storage
-            pass
+            if self.database:
+                # Store preference in the database
+                preference_data = {
+                    'user_id': user_id,
+                    'preference_type': preference_type,
+                    'preference_value': preference_value,
+                    'confidence': confidence,
+                    'source': source,
+                    'usage_count': usage_count,
+                    'timestamp': datetime.now().isoformat()
+                }
+                
+                await self.database.store_user_preference(preference_data)
+                logger.debug(f"Stored preference for user {user_id}: {preference_type}={preference_value}")
+            else:
+                logger.warning("Database not available, preference not stored")
         except Exception as e:
             logger.error(f"Error storing preference: {e}")
     
     async def _load_context_summary(self, user_id: str, summary_type: str) -> Optional[str]:
         """Load context summary from database."""
         try:
-            # This would integrate with the existing SecureDatabase
-            # For now, return None
-            return None
+            if self.database:
+                # Load context summary from the database
+                summary = await self.database.get_context_summary(user_id, summary_type)
+                logger.debug(f"Loaded context summary for user {user_id}, type: {summary_type}")
+                return summary
+            else:
+                logger.warning("Database not available, returning None for context summary")
+                return None
         except Exception as e:
             logger.error(f"Error loading context summary: {e}")
             return None

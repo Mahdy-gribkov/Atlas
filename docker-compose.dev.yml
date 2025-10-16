@@ -10,11 +10,13 @@ services:
     environment:
       - PYTHONPATH=/app/src
       - ENVIRONMENT=development
+      - DATABASE_PATH=/app/data/travel_agent.db
+      - CACHE_DIR=/app/data/cache
+      - LOG_LEVEL=DEBUG
     volumes:
       - ./src:/app/src
       - ./travel_agent.py:/app/travel_agent.py
       - ./api.py:/app/api.py
-      - ./start.py:/app/start.py
       - ./data:/app/data
     restart: unless-stopped
     command: ["python", "api.py"]

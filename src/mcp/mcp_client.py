@@ -18,9 +18,9 @@ class TravelMCPClient:
     Provides seamless integration with MCP server tools.
     """
     
-    def __init__(self, server_url: str = "http://localhost:8000"):
+    def __init__(self, server_url: str = None):
         """Initialize the MCP client."""
-        self.server_url = server_url
+        self.server_url = server_url or os.getenv("MCP_SERVER_URL", "http://localhost:8000")
         self.session_id = None
         self.context = {}
         

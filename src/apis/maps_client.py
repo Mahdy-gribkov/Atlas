@@ -5,12 +5,16 @@ Uses OpenStreetMap Nominatim for geocoding and reverse geocoding.
 
 import aiohttp
 import asyncio
+import logging
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 import json
 import urllib.parse
 
 from .rate_limiter import APIRateLimiter
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 class NominatimClient:
     """
@@ -42,7 +46,7 @@ class NominatimClient:
             return []
             
         except Exception as e:
-            print(f"Geocoding error: {e}")
+            logger.error(f"Geocoding error for {address}: {e}")
             return []
     
     async def reverse_geocode(self, latitude: float, longitude: float) -> Optional[Dict[str, Any]]:
@@ -65,7 +69,7 @@ class NominatimClient:
             return None
             
         except Exception as e:
-            print(f"Reverse geocoding error: {e}")
+            logger.error(f"Reverse geocoding error for {latitude}, {longitude}: {e}")
             return None
     
     async def search_places(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
@@ -88,7 +92,7 @@ class NominatimClient:
             return []
             
         except Exception as e:
-            print(f"Place search error: {e}")
+            logger.error(f"Place search error for {query}: {e}")
             return []
     
     async def _geocode_nominatim(self, address: str) -> List[Dict[str, Any]]:
@@ -155,7 +159,7 @@ class NominatimClient:
                         return []
                         
         except Exception as e:
-            print(f"Nominatim geocoding error: {e}")
+            logger.warning(f"Nominatim geocoding error: {e}")
             return []
     
     async def _reverse_geocode_nominatim(self, latitude: float, longitude: float) -> Optional[Dict[str, Any]]:
@@ -205,7 +209,7 @@ class NominatimClient:
                         return result
                         
         except Exception as e:
-            print(f"Nominatim reverse geocoding error: {e}")
+            logger.warning(f"Nominatim reverse geocoding error: {e}")
             return None
     
     async def _search_nominatim(self, query: str, limit: int) -> List[Dict[str, Any]]:
@@ -260,7 +264,7 @@ class NominatimClient:
                         return results
                         
         except Exception as e:
-            print(f"Nominatim search error: {e}")
+            logger.warning(f"Nominatim search error: {e}")
             return []
     
     async def get_place_details(self, place_id: str) -> Optional[Dict[str, Any]]:
@@ -318,5 +322,5 @@ class NominatimClient:
                         return result
                         
         except Exception as e:
-            print(f"Nominatim place details error: {e}")
+            logger.warning(f"Nominatim place details error: {e}")
             return None

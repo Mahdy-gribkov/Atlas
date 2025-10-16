@@ -50,6 +50,9 @@ class SecureDatabase:
             # Create tables
             self._create_tables()
             
+            # Migrate existing tables if needed
+            self._migrate_tables()
+            
             # Set up automatic cleanup
             self._setup_cleanup_triggers()
             
@@ -106,6 +109,58 @@ class SecureDatabase:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 expires_at TIMESTAMP DEFAULT (datetime('now', '+1 hour'))
             )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS conversations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                timestamp TEXT NOT NULL,
+                user_message TEXT NOT NULL,
+                assistant_response TEXT NOT NULL,
+                context_data TEXT,
+                intent TEXT,
+                entities TEXT,
+                sentiment TEXT,
+                confidence REAL
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS user_profiles (
+                user_id TEXT PRIMARY KEY,
+                travel_style TEXT,
+                budget_range TEXT,
+                preferred_destinations TEXT,
+                preferred_activities TEXT,
+                preferred_accommodations TEXT,
+                preferred_transportation TEXT,
+                dietary_preferences TEXT,
+                accessibility_needs TEXT,
+                language_preferences TEXT,
+                last_updated TEXT,
+                confidence_scores TEXT
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS context_summaries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                summary_type TEXT NOT NULL,
+                summary TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, summary_type)
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS user_preferences_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                preference_type TEXT NOT NULL,
+                preference_value TEXT NOT NULL,
+                confidence REAL DEFAULT 0.5,
+                source TEXT DEFAULT 'user',
+                usage_count INTEGER DEFAULT 1,
+                timestamp TEXT NOT NULL
+            )
             """
         ]
         
@@ -128,39 +183,82 @@ class SecureDatabase:
         
         self.conn.commit()
     
+    def _migrate_tables(self):
+        """Migrate existing tables to new schema if needed."""
+        try:
+            # Get list of existing tables
+            cursor = self.conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            existing_tables = [row[0] for row in cursor.fetchall()]
+            
+            # Check if conversations table exists and has timestamp column
+            if 'conversations' in existing_tables:
+                cursor = self.conn.execute("PRAGMA table_info(conversations)")
+                columns = [row[1] for row in cursor.fetchall()]
+                
+                if 'timestamp' not in columns:
+                    # Add timestamp column to existing conversations table
+                    self.conn.execute("ALTER TABLE conversations ADD COLUMN timestamp TEXT")
+                    print("Added timestamp column to conversations table")
+            
+            # Check if old user_preferences table exists and migrate to new structure
+            if 'user_preferences' in existing_tables:
+                cursor = self.conn.execute("PRAGMA table_info(user_preferences)")
+                columns = [row[1] for row in cursor.fetchall()]
+                
+                if 'user_id' not in columns:
+                    # Migrate old user_preferences to new structure
+                    self.conn.execute("""
+                        CREATE TABLE IF NOT EXISTS user_preferences_backup AS 
+                        SELECT * FROM user_preferences
+                    """)
+                    self.conn.execute("DROP TABLE user_preferences")
+                    print("Migrated user_preferences table to new structure")
+            
+            self.conn.commit()
+        except Exception as e:
+            print(f"Migration error: {e}")
+    
     def _setup_cleanup_triggers(self):
         """Set up automatic cleanup triggers for expired data."""
-        # Trigger to clean up expired preferences
-        self.conn.execute("""
-            CREATE TRIGGER IF NOT EXISTS cleanup_expired_preferences
-            AFTER INSERT ON user_preferences
-            BEGIN
-                DELETE FROM user_preferences 
-                WHERE expires_at IS NOT NULL AND expires_at < datetime('now');
-            END
-        """)
-        
-        # Trigger to clean up expired search history
-        self.conn.execute("""
-            CREATE TRIGGER IF NOT EXISTS cleanup_expired_searches
-            AFTER INSERT ON search_history
-            BEGIN
-                DELETE FROM search_history 
-                WHERE expires_at IS NOT NULL AND expires_at < datetime('now');
-            END
-        """)
-        
-        # Trigger to clean up expired cache
-        self.conn.execute("""
-            CREATE TRIGGER IF NOT EXISTS cleanup_expired_cache
-            AFTER INSERT ON api_cache
-            BEGIN
-                DELETE FROM api_cache 
-                WHERE expires_at IS NOT NULL AND expires_at < datetime('now');
-            END
-        """)
-        
-        self.conn.commit()
+        try:
+            # Get list of existing tables
+            cursor = self.conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            existing_tables = [row[0] for row in cursor.fetchall()]
+            
+            # Only create triggers for tables that exist
+            if 'user_preferences' in existing_tables:
+                self.conn.execute("""
+                    CREATE TRIGGER IF NOT EXISTS cleanup_expired_preferences
+                    AFTER INSERT ON user_preferences
+                    BEGIN
+                        DELETE FROM user_preferences 
+                        WHERE expires_at IS NOT NULL AND expires_at < datetime('now');
+                    END
+                """)
+            
+            if 'search_history' in existing_tables:
+                self.conn.execute("""
+                    CREATE TRIGGER IF NOT EXISTS cleanup_expired_searches
+                    AFTER INSERT ON search_history
+                    BEGIN
+                        DELETE FROM search_history 
+                        WHERE expires_at IS NOT NULL AND expires_at < datetime('now');
+                    END
+                """)
+            
+            if 'api_cache' in existing_tables:
+                self.conn.execute("""
+                    CREATE TRIGGER IF NOT EXISTS cleanup_expired_cache
+                    AFTER INSERT ON api_cache
+                    BEGIN
+                        DELETE FROM api_cache 
+                        WHERE expires_at IS NOT NULL AND expires_at < datetime('now');
+                    END
+                """)
+            
+            self.conn.commit()
+        except Exception as e:
+            print(f"Error setting up cleanup triggers: {e}")
     
     async def _ensure_connection(self):
         """Ensure database connection is available and thread-safe."""
@@ -528,6 +626,363 @@ class SecureDatabase:
             print(f"Error getting database stats: {e}")
             return {}
     
+    async def get_user_preferences(self, user_id: str = "default") -> Dict[str, Any]:
+        """Get user preferences as a dictionary."""
+        try:
+            preferences = await self.get_preferences()
+            result = {}
+            for pref in preferences:
+                result[pref.preference_type] = pref.preference_value
+            return result
+        except Exception as e:
+            print(f"Error getting user preferences: {e}")
+            return {}
+    
+    async def get_conversation_data(self, user_id: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Get conversation data for a user."""
+        try:
+            await self._ensure_connection()
+            query = """
+                SELECT user_message, assistant_response, timestamp 
+                FROM conversations 
+                WHERE user_id = ? 
+                ORDER BY timestamp DESC 
+                LIMIT ?
+            """
+            cursor = await self._execute_query(query, (user_id, limit))
+            rows = cursor.fetchall()
+            
+            conversations = []
+            for row in rows:
+                conversations.append({
+                    'user_message': row[0],
+                    'assistant_response': row[1],
+                    'timestamp': row[2]
+                })
+            return conversations
+        except Exception as e:
+            print(f"Error getting conversation data: {e}")
+            return []
+    
+    async def store_conversation_data(self, conversation_data: Dict[str, Any]) -> bool:
+        """Store conversation data."""
+        try:
+            await self._ensure_connection()
+            query = """
+                INSERT INTO conversations (user_id, timestamp, user_message, assistant_response, context_data, intent, entities, sentiment, confidence)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+            params = (
+                conversation_data.get('user_id', 'default'),
+                conversation_data.get('timestamp', datetime.now().isoformat()),
+                conversation_data.get('user_message', ''),
+                conversation_data.get('assistant_response', ''),
+                json.dumps(conversation_data.get('context_data', {})),
+                conversation_data.get('intent', 'unknown'),
+                json.dumps(conversation_data.get('entities', {})),
+                conversation_data.get('sentiment', 'neutral'),
+                conversation_data.get('confidence', 0.5)
+            )
+            await self._execute_query(query, params)
+            return True
+        except Exception as e:
+            print(f"Error storing conversation data: {e}")
+            return False
+    
+    async def initialize_memory_tables(self) -> bool:
+        """Initialize memory tables."""
+        try:
+            await self._ensure_connection()
+            
+            # Create memories table
+            query = """
+                CREATE TABLE IF NOT EXISTS memories (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    content_type TEXT NOT NULL,
+                    importance REAL NOT NULL,
+                    timestamp TEXT NOT NULL,
+                    tags TEXT NOT NULL,
+                    metadata TEXT NOT NULL
+                )
+            """
+            await self._execute_query(query)
+            
+            # Create memory search index
+            query = """
+                CREATE TABLE IF NOT EXISTS memory_search_index (
+                    memory_id TEXT PRIMARY KEY,
+                    content TEXT NOT NULL,
+                    tags TEXT NOT NULL,
+                    FOREIGN KEY (memory_id) REFERENCES memories (id)
+                )
+            """
+            await self._execute_query(query)
+            
+            return True
+        except Exception as e:
+            print(f"Error initializing memory tables: {e}")
+            return False
+    
+    async def store_memory_entry(self, memory_data: Dict[str, Any]) -> bool:
+        """Store memory entry."""
+        try:
+            await self._ensure_connection()
+            query = """
+                INSERT OR REPLACE INTO memories (id, user_id, content, content_type, importance, timestamp, tags, metadata)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """
+            params = (
+                memory_data.get('id', ''),
+                memory_data.get('user_id', 'default'),
+                memory_data.get('content', ''),
+                memory_data.get('content_type', 'general'),
+                memory_data.get('importance', 0.5),
+                memory_data.get('timestamp', datetime.now().isoformat()),
+                json.dumps(memory_data.get('tags', [])),
+                json.dumps(memory_data.get('metadata', {}))
+            )
+            await self._execute_query(query, params)
+            return True
+        except Exception as e:
+            print(f"Error storing memory entry: {e}")
+            return False
+    
+    async def get_memories(self, user_id: str, query: str = None, content_type: str = None, limit: int = 10) -> List[Dict[str, Any]]:
+        """Get memories for a user."""
+        try:
+            await self._ensure_connection()
+            
+            where_conditions = ["user_id = ?"]
+            params = [user_id]
+            
+            if query:
+                where_conditions.append("content LIKE ?")
+                params.append(f"%{query}%")
+            
+            if content_type:
+                where_conditions.append("content_type = ?")
+                params.append(content_type)
+            
+            where_clause = " AND ".join(where_conditions)
+            params.append(limit)
+            
+            query_sql = f"""
+                SELECT id, user_id, content, content_type, importance, timestamp, tags, metadata
+                FROM memories 
+                WHERE {where_clause}
+                ORDER BY importance DESC, timestamp DESC 
+                LIMIT ?
+            """
+            
+            cursor = await self._execute_query(query_sql, tuple(params))
+            rows = cursor.fetchall()
+            
+            memories = []
+            for row in rows:
+                memories.append({
+                    'id': row[0],
+                    'user_id': row[1],
+                    'content': row[2],
+                    'content_type': row[3],
+                    'importance': row[4],
+                    'timestamp': row[5],
+                    'tags': json.loads(row[6]),
+                    'metadata': json.loads(row[7])
+                })
+            return memories
+        except Exception as e:
+            print(f"Error getting memories: {e}")
+            return []
+    
+    async def update_memory_search_index(self, memory_id: str, content: str, tags: List[str]) -> bool:
+        """Update memory search index."""
+        try:
+            await self._ensure_connection()
+            query = """
+                INSERT OR REPLACE INTO memory_search_index (memory_id, content, tags)
+                VALUES (?, ?, ?)
+            """
+            await self._execute_query(query, (memory_id, content, json.dumps(tags)))
+            return True
+        except Exception as e:
+            print(f"Error updating memory search index: {e}")
+            return False
+    
+    async def update_memory_importance(self, memory_id: str, importance: float) -> bool:
+        """Update memory importance."""
+        try:
+            await self._ensure_connection()
+            query = "UPDATE memories SET importance = ? WHERE id = ?"
+            await self._execute_query(query, (importance, memory_id))
+            return True
+        except Exception as e:
+            print(f"Error updating memory importance: {e}")
+            return False
+    
+    async def remove_old_memories(self, cutoff_date: datetime, user_id: str = None) -> int:
+        """Remove old memories."""
+        try:
+            await self._ensure_connection()
+            
+            where_conditions = ["timestamp < ?"]
+            params = [cutoff_date.isoformat()]
+            
+            if user_id:
+                where_conditions.append("user_id = ?")
+                params.append(user_id)
+            
+            where_clause = " AND ".join(where_conditions)
+            
+            # First get count
+            count_query = f"SELECT COUNT(*) FROM memories WHERE {where_clause}"
+            cursor = await self._execute_query(count_query, tuple(params))
+            count = cursor.fetchone()[0]
+            
+            # Then delete
+            delete_query = f"DELETE FROM memories WHERE {where_clause}"
+            await self._execute_query(delete_query, tuple(params))
+            
+            return count
+        except Exception as e:
+            print(f"Error removing old memories: {e}")
+            return 0
+    
+    async def get_memory_statistics(self, user_id: str = None) -> Dict[str, Any]:
+        """Get memory statistics."""
+        try:
+            await self._ensure_connection()
+            
+            where_clause = "WHERE user_id = ?" if user_id else ""
+            params = [user_id] if user_id else []
+            
+            query = f"""
+                SELECT 
+                    COUNT(*) as total_memories,
+                    COUNT(CASE WHEN content_type = 'conversation' THEN 1 END) as conversation_memories,
+                    COUNT(CASE WHEN content_type = 'preference' THEN 1 END) as preference_memories,
+                    COUNT(CASE WHEN content_type = 'fact' THEN 1 END) as fact_memories,
+                    COUNT(CASE WHEN content_type = 'context' THEN 1 END) as context_memories,
+                    AVG(importance) as average_importance,
+                    MIN(timestamp) as oldest_memory,
+                    MAX(timestamp) as newest_memory
+                FROM memories 
+                {where_clause}
+            """
+            
+            cursor = await self._execute_query(query, tuple(params))
+            row = cursor.fetchone()
+            
+            return {
+                'total_memories': row[0] or 0,
+                'conversation_memories': row[1] or 0,
+                'preference_memories': row[2] or 0,
+                'fact_memories': row[3] or 0,
+                'context_memories': row[4] or 0,
+                'average_importance': row[5] or 0.0,
+                'oldest_memory': row[6],
+                'newest_memory': row[7]
+            }
+        except Exception as e:
+            print(f"Error getting memory statistics: {e}")
+            return {}
+    
+    async def get_user_profile(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """Get user profile."""
+        try:
+            await self._ensure_connection()
+            query = "SELECT * FROM user_profiles WHERE user_id = ?"
+            cursor = await self._execute_query(query, (user_id,))
+            row = cursor.fetchone()
+            
+            if row:
+                return {
+                    'user_id': row[0],
+                    'travel_style': row[1],
+                    'budget_range': json.loads(row[2]),
+                    'preferred_destinations': json.loads(row[3]),
+                    'preferred_activities': json.loads(row[4]),
+                    'preferred_accommodations': json.loads(row[5]),
+                    'preferred_transportation': json.loads(row[6]),
+                    'dietary_preferences': json.loads(row[7]),
+                    'accessibility_needs': json.loads(row[8]),
+                    'language_preferences': json.loads(row[9]),
+                    'last_updated': row[10],
+                    'confidence_scores': json.loads(row[11])
+                }
+            return None
+        except Exception as e:
+            print(f"Error getting user profile: {e}")
+            return None
+    
+    async def save_user_profile(self, profile_data: Dict[str, Any]) -> bool:
+        """Save user profile."""
+        try:
+            await self._ensure_connection()
+            query = """
+                INSERT OR REPLACE INTO user_profiles 
+                (user_id, travel_style, budget_range, preferred_destinations, preferred_activities, 
+                 preferred_accommodations, preferred_transportation, dietary_preferences, 
+                 accessibility_needs, language_preferences, last_updated, confidence_scores)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+            params = (
+                profile_data.get('user_id', ''),
+                profile_data.get('travel_style', 'general'),
+                json.dumps(profile_data.get('budget_range', [1000, 5000])),
+                json.dumps(profile_data.get('preferred_destinations', [])),
+                json.dumps(profile_data.get('preferred_activities', [])),
+                json.dumps(profile_data.get('preferred_accommodations', [])),
+                json.dumps(profile_data.get('preferred_transportation', [])),
+                json.dumps(profile_data.get('dietary_preferences', [])),
+                json.dumps(profile_data.get('accessibility_needs', [])),
+                json.dumps(profile_data.get('language_preferences', [])),
+                profile_data.get('last_updated', datetime.now().isoformat()),
+                json.dumps(profile_data.get('confidence_scores', {}))
+            )
+            await self._execute_query(query, params)
+            return True
+        except Exception as e:
+            print(f"Error saving user profile: {e}")
+            return False
+    
+    async def get_context_summary(self, user_id: str, summary_type: str) -> Optional[str]:
+        """Get context summary."""
+        try:
+            await self._ensure_connection()
+            query = "SELECT summary FROM context_summaries WHERE user_id = ? AND summary_type = ?"
+            cursor = await self._execute_query(query, (user_id, summary_type))
+            row = cursor.fetchone()
+            return row[0] if row else None
+        except Exception as e:
+            print(f"Error getting context summary: {e}")
+            return None
+    
+    async def store_user_preference(self, preference_data: Dict[str, Any]) -> bool:
+        """Store user preference."""
+        try:
+            await self._ensure_connection()
+            query = """
+                INSERT OR REPLACE INTO user_preferences 
+                (user_id, preference_type, preference_value, confidence, source, usage_count, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """
+            params = (
+                preference_data.get('user_id', ''),
+                preference_data.get('preference_type', ''),
+                preference_data.get('preference_value', ''),
+                preference_data.get('confidence', 0.5),
+                preference_data.get('source', 'user'),
+                preference_data.get('usage_count', 1),
+                preference_data.get('timestamp', datetime.now().isoformat())
+            )
+            await self._execute_query(query, params)
+            return True
+        except Exception as e:
+            print(f"Error storing user preference: {e}")
+            return False
+
     async def save_conversation(self, user_id: str, user_message: str, assistant_response: str) -> bool:
         """
         Save conversation to database.
@@ -583,3 +1038,152 @@ class SecureDatabase:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit."""
         self.close()
+    
+    # User Management Methods
+    async def create_user(self, user_data: Dict[str, Any]) -> str:
+        """Create a new user in the database."""
+        try:
+            await self._ensure_connection()
+            
+            user_id = f"user_{int(datetime.now().timestamp())}"
+            
+            # Create users table if it doesn't exist
+            await self._execute_query("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id TEXT PRIMARY KEY,
+                    username TEXT UNIQUE NOT NULL,
+                    email TEXT UNIQUE NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    salt TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    last_login TIMESTAMP,
+                    is_active BOOLEAN DEFAULT TRUE
+                )
+            """)
+            
+            query = """
+                INSERT INTO users (id, username, email, password_hash, salt, created_at, last_login, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """
+            
+            await self._execute_query(query, (
+                user_id,
+                user_data.get('username'),
+                user_data.get('email'),
+                user_data.get('password_hash'),
+                user_data.get('salt'),
+                user_data.get('created_at'),
+                user_data.get('last_login'),
+                user_data.get('is_active', True)
+            ))
+            
+            return user_id
+            
+        except Exception as e:
+            logger.error(f"Error creating user: {e}")
+            return None
+    
+    async def get_user_by_username(self, username: str) -> Optional[Dict[str, Any]]:
+        """Get user by username."""
+        try:
+            await self._ensure_connection()
+            
+            query = "SELECT * FROM users WHERE username = ?"
+            cursor = await self._execute_query(query, (username,))
+            row = cursor.fetchone()
+            
+            if row:
+                return {
+                    'id': row[0],
+                    'username': row[1],
+                    'email': row[2],
+                    'password_hash': row[3],
+                    'salt': row[4],
+                    'created_at': row[5],
+                    'last_login': row[6],
+                    'is_active': bool(row[7])
+                }
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error getting user by username: {e}")
+            return None
+    
+    async def get_user_by_email(self, email: str) -> Optional[Dict[str, Any]]:
+        """Get user by email."""
+        try:
+            await self._ensure_connection()
+            
+            query = "SELECT * FROM users WHERE email = ?"
+            cursor = await self._execute_query(query, (email,))
+            row = cursor.fetchone()
+            
+            if row:
+                return {
+                    'id': row[0],
+                    'username': row[1],
+                    'email': row[2],
+                    'password_hash': row[3],
+                    'salt': row[4],
+                    'created_at': row[5],
+                    'last_login': row[6],
+                    'is_active': bool(row[7])
+                }
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error getting user by email: {e}")
+            return None
+    
+    async def get_user_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """Get user by ID."""
+        try:
+            await self._ensure_connection()
+            
+            query = "SELECT * FROM users WHERE id = ?"
+            cursor = await self._execute_query(query, (user_id,))
+            row = cursor.fetchone()
+            
+            if row:
+                return {
+                    'id': row[0],
+                    'username': row[1],
+                    'email': row[2],
+                    'password_hash': row[3],
+                    'salt': row[4],
+                    'created_at': row[5],
+                    'last_login': row[6],
+                    'is_active': bool(row[7])
+                }
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error getting user by ID: {e}")
+            return None
+    
+    async def update_user(self, user_id: str, update_data: Dict[str, Any]) -> bool:
+        """Update user information."""
+        try:
+            await self._ensure_connection()
+            
+            # Build dynamic update query
+            set_clauses = []
+            values = []
+            
+            for key, value in update_data.items():
+                if key in ['username', 'email', 'password_hash', 'salt', 'last_login', 'is_active']:
+                    set_clauses.append(f"{key} = ?")
+                    values.append(value)
+            
+            if not set_clauses:
+                return False
+            
+            query = f"UPDATE users SET {', '.join(set_clauses)} WHERE id = ?"
+            values.append(user_id)
+            
+            await self._execute_query(query, tuple(values))
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error updating user: {e}")
+            return False

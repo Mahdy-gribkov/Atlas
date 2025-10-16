@@ -5,11 +5,15 @@ Uses real free flight data services that provide actual data.
 
 import aiohttp
 import asyncio
+import logging
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 import json
 
 from .rate_limiter import APIRateLimiter
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 class AviationStackClient:
     """
@@ -47,7 +51,7 @@ class AviationStackClient:
             return []
             
         except Exception as e:
-            print(f"Flight search error: {e}")
+            logger.error(f"Flight search error for {origin} -> {destination}: {e}")
             return []
     
     async def get_airline_info(self, airline_code: str) -> Optional[Dict[str, Any]]:
@@ -61,7 +65,7 @@ class AviationStackClient:
             return None
             
         except Exception as e:
-            print(f"Airline info error: {e}")
+            logger.error(f"Airline info error for {airline_code}: {e}")
             return None
     
     async def _get_opensky_flights(self, origin: str, destination: str, date: str = None) -> List[Dict[str, Any]]:
@@ -129,7 +133,7 @@ class AviationStackClient:
                         return relevant_flights[:5]  # Return top 5 flights
                         
         except Exception as e:
-            print(f"OpenSky Network error: {e}")
+            logger.warning(f"OpenSky Network error: {e}")
             return []
     
     async def _get_public_flight_data(self, origin: str, destination: str, date: str = None) -> List[Dict[str, Any]]:
@@ -190,7 +194,7 @@ class AviationStackClient:
             return []
             
         except Exception as e:
-            print(f"Public flight data error: {e}")
+            logger.warning(f"Public flight data error: {e}")
             return []
     
     async def _get_public_airline_data(self, airline_code: str) -> Optional[Dict[str, Any]]:
@@ -210,7 +214,7 @@ class AviationStackClient:
             return airline_data.get(airline_code.upper())
             
         except Exception as e:
-            print(f"Public airline data error: {e}")
+            logger.warning(f"Public airline data error: {e}")
             return None
     
     def _get_airline_from_callsign(self, callsign: str) -> str:

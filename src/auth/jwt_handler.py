@@ -6,7 +6,7 @@ import jwt
 import time
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
-from config import config
+from src.config import config
 
 class JWTHandler:
     """JWT token management for authentication."""

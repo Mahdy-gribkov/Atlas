@@ -6,7 +6,11 @@ Provides comprehensive performance monitoring and optimization.
 import asyncio
 import time
 import logging
-import psutil
+try:
+    import psutil
+except ImportError:
+    # Fallback for systems without psutil
+    psutil = None
 import threading
 from typing import Dict, List, Any, Optional, Callable
 from datetime import datetime, timedelta
@@ -342,6 +346,18 @@ class PerformanceMonitor:
     async def _collect_system_metrics(self):
         """Collect system metrics."""
         try:
+            if psutil is None:
+                # Fallback when psutil is not available
+                logger.warning("psutil not available, using default system metrics")
+                self.system_metrics.update({
+                    'cpu_usage': 0.0,
+                    'memory_usage': 0.0,
+                    'disk_usage': 0.0,
+                    'network_io': {'bytes_sent': 0, 'bytes_recv': 0},
+                    'process_count': 0
+                })
+                return
+            
             # CPU usage
             cpu_usage = psutil.cpu_percent(interval=1)
             

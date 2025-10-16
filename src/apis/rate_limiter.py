@@ -5,10 +5,14 @@ Ensures we don't exceed free tier limits.
 
 import asyncio
 import time
+import logging
 from typing import Dict, Optional
 from datetime import datetime, timedelta
 import json
 import os
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 class APIRateLimiter:
     """
@@ -45,7 +49,7 @@ class APIRateLimiter:
                         self.rate_limits[api_name].update(data)
                         
         except Exception as e:
-            print(f"Error loading rate limits: {e}")
+            logger.warning(f"Error loading rate limits: {e}")
     
     def _save_rate_limits(self):
         """Save rate limit data to cache file."""
@@ -54,7 +58,7 @@ class APIRateLimiter:
             with open(self.cache_file, 'w') as f:
                 json.dump(self.rate_limits, f, indent=2)
         except Exception as e:
-            print(f"Error saving rate limits: {e}")
+            logger.warning(f"Error saving rate limits: {e}")
     
     def _get_reset_time(self, period: str) -> float:
         """Calculate reset time based on period."""

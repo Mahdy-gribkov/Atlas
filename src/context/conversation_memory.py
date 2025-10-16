@@ -330,18 +330,35 @@ class ConversationMemory:
     async def _initialize_memory_tables(self) -> None:
         """Initialize memory tables in the database."""
         try:
-            # This would integrate with the existing SecureDatabase
-            # For now, we'll use a simple approach
-            logger.info("✅ Memory tables initialized")
+            if self.database:
+                # Initialize memory tables in the database
+                await self.database.initialize_memory_tables()
+                logger.info("✅ Memory tables initialized")
+            else:
+                logger.warning("Database not available, memory tables not initialized")
         except Exception as e:
             logger.error(f"Error initializing memory tables: {e}")
     
     async def _store_memory_entry(self, memory: MemoryEntry) -> None:
         """Store memory entry in database."""
         try:
-            # This would integrate with the existing SecureDatabase
-            # For now, we'll use in-memory storage
-            pass
+            if self.database:
+                # Store memory entry in the database
+                memory_data = {
+                    'id': memory.id,
+                    'user_id': memory.user_id,
+                    'content': memory.content,
+                    'content_type': memory.content_type,
+                    'importance': memory.importance,
+                    'timestamp': memory.timestamp.isoformat(),
+                    'tags': json.dumps(memory.tags),
+                    'metadata': json.dumps(memory.metadata)
+                }
+                
+                await self.database.store_memory_entry(memory_data)
+                logger.debug(f"Stored memory entry: {memory.id}")
+            else:
+                logger.warning("Database not available, memory entry not stored")
         except Exception as e:
             logger.error(f"Error storing memory entry: {e}")
     
@@ -349,9 +366,29 @@ class ConversationMemory:
                            content_type: str = None, limit: int = 10) -> List[MemoryEntry]:
         """Load memories from database."""
         try:
-            # This would integrate with the existing SecureDatabase
-            # For now, return empty list
-            return []
+            if self.database:
+                # Load memories from the database
+                memory_data = await self.database.get_memories(user_id, query, content_type, limit)
+                
+                memories = []
+                for data in memory_data:
+                    memory = MemoryEntry(
+                        id=data['id'],
+                        user_id=data['user_id'],
+                        content=data['content'],
+                        content_type=data['content_type'],
+                        importance=data['importance'],
+                        timestamp=datetime.fromisoformat(data['timestamp']),
+                        tags=json.loads(data['tags']),
+                        metadata=json.loads(data['metadata'])
+                    )
+                    memories.append(memory)
+                
+                logger.debug(f"Loaded {len(memories)} memories for user {user_id}")
+                return memories
+            else:
+                logger.warning("Database not available, returning empty memories")
+                return []
         except Exception as e:
             logger.error(f"Error loading memories: {e}")
             return []
@@ -359,25 +396,38 @@ class ConversationMemory:
     async def _update_search_index(self, memory: MemoryEntry) -> None:
         """Update search index for memory entry."""
         try:
-            # This would create search indices for fast retrieval
-            # For now, we'll use simple in-memory indexing
-            pass
+            if self.database:
+                # Update search index in the database
+                await self.database.update_memory_search_index(memory.id, memory.content, memory.tags)
+                logger.debug(f"Updated search index for memory: {memory.id}")
+            else:
+                logger.warning("Database not available, search index not updated")
         except Exception as e:
             logger.error(f"Error updating search index: {e}")
     
     async def _update_memory_importance_db(self, memory_id: str, importance: float) -> None:
         """Update memory importance in database."""
         try:
-            # This would integrate with the existing SecureDatabase
-            pass
+            if self.database:
+                # Update memory importance in the database
+                await self.database.update_memory_importance(memory_id, importance)
+                logger.debug(f"Updated memory importance for: {memory_id}")
+            else:
+                logger.warning("Database not available, memory importance not updated")
         except Exception as e:
             logger.error(f"Error updating memory importance: {e}")
     
     async def _remove_old_memories_db(self, cutoff_date: datetime, user_id: str = None) -> int:
         """Remove old memories from database."""
         try:
-            # This would integrate with the existing SecureDatabase
-            return 0
+            if self.database:
+                # Remove old memories from the database
+                removed_count = await self.database.remove_old_memories(cutoff_date, user_id)
+                logger.debug(f"Removed {removed_count} old memories")
+                return removed_count
+            else:
+                logger.warning("Database not available, no memories removed")
+                return 0
         except Exception as e:
             logger.error(f"Error removing old memories: {e}")
             return 0
@@ -385,17 +435,23 @@ class ConversationMemory:
     async def _get_memory_stats_db(self, user_id: str = None) -> Dict[str, Any]:
         """Get memory statistics from database."""
         try:
-            # This would integrate with the existing SecureDatabase
-            return {
-                'total_memories': 0,
-                'conversation_memories': 0,
-                'preference_memories': 0,
-                'fact_memories': 0,
-                'context_memories': 0,
-                'average_importance': 0.0,
-                'oldest_memory': None,
-                'newest_memory': None
-            }
+            if self.database:
+                # Get memory statistics from the database
+                stats = await self.database.get_memory_statistics(user_id)
+                logger.debug(f"Retrieved memory statistics for user: {user_id}")
+                return stats
+            else:
+                logger.warning("Database not available, returning default memory statistics")
+                return {
+                    'total_memories': 0,
+                    'conversation_memories': 0,
+                    'preference_memories': 0,
+                    'fact_memories': 0,
+                    'context_memories': 0,
+                    'average_importance': 0.0,
+                    'oldest_memory': None,
+                    'newest_memory': None
+                }
         except Exception as e:
             logger.error(f"Error getting memory statistics: {e}")
             return {}

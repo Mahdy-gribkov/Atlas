@@ -25,6 +25,10 @@ open http://localhost:8000
 
 ### **Option 2: Development Setup**
 ```bash
+# Clone the repository
+git clone https://github.com/yourusername/Travel_Agent.git
+cd Travel_Agent
+
 # Backend setup
 pip install -r requirements.txt
 python api.py
