@@ -132,14 +132,14 @@ function App() {
         },
         (error) => {
           console.log('Geolocation error:', error);
-          // Fallback to a default location (no user location set)
-          setCurrentLocation({ lat: 40.7128, lng: -74.0060 });
+          // Fallback to a default location (Tel Aviv, Israel)
+          setCurrentLocation({ lat: 32.0853, lng: 34.7818 });
           // Don't set userLocation to avoid showing in input field
         }
       );
     } else {
-      // Fallback to a default location
-      setCurrentLocation({ lat: 40.7128, lng: -74.0060 });
+      // Fallback to a default location (Tel Aviv, Israel)
+      setCurrentLocation({ lat: 32.0853, lng: 34.7818 });
       // Don't set userLocation to avoid showing in input field
     }
   }, []);

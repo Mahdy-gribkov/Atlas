@@ -41,6 +41,7 @@ import json
 import logging
 import time
 import os
+from datetime import datetime
 from travel_agent import TravelAgent
 from src.utils.cache_manager import cache_manager, API_CACHE
 from src.utils.security import security_validator, security_monitor
@@ -129,6 +130,17 @@ async def generate_streaming_response(message: str, context: Optional[Dict[str, 
         
         # Cache the response
         await api_cache.set(cache_key, response, ttl=3600)  # 1 hour cache
+        
+        # Save conversation to database
+        try:
+            await agent.database.store_conversation_data({
+                "user_id": "default_user",
+                "user_message": message,
+                "assistant_response": response,
+                "timestamp": datetime.now().isoformat()
+            })
+        except Exception as e:
+            logger.error(f"Error saving conversation: {e}")
         
         # Stream the response more naturally
         words = response.split()
@@ -240,6 +252,16 @@ async def store_travel_plan(plan_data: dict):
         return {"status": "success", "message": "Travel plan stored"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+@app.get("/chat-history")
+async def get_chat_history():
+    """Get chat history for the user."""
+    try:
+        conversations = await agent.database.get_conversation_history("default_user", limit=50)
+        return {"conversations": conversations}
+    except Exception as e:
+        logger.error(f"Error getting chat history: {e}")
+        return {"error": str(e), "conversations": []}
 
 @app.get("/health")
 async def health_check():

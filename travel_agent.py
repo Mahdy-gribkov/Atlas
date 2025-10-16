@@ -1717,8 +1717,7 @@ Response:"""
             flights = await self.flight_client.search_flights(
                 origin="TLV",  # Tel Aviv
                 destination=self._get_airport_code(destination),
-                departure_date=date,
-                passengers=travelers
+                date=date
             )
             
             if flights and len(flights) > 0:
@@ -1747,9 +1746,8 @@ Response:"""
         try:
             # Use the hotel scraper to search for hotels
             hotels = await self.real_hotel_scraper.search_hotels(
-                destination=destination,
+                city=destination,
                 check_in=date,
-                nights=int(duration),
                 guests=travelers
             )
             
@@ -1780,7 +1778,7 @@ Response:"""
     async def _get_weather_data(self, destination: str, date: str) -> str:
         """Get weather information for the destination."""
         try:
-            weather = await self.weather_client.get_weather(destination)
+            weather = await self.weather_client.get_current_weather(destination)
             if weather and "error" not in weather:
                 weather_info = f"## 🌤️ Weather in {destination}\n"
                 weather_info += f"**Temperature:** {weather.get('temperature', 'N/A')}°C\n"
