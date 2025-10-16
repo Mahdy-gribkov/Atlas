@@ -65,7 +65,7 @@ class ResponseOptimizer:
         # Initialize optimization rules
         self._initialize_optimization_rules()
         
-        logger.info("⚡ Response Optimizer initialized")
+        logger.info("Response Optimizer initialized")
     
     async def optimize_response(self, query: str, context: Dict[str, Any], 
                               response_generator: Callable) -> str:
@@ -124,14 +124,14 @@ class ResponseOptimizer:
             self.optimization_stats['response_times'].append(duration)
             self.optimization_stats['optimization_applied'] += 1
             
-            await record_response_time('response_optimization', duration, True)
+            record_response_time('response_optimization', duration)
             await record_metric('response_optimizer_duration', duration)
             
             return optimized_response
             
         except Exception as e:
             duration = time.time() - start_time
-            await record_response_time('response_optimization', duration, False)
+            record_response_time('response_optimization', duration)
             await record_metric('response_optimizer_error', 1.0)
             logger.error(f"Response optimization error: {e}")
             
@@ -208,7 +208,7 @@ class ResponseOptimizer:
             hash_data = {
                 'query': normalized_query,
                 'context_keys': sorted(context.keys()) if context else [],
-                'context_values': [str(v) for v in sorted(context.values())] if context else []
+                'context_values': [str(v) for v in context.values()] if context else []
             }
             
             # Generate hash
@@ -388,7 +388,7 @@ class ResponseOptimizer:
                 priority=2
             ))
             
-            logger.info(f"✅ Initialized {len(self.optimization_rules)} optimization rules")
+            logger.info(f"Initialized {len(self.optimization_rules)} optimization rules")
             
         except Exception as e:
             logger.error(f"Error initializing optimization rules: {e}")

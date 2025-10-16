@@ -75,7 +75,7 @@ class PreferenceLearningSystem:
             'group_size': ['solo', 'couple', 'family', 'group', 'business']
         }
         
-        logger.info("🎯 Preference Learning System initialized")
+        logger.info("Preference Learning System initialized")
     
     async def learn_from_conversation(self, user_id: str, conversation_data: Dict[str, Any]) -> bool:
         """

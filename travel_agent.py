@@ -650,7 +650,7 @@ What destination are you most interested in?"""
     async def search_web(self, query: str) -> List[Dict[str, Any]]:
         """Search the web for real-time information."""
         try:
-            return await self.web_search.search(query)
+            return await self.web_search_client.search(query)
         except Exception as e:
             logger.error(f"Web search error: {e}")
             return []

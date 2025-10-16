@@ -74,7 +74,7 @@ class AdvancedCache:
         self._cleanup_task = None
         self._start_cleanup_task()
         
-        logger.info("🚀 Advanced Cache System initialized")
+        logger.info("Advanced Cache System initialized")
     
     async def get(self, key: str, default: Any = None) -> Any:
         """

@@ -1187,3 +1187,68 @@ class SecureDatabase:
         except Exception as e:
             logger.error(f"Error updating user: {e}")
             return False
+    
+    async def get_conversation_history(self, user_id: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Get conversation history for a user."""
+        try:
+            await self._ensure_connection()
+            
+            query = """
+                SELECT user_message, assistant_response, created_at 
+                FROM conversations 
+                WHERE user_id = ? 
+                ORDER BY created_at DESC 
+                LIMIT ?
+            """
+            
+            cursor = await self._execute_query(query, (user_id, limit))
+            rows = cursor.fetchall()
+            
+            conversations = []
+            for row in rows:
+                conversations.append({
+                    'user_message': self._decrypt_data(row[0]),
+                    'assistant_response': self._decrypt_data(row[1]),
+                    'created_at': row[2]
+                })
+            
+            return conversations
+            
+        except Exception as e:
+            logger.error(f"Error getting conversation history: {e}")
+            return []
+    
+    async def search_memories(self, user_id: str, query: str, limit: int = 5) -> List[Dict[str, Any]]:
+        """Search memories for a user."""
+        try:
+            await self._ensure_connection()
+            
+            # Simple text search in memory content
+            search_query = f"%{query}%"
+            query_sql = """
+                SELECT id, content, content_type, importance, tags, timestamp
+                FROM memories 
+                WHERE user_id = ? AND content LIKE ?
+                ORDER BY importance DESC, timestamp DESC
+                LIMIT ?
+            """
+            
+            cursor = await self._execute_query(query_sql, (user_id, search_query, limit))
+            rows = cursor.fetchall()
+            
+            memories = []
+            for row in rows:
+                memories.append({
+                    'id': row[0],
+                    'content': self._decrypt_data(row[1]),
+                    'content_type': row[2],
+                    'importance': row[3],
+                    'tags': json.loads(row[4]) if row[4] else [],
+                    'timestamp': row[5]
+                })
+            
+            return memories
+            
+        except Exception as e:
+            logger.error(f"Error searching memories: {e}")
+            return []

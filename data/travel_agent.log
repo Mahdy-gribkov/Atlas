@@ -621,3 +621,48 @@
 2025-10-16 05:49:25,032 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
 2025-10-16 05:49:25,033 - INFO - LLM Service initialized with multiple fallbacks
 2025-10-16 05:49:25,033 - INFO - Travel agent initialized successfully
+2025-10-16 05:49:30,668 - INFO - Processing query with intelligent routing: Hello...
+2025-10-16 05:49:30,669 - INFO - Query routed: unknown -> direct_llm (latency: 200ms)
+2025-10-16 05:49:30,670 - INFO - Query routed: unknown -> direct_llm (latency: 200ms)
+2025-10-16 05:49:31,429 - WARNING - LLM7.io error: 400, message:
+  Can not decode content-encoding: zstd
+2025-10-16 05:49:31,672 - WARNING - Hugging Face returned status 401
+2025-10-16 05:49:31,673 - INFO - Using intelligent fallback in 1.00s
+2025-10-16 05:49:36,547 - INFO - Processing new request: i want a 3 day trip plan to iceland on jan 26. im on my own and i start the journey in tel aviv...
+2025-10-16 05:49:36,548 - INFO - Processing query with intelligent routing: i want a 3 day trip plan to iceland on jan 26. im on my own and i start the journey in tel aviv...
+2025-10-16 05:49:36,552 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-16 05:49:36,552 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-16 05:49:36,552 - ERROR - Error getting user context: 'SecureDatabase' object has no attribute 'get_conversation_history'
+2025-10-16 05:49:36,553 - ERROR - Error getting conversation context: 'SecureDatabase' object has no attribute 'get_conversation_history'
+2025-10-16 05:49:36,553 - ERROR - Error getting memory context: 'SecureDatabase' object has no attribute 'search_memories'
+2025-10-16 05:49:36,556 - INFO - Loaded user preferences for default_user
+2025-10-16 05:49:36,556 - INFO - Added to knowledge base: query_1
+2025-10-16 05:49:36,558 - INFO - Searching for general information...
+2025-10-16 05:49:36,558 - ERROR - Web search error: 'TravelAgent' object has no attribute 'web_search'
+2025-10-16 05:49:36,559 - ERROR - Error generating query hash: '<' not supported between instances of 'list' and 'str'
+2025-10-16 05:49:36,559 - ERROR - Error generating query hash: '<' not supported between instances of 'list' and 'str'
+2025-10-16 05:49:37,218 - WARNING - LLM7.io error: 400, message:
+  Can not decode content-encoding: zstd
+2025-10-16 05:49:37,456 - WARNING - Hugging Face returned status 401
+2025-10-16 05:49:37,457 - INFO - Using intelligent fallback in 0.90s
+2025-10-16 05:49:37,459 - ERROR - Error in full processing logic: record_response_time() takes 2 positional arguments but 3 were given
+2025-10-16 05:49:42,200 - INFO - Processing new request: hello...
+2025-10-16 05:49:42,200 - INFO - Processing query with intelligent routing: hello...
+2025-10-16 05:49:42,201 - INFO - Query routed: unknown -> direct_llm (latency: 200ms)
+2025-10-16 05:49:42,201 - INFO - Query routed: unknown -> direct_llm (latency: 200ms)
+2025-10-16 05:49:44,746 - WARNING - LLM7.io error: 400, message:
+  Can not decode content-encoding: zstd
+2025-10-16 05:49:44,988 - WARNING - Hugging Face returned status 401
+2025-10-16 05:49:44,990 - INFO - Using intelligent fallback in 2.79s
+2025-10-16 05:55:04,693 - INFO - Travel MCP Client initialized
+2025-10-16 05:55:04,693 - INFO - Intent Router initialized with pattern matching
+2025-10-16 05:55:04,694 - INFO - Database Context Provider initialized
+2025-10-16 05:55:04,694 - INFO - Conversation Memory System initialized
+2025-10-16 05:55:04,694 - INFO - Preference Learning System initialized
+2025-10-16 05:55:04,695 - INFO - Advanced Cache System initialized
+2025-10-16 05:55:04,695 - INFO - Simple Performance Monitor initialized
+2025-10-16 05:55:04,695 - INFO - Initialized 5 optimization rules
+2025-10-16 05:55:04,695 - INFO - Response Optimizer initialized
+2025-10-16 05:55:04,695 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
+2025-10-16 05:55:04,696 - INFO - LLM Service initialized with multiple fallbacks
+2025-10-16 05:55:04,696 - INFO - Travel agent initialized successfully

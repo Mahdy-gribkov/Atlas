@@ -23,7 +23,7 @@ class DatabaseContextProvider(ContextProvider):
     def __init__(self, database: SecureDatabase):
         """Initialize the database context provider."""
         self.database = database
-        logger.info("🗄️ Database Context Provider initialized")
+        logger.info("Database Context Provider initialized")
     
     async def get_user_context(self, user_id: str) -> Dict[str, Any]:
         """Get complete user context for decision making."""
