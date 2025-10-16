@@ -61,6 +61,7 @@ from src.apis import (
 from src.mcp import TravelMCPClient
 from src.context import AdvancedContextManager, ConversationMemory, PreferenceLearningSystem
 from src.context.context_provider import ContextProvider
+from src.context.database_context_provider import DatabaseContextProvider
 from src.routing import IntentRouter, IntentType
 from src.performance import (
     AdvancedCache, ResponseOptimizer, SimplePerformanceMonitor,
@@ -147,7 +148,7 @@ class TravelAgent:
         self.intent_router = IntentRouter()
         
         # Initialize Context Provider (implements ContextProvider interface)
-        self.context_provider: ContextProvider = AdvancedContextManager(self.database)
+        self.context_provider: ContextProvider = DatabaseContextProvider(self.database)
         
         # Initialize Conversation Memory System for persistent memory
         self.conversation_memory = ConversationMemory(self.database)
