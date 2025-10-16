@@ -1731,7 +1731,11 @@ Response:"""
                     flight_info += f"- Price: ${flight.get('price', 'N/A')}\n"
                     flight_info += f"- Duration: {flight.get('duration', 'N/A')}\n"
                     flight_info += f"- Departure: {flight.get('departure_time', 'N/A')}\n"
-                    flight_info += f"- Arrival: {flight.get('arrival_time', 'N/A')}\n\n"
+                    flight_info += f"- Arrival: {flight.get('arrival_time', 'N/A')}\n"
+                    # Add booking links
+                    flight_info += f"- [Book on Skyscanner](https://www.skyscanner.com/transport/flights/tlv/kef/2026-01-01/)\n"
+                    flight_info += f"- [Book on Google Flights](https://www.google.com/travel/flights?q=Flights+from+TLV+to+KEF+on+2026-01-01)\n"
+                    flight_info += f"- [Book on Kayak](https://www.kayak.com/flights/TLV-KEF/2026-01-01)\n\n"
                 
                 return flight_info
             else:
@@ -1970,7 +1974,7 @@ Response:"""
         
         try:
             # Get attractions for the destination
-            if self.attractions_client:
+            if self.real_attractions_scraper:
                 attractions_data = await self._get_attractions_data(destination)
                 if attractions_data:
                     response_parts.append(attractions_data)
@@ -2020,10 +2024,10 @@ Response:"""
     async def _get_attractions_data(self, destination: str) -> Optional[str]:
         """Get attractions data for a destination."""
         try:
-            if not self.attractions_client:
+            if not self.real_attractions_scraper:
                 return None
             
-            attractions = await self.attractions_client.get_attractions(destination)
+            attractions = await self.real_attractions_scraper.search_attractions(destination)
             
             if attractions:
                 attractions_info = f"""

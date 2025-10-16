@@ -870,3 +870,28 @@
 2025-10-16 06:16:51,719 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
 2025-10-16 06:16:51,719 - INFO - LLM Service initialized with multiple fallbacks
 2025-10-16 06:16:51,720 - INFO - Travel agent initialized successfully
+2025-10-16 06:17:00,583 - INFO - Processing query with intelligent routing: Hello...
+2025-10-16 06:17:00,600 - INFO - Query routed: unknown -> direct_llm (latency: 200ms)
+2025-10-16 06:17:00,678 - INFO - Query routed: unknown -> direct_llm (latency: 200ms)
+2025-10-16 06:17:01,607 - WARNING - LLM7.io error: 400, message:
+  Can not decode content-encoding: zstd
+2025-10-16 06:17:01,855 - WARNING - Hugging Face returned status 401
+2025-10-16 06:17:01,859 - INFO - Using intelligent fallback in 1.11s
+2025-10-16 06:17:06,202 - INFO - Processing new request: plan me 3 day trip to Iceland on jan 2026 just from. i start in israel and have 2000usd...
+2025-10-16 06:17:06,202 - INFO - Processing query with intelligent routing: plan me 3 day trip to Iceland on jan 2026 just from. i start in israel and have 2000usd...
+2025-10-16 06:17:06,206 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-16 06:17:06,206 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-16 06:17:06,207 - ERROR - Error getting conversation history: no such column: created_at
+2025-10-16 06:17:06,207 - ERROR - Error getting conversation history: no such column: created_at
+2025-10-16 06:17:06,208 - INFO - Loaded user preferences for default_user
+2025-10-16 06:17:06,208 - INFO - Added to knowledge base: query_1
+2025-10-16 06:17:06,208 - WARNING - Error extracting destination from maps API: 'NominatimClient' object has no attribute 'search_location'
+2025-10-16 06:17:06,211 - INFO - Creating comprehensive travel plan for Iceland
+2025-10-16 06:17:07,134 - ERROR - Attractions data error: 'TravelAgent' object has no attribute 'attractions_client'
+2025-10-16 06:17:13,515 - WARNING - LLM7.io error: 400, message:
+  Can not decode content-encoding: zstd
+2025-10-16 06:17:13,746 - WARNING - Hugging Face returned status 401
+2025-10-16 06:17:13,747 - INFO - Using intelligent fallback in 5.14s
+2025-10-16 06:17:13,766 - INFO - Memory tables initialized
+2025-10-16 06:17:13,767 - INFO - Memory stored: default_user_conversation_20251016061713_c424de68 for user default_user
+2025-10-16 06:17:25,257 - ERROR - Error getting conversation history: no such column: created_at

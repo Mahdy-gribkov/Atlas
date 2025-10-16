@@ -132,14 +132,16 @@ function App() {
         },
         (error) => {
           console.log('Geolocation error:', error);
-          // Fallback to a default location (Tel Aviv, Israel)
-          setCurrentLocation({ lat: 32.0853, lng: 34.7818 });
+          // Only set default location if user denied permission or location unavailable
+          if (error.code === error.PERMISSION_DENIED || error.code === error.POSITION_UNAVAILABLE) {
+            setCurrentLocation({ lat: 32.0853, lng: 34.7818, name: 'Tel Aviv, Israel' });
+          }
           // Don't set userLocation to avoid showing in input field
         }
       );
     } else {
-      // Fallback to a default location (Tel Aviv, Israel)
-      setCurrentLocation({ lat: 32.0853, lng: 34.7818 });
+      // Only set default location if geolocation is not supported
+      setCurrentLocation({ lat: 32.0853, lng: 34.7818, name: 'Tel Aviv, Israel' });
       // Don't set userLocation to avoid showing in input field
     }
   }, []);
@@ -451,6 +453,35 @@ function App() {
     }
   };
 
+  const loadChatHistory = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/chat-history');
+      const data = await response.json();
+      
+      if (data.conversations && data.conversations.length > 0) {
+        const historyMessages = [];
+        data.conversations.forEach(conv => {
+          historyMessages.push({
+            role: 'user',
+            content: conv.user_message
+          });
+          historyMessages.push({
+            role: 'assistant', 
+            content: conv.assistant_response
+          });
+        });
+        
+        setMessages(historyMessages);
+        alert(`Loaded ${data.conversations.length} previous conversations`);
+      } else {
+        alert('No chat history found');
+      }
+    } catch (error) {
+      console.error('Error loading chat history:', error);
+      alert('Error loading chat history');
+    }
+  };
+
   const saveChat = (format) => {
     if (format === 'json') {
       // JSON
@@ -604,6 +635,11 @@ function App() {
                 <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/>
               </svg>
             </button>
+            <button className="header-btn" onClick={loadChatHistory} title="Chat history">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+              </svg>
+            </button>
             <div className="download-container">
               <button className="header-btn" onClick={() => setShowDownloadOptions(!showDownloadOptions)} title="Save chat">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -701,21 +737,29 @@ function App() {
         <div 
           className="resize-handle"
           onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
             const startX = e.clientX;
             const startWidth = mapWidth;
             
             const handleMouseMove = (e) => {
+              e.preventDefault();
               const deltaX = e.clientX - startX;
               const deltaPercent = (deltaX / window.innerWidth) * 100;
               const newWidth = Math.max(25, Math.min(70, startWidth + deltaPercent));
               setMapWidth(newWidth);
             };
             
-            const handleMouseUp = () => {
+            const handleMouseUp = (e) => {
+              e.preventDefault();
               document.removeEventListener('mousemove', handleMouseMove);
               document.removeEventListener('mouseup', handleMouseUp);
+              document.body.style.userSelect = '';
+              document.body.style.cursor = '';
             };
             
+            document.body.style.userSelect = 'none';
+            document.body.style.cursor = 'col-resize';
             document.addEventListener('mousemove', handleMouseMove);
             document.addEventListener('mouseup', handleMouseUp);
           }}
