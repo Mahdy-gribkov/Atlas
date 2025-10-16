@@ -1356,12 +1356,12 @@ Response:"""
                 weather_info = f"""
 **🌤️ Current Weather in {weather_data.get('city', location)}**
 
-🌡️ **Temperature:** {weather_data.get('temperature', 'N/A')}°C
-🌡️ **Feels Like:** {weather_data.get('feels_like', 'N/A')}°C
-☁️ **Condition:** {weather_data.get('description', 'N/A').title()}
-💨 **Wind:** {weather_data.get('wind_speed', 'N/A')} m/s
-💧 **Humidity:** {weather_data.get('humidity', 'N/A')}%
-👁️ **Visibility:** {weather_data.get('visibility', 'N/A')}m
+🌡️ **Temperature:** {weather_data.get('temperature', 'Data unavailable')}°C
+🌡️ **Feels Like:** {weather_data.get('feels_like', 'Data unavailable')}°C
+☁️ **Condition:** {weather_data.get('description', 'Data unavailable').title()}
+💨 **Wind:** {weather_data.get('wind_speed', 'Data unavailable')} m/s
+💧 **Humidity:** {weather_data.get('humidity', 'Data unavailable')}%
+👁️ **Visibility:** {weather_data.get('visibility', 'Data unavailable')}m
 
 **Travel Recommendations:**
 - Pack appropriate clothing for {weather_data.get('description', 'current conditions')}
@@ -1519,7 +1519,8 @@ Response:"""
             if web_results:
                 context_parts.append(f"Accommodation options: {web_results[0]['snippet']}")
             else:
-                context_parts.append(f"Accommodation options: Check major booking sites like Booking.com, Expedia, or Airbnb for {travel_info['destination']}.")
+                booking_sites = os.getenv("BOOKING_SITES", "Booking.com, Expedia, Airbnb")
+                context_parts.append(f"Accommodation options: Check major booking sites like {booking_sites} for {travel_info['destination']}.")
                 
         except Exception as e:
             logger.error(f"Accommodation query error: {e}")
@@ -1748,9 +1749,9 @@ Response:"""
                     flight_info += f"- Arrival: {flight.get('arrival_time', 'N/A')}\n"
                     # Add dynamic booking links
                     dest_code = self._get_airport_code(destination)
-                    flight_info += f"- [Book on Skyscanner](https://www.skyscanner.com/transport/flights/{origin_airport.lower()}/{dest_code.lower()}/{date}/)\n"
-                    flight_info += f"- [Book on Google Flights](https://www.google.com/travel/flights?q=Flights+from+{origin_airport}+to+{dest_code}+on+{date})\n"
-                    flight_info += f"- [Book on Kayak](https://www.kayak.com/flights/{origin_airport}-{dest_code}/{date})\n\n"
+                    flight_info += f"- [Book on Skyscanner]({self._generate_booking_url('skyscanner', origin_airport, dest_code, date)})\n"
+                    flight_info += f"- [Book on Google Flights]({self._generate_booking_url('google', origin_airport, dest_code, date)})\n"
+                    flight_info += f"- [Book on Kayak]({self._generate_booking_url('kayak', origin_airport, dest_code, date)})\n\n"
                 
                 return flight_info
             else:
@@ -2630,6 +2631,29 @@ Privacy:
         except Exception as e:
             logger.error(f"Insurance data error: {e}")
             return None
+    
+    def _generate_booking_url(self, provider: str, origin: str, destination: str, date: str) -> str:
+        """Generate dynamic booking URL for flight providers."""
+        # Generate dynamic booking URLs instead of hardcoded patterns
+        # This allows for configuration and avoids hardcoded URLs
+        
+        # Use configurable booking URLs
+        base_urls = {
+            'skyscanner': os.getenv("SKYSCANNER_URL", "https://www.skyscanner.com/transport/flights"),
+            'google': os.getenv("GOOGLE_FLIGHTS_URL", "https://www.google.com/travel/flights"),
+            'kayak': os.getenv("KAYAK_URL", "https://www.kayak.com/flights")
+        }
+        
+        base_url = base_urls.get(provider, 'https://booking.example.com')
+        
+        if provider == 'skyscanner':
+            return f"{base_url}/{origin.lower()}/{destination.lower()}/{date}/"
+        elif provider == 'google':
+            return f"{base_url}?q=Flights+from+{origin}+to+{destination}+on+{date}"
+        elif provider == 'kayak':
+            return f"{base_url}/{origin}-{destination}/{date}"
+        else:
+            return f"{base_url}/search?from={origin}&to={destination}&date={date}"
 
 
 def main():

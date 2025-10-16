@@ -60,7 +60,7 @@ app = FastAPI(
 # Add CORS middleware for React frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000"],
+    allow_origins=os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000").split(","),
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "Accept"],
@@ -122,7 +122,7 @@ async def generate_streaming_response(message: str, context: Optional[Dict[str, 
             # Process with timeout to prevent long waits
             response = await asyncio.wait_for(
                 agent.process_query(message, context), 
-                timeout=30.0  # 30 second timeout
+                timeout=float(os.getenv("REQUEST_TIMEOUT", "30.0"))  # Configurable timeout
             )
         except asyncio.TimeoutError:
             yield f"data: {json.dumps({'chunk': 'Request is taking longer than expected. Please try a simpler question or check your internet connection.', 'done': True})}\n\n"
@@ -134,7 +134,7 @@ async def generate_streaming_response(message: str, context: Optional[Dict[str, 
         # Save conversation to database
         try:
             await agent.database.store_conversation_data({
-                "user_id": "default_user",
+                "user_id": os.getenv("DEFAULT_USER_ID", "default_user"),
                 "user_message": message,
                 "assistant_response": response,
                 "timestamp": datetime.now().isoformat()
@@ -257,7 +257,9 @@ async def store_travel_plan(plan_data: dict):
 async def get_chat_history():
     """Get chat history for the user."""
     try:
-        conversations = await agent.database.get_conversation_history("default_user", limit=50)
+        limit = int(os.getenv("CHAT_HISTORY_LIMIT", "50"))
+        default_user = os.getenv("DEFAULT_USER_ID", "default_user")
+        conversations = await agent.database.get_conversation_history(default_user, limit=limit)
         return {"conversations": conversations}
     except Exception as e:
         logger.error(f"Error getting chat history: {e}")
@@ -322,6 +324,24 @@ async def search_locations(request: dict):
         # Use the maps client to search
         result = await agent.maps_client.geocode(query)
         return result
+    except Exception as e:
+        return {"error": str(e)}
+
+# API Authentication endpoints (for backend API access)
+@app.post("/api/auth/validate")
+async def validate_api_key(request: Dict[str, Any]):
+    """Validate API key for backend access."""
+    try:
+        api_key = request.get("api_key", "")
+        if not api_key:
+            return {"error": "API key is required"}
+        
+        # Simple API key validation (in production, use proper key management)
+        valid_keys = os.getenv("VALID_API_KEYS", "").split(",")
+        if api_key in valid_keys:
+            return {"valid": True, "message": "API key is valid"}
+        else:
+            return {"valid": False, "error": "Invalid API key"}
     except Exception as e:
         return {"error": str(e)}
 

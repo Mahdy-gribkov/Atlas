@@ -563,11 +563,22 @@ class AdvancedContextManager(ContextProvider):
             
             # Extract entities (simple keyword extraction)
             entities = {}
-            destinations = ["paris", "tokyo", "london", "new york", "rome", "japan", "france", "italy", "spain"]
-            for dest in destinations:
-                if dest in query_lower:
-                    entities["destination"] = dest.title()
-                    break
+            # Use dynamic destination detection - let the travel agent handle destination extraction
+            # This is just a basic fallback for common patterns
+            destination_patterns = [
+                r'\b(to|in|from|visit|travel to|going to|planning to go to)\s+([a-zA-Z\s]+?)(?:\s|$|,|\.)',
+                r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+(?:is|has|offers|provides)',
+                r'\b(?:destination|place|location|city|country)\s*:?\s*([a-zA-Z\s]+)'
+            ]
+            
+            import re
+            for pattern in destination_patterns:
+                match = re.search(pattern, query, re.IGNORECASE)
+                if match:
+                    potential_dest = match.group(1) if len(match.groups()) > 0 else match.group(0)
+                    if len(potential_dest.strip()) > 2 and len(potential_dest.strip()) < 50:
+                        entities["destination"] = potential_dest.strip().title()
+                        break
             
             # Extract sentiment
             sentiment = "neutral"

@@ -907,3 +907,39 @@
 2025-10-16 06:38:46,361 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
 2025-10-16 06:38:46,361 - INFO - LLM Service initialized with multiple fallbacks
 2025-10-16 06:38:46,361 - INFO - Travel agent initialized successfully
+2025-10-16 07:08:55,385 - INFO - Travel MCP Client initialized
+2025-10-16 07:08:55,386 - INFO - Intent Router initialized with pattern matching
+2025-10-16 07:08:55,386 - INFO - Database Context Provider initialized
+2025-10-16 07:08:55,386 - INFO - Conversation Memory System initialized
+2025-10-16 07:08:55,386 - INFO - Preference Learning System initialized
+2025-10-16 07:08:55,387 - INFO - Advanced Cache System initialized
+2025-10-16 07:08:55,387 - INFO - Simple Performance Monitor initialized
+2025-10-16 07:08:55,387 - INFO - Initialized 5 optimization rules
+2025-10-16 07:08:55,387 - INFO - Response Optimizer initialized
+2025-10-16 07:08:55,387 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
+2025-10-16 07:08:55,388 - INFO - LLM Service initialized with multiple fallbacks
+2025-10-16 07:08:55,388 - INFO - Travel agent initialized successfully
+2025-10-16 07:10:26,547 - INFO - Travel MCP Client initialized
+2025-10-16 07:10:26,548 - INFO - Intent Router initialized with pattern matching
+2025-10-16 07:10:26,548 - INFO - Database Context Provider initialized
+2025-10-16 07:10:26,548 - INFO - Conversation Memory System initialized
+2025-10-16 07:10:26,548 - INFO - Preference Learning System initialized
+2025-10-16 07:10:26,549 - INFO - Advanced Cache System initialized
+2025-10-16 07:10:26,549 - INFO - Simple Performance Monitor initialized
+2025-10-16 07:10:26,549 - INFO - Initialized 5 optimization rules
+2025-10-16 07:10:26,549 - INFO - Response Optimizer initialized
+2025-10-16 07:10:26,549 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
+2025-10-16 07:10:26,550 - INFO - LLM Service initialized with multiple fallbacks
+2025-10-16 07:10:26,550 - INFO - Travel agent initialized successfully
+2025-10-16 07:13:57,622 - INFO - Travel MCP Client initialized
+2025-10-16 07:13:57,623 - INFO - Intent Router initialized with pattern matching
+2025-10-16 07:13:57,623 - INFO - Database Context Provider initialized
+2025-10-16 07:13:57,626 - INFO - Conversation Memory System initialized
+2025-10-16 07:13:57,628 - INFO - Preference Learning System initialized
+2025-10-16 07:13:57,636 - INFO - Advanced Cache System initialized
+2025-10-16 07:13:57,638 - INFO - Simple Performance Monitor initialized
+2025-10-16 07:13:57,640 - INFO - Initialized 5 optimization rules
+2025-10-16 07:13:57,651 - INFO - Response Optimizer initialized
+2025-10-16 07:13:57,653 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
+2025-10-16 07:13:57,703 - INFO - LLM Service initialized with multiple fallbacks
+2025-10-16 07:13:57,720 - INFO - Travel agent initialized successfully

@@ -39,21 +39,23 @@ class AdvancedCache:
     Provides memory, disk, and distributed caching capabilities.
     """
     
-    def __init__(self, max_memory_size: int = 100 * 1024 * 1024,  # 100MB
-                 max_disk_size: int = 500 * 1024 * 1024,  # 500MB
-                 default_ttl: int = 3600,  # 1 hour
-                 cleanup_interval: int = 300):  # 5 minutes
-        self.max_memory_size = max_memory_size
-        self.max_disk_size = max_disk_size
-        self.default_ttl = default_ttl
-        self.cleanup_interval = cleanup_interval
+    def __init__(self, max_memory_size: int = None,
+                 max_disk_size: int = None,
+                 default_ttl: int = None,
+                 cleanup_interval: int = None):
+        import os
+        self.max_memory_size = max_memory_size or int(os.getenv("CACHE_MAX_MEMORY", "104857600"))  # 100MB default
+        self.max_disk_size = max_disk_size or int(os.getenv("CACHE_MAX_DISK", "524288000"))  # 500MB default
+        self.default_ttl = default_ttl or int(os.getenv("CACHE_DEFAULT_TTL", "3600"))  # 1 hour default
+        self.cleanup_interval = cleanup_interval or int(os.getenv("CACHE_CLEANUP_INTERVAL", "300"))  # 5 minutes default
         
         # Memory cache (LRU with size limits)
         self.memory_cache: OrderedDict[str, CacheEntry] = OrderedDict()
         self.memory_size = 0
         
         # Disk cache (persistent storage)
-        self.disk_cache_path = "data/cache"
+        import os
+        self.disk_cache_path = os.getenv("CACHE_PATH", "data/cache")
         self.disk_cache_index: Dict[str, Dict[str, Any]] = {}
         
         # Statistics
