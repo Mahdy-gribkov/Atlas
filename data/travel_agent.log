@@ -895,3 +895,15 @@
 2025-10-16 06:17:13,766 - INFO - Memory tables initialized
 2025-10-16 06:17:13,767 - INFO - Memory stored: default_user_conversation_20251016061713_c424de68 for user default_user
 2025-10-16 06:17:25,257 - ERROR - Error getting conversation history: no such column: created_at
+2025-10-16 06:38:46,359 - INFO - Travel MCP Client initialized
+2025-10-16 06:38:46,360 - INFO - Intent Router initialized with pattern matching
+2025-10-16 06:38:46,360 - INFO - Database Context Provider initialized
+2025-10-16 06:38:46,360 - INFO - Conversation Memory System initialized
+2025-10-16 06:38:46,360 - INFO - Preference Learning System initialized
+2025-10-16 06:38:46,360 - INFO - Advanced Cache System initialized
+2025-10-16 06:38:46,361 - INFO - Simple Performance Monitor initialized
+2025-10-16 06:38:46,361 - INFO - Initialized 5 optimization rules
+2025-10-16 06:38:46,361 - INFO - Response Optimizer initialized
+2025-10-16 06:38:46,361 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
+2025-10-16 06:38:46,361 - INFO - LLM Service initialized with multiple fallbacks
+2025-10-16 06:38:46,361 - INFO - Travel agent initialized successfully

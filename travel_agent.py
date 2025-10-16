@@ -294,12 +294,9 @@ class TravelAgent:
                 if budget_match:
                     await self._save_user_preference('budget', budget_match.group(1))
             
-            # Extract destination preferences
-            destinations = ['peru', 'japan', 'france', 'italy', 'spain', 'germany', 'thailand', 'vietnam', 'india', 'brazil', 'argentina', 'chile', 'mexico', 'canada', 'australia', 'new zealand', 'south korea', 'china', 'russia', 'uk', 'ireland', 'portugal', 'greece', 'turkey', 'egypt', 'morocco', 'south africa', 'kenya', 'tanzania', 'madagascar', 'mauritius', 'seychelles']
-            for dest in destinations:
-                if dest in query_lower:
-                    await self._save_user_preference('preferred_destination', dest)
-                    break
+            # Extract destination preferences using API-based detection
+            # This will be handled by the extract_travel_info method which uses real APIs
+            # No more hardcoded destination lists
             
             # Extract travel style preferences
             if any(word in query_lower for word in ['luxury', 'expensive', 'high-end']):
@@ -682,13 +679,24 @@ What destination are you most interested in?"""
         except Exception as e:
             logger.warning(f"Error extracting destination from maps API: {e}")
             
-        # Fallback: try to extract from common country names in query
+        # Fallback: try to extract destination using simple regex patterns
         if not destination:
-            common_countries = ['iceland', 'japan', 'france', 'italy', 'spain', 'germany', 'thailand', 'vietnam', 'india', 'brazil', 'argentina', 'chile', 'mexico', 'canada', 'australia', 'new zealand', 'south korea', 'china', 'russia', 'uk', 'ireland', 'portugal', 'greece', 'turkey', 'egypt', 'morocco', 'south africa', 'kenya', 'tanzania', 'madagascar', 'mauritius', 'seychelles', 'norway', 'sweden', 'finland', 'denmark', 'netherlands', 'belgium', 'switzerland', 'austria', 'poland', 'czech republic', 'hungary', 'croatia', 'slovenia', 'slovakia', 'romania', 'bulgaria', 'serbia', 'montenegro', 'bosnia', 'albania', 'macedonia', 'moldova', 'ukraine', 'belarus', 'lithuania', 'latvia', 'estonia', 'luxembourg', 'malta', 'cyprus', 'israel', 'jordan', 'lebanon', 'syria', 'iraq', 'iran', 'saudi arabia', 'uae', 'qatar', 'kuwait', 'bahrain', 'oman', 'yemen', 'afghanistan', 'pakistan', 'bangladesh', 'sri lanka', 'maldives', 'nepal', 'bhutan', 'myanmar', 'laos', 'cambodia', 'malaysia', 'singapore', 'indonesia', 'philippines', 'brunei', 'east timor', 'mongolia', 'kazakhstan', 'uzbekistan', 'turkmenistan', 'tajikistan', 'kyrgyzstan', 'georgia', 'armenia', 'azerbaijan']
-            for country in common_countries:
-                if country in query_lower:
-                    destination = country.title()
-                    break
+            # Look for "to [destination]" or "in [destination]" patterns
+            destination_patterns = [
+                r'to\s+([a-zA-Z\s]+?)(?:\s|$|,|\.)',
+                r'in\s+([a-zA-Z\s]+?)(?:\s|$|,|\.)',
+                r'visit\s+([a-zA-Z\s]+?)(?:\s|$|,|\.)',
+                r'trip\s+to\s+([a-zA-Z\s]+?)(?:\s|$|,|\.)'
+            ]
+            
+            for pattern in destination_patterns:
+                match = re.search(pattern, query_lower)
+                if match:
+                    potential_dest = match.group(1).strip()
+                    # Filter out common words that aren't destinations
+                    if potential_dest and len(potential_dest) > 2 and potential_dest not in ['the', 'a', 'an', 'my', 'our', 'this', 'that']:
+                        destination = potential_dest.title()
+                        break
         
         # Extract budget - handle both $2000 and 2000usd formats
         budget_match = re.search(r'\$(\d+(?:,\d{3})*(?:\.\d{2})?)', query)
@@ -1713,12 +1721,15 @@ Response:"""
             logger.error(f"Error in comprehensive travel planning: {e}")
             response_parts.append(f"Error creating travel plan: {str(e)}")
     
-    async def _search_real_flights(self, destination: str, date: str, travelers: int) -> str:
+    async def _search_real_flights(self, destination: str, date: str, travelers: int, origin: str = None) -> str:
         """Search for real flights using available APIs."""
         try:
+            # Use configurable origin or default to Tel Aviv
+            origin_airport = origin or os.getenv('DEFAULT_ORIGIN_AIRPORT', 'TLV')
+            
             # Use the flight client to search for flights
             flights = await self.flight_client.search_flights(
-                origin="TLV",  # Tel Aviv
+                origin=origin_airport,
                 destination=self._get_airport_code(destination),
                 date=date
             )
@@ -1735,10 +1746,11 @@ Response:"""
                     flight_info += f"- Duration: {flight.get('duration', 'N/A')}\n"
                     flight_info += f"- Departure: {flight.get('departure_time', 'N/A')}\n"
                     flight_info += f"- Arrival: {flight.get('arrival_time', 'N/A')}\n"
-                    # Add booking links
-                    flight_info += f"- [Book on Skyscanner](https://www.skyscanner.com/transport/flights/tlv/kef/2026-01-01/)\n"
-                    flight_info += f"- [Book on Google Flights](https://www.google.com/travel/flights?q=Flights+from+TLV+to+KEF+on+2026-01-01)\n"
-                    flight_info += f"- [Book on Kayak](https://www.kayak.com/flights/TLV-KEF/2026-01-01)\n\n"
+                    # Add dynamic booking links
+                    dest_code = self._get_airport_code(destination)
+                    flight_info += f"- [Book on Skyscanner](https://www.skyscanner.com/transport/flights/{origin_airport.lower()}/{dest_code.lower()}/{date}/)\n"
+                    flight_info += f"- [Book on Google Flights](https://www.google.com/travel/flights?q=Flights+from+{origin_airport}+to+{dest_code}+on+{date})\n"
+                    flight_info += f"- [Book on Kayak](https://www.kayak.com/flights/{origin_airport}-{dest_code}/{date})\n\n"
                 
                 return flight_info
             else:
@@ -1922,110 +1934,47 @@ Response:"""
             return f"## 💰 Budget Breakdown\nError creating budget breakdown: {str(e)}"
     
     def _get_airport_code(self, destination: str) -> str:
-        """Get airport code for destination."""
-        airport_codes = {
-            'iceland': 'KEF',
-            'japan': 'NRT',
-            'france': 'CDG',
-            'italy': 'FCO',
-            'spain': 'MAD',
-            'germany': 'FRA',
-            'thailand': 'BKK',
-            'vietnam': 'SGN',
-            'india': 'DEL',
-            'brazil': 'GRU',
-            'argentina': 'EZE',
-            'chile': 'SCL',
-            'mexico': 'MEX',
-            'canada': 'YYZ',
-            'australia': 'SYD',
-            'new zealand': 'AKL',
-            'south korea': 'ICN',
-            'china': 'PEK',
-            'russia': 'SVO',
-            'uk': 'LHR',
-            'ireland': 'DUB',
-            'portugal': 'LIS',
-            'greece': 'ATH',
-            'turkey': 'IST',
-            'egypt': 'CAI',
-            'morocco': 'CMN',
-            'south africa': 'JNB',
-            'kenya': 'NBO',
-            'tanzania': 'DAR',
-            'madagascar': 'TNR',
-            'mauritius': 'MRU',
-            'seychelles': 'SEZ',
-            'norway': 'OSL',
-            'sweden': 'ARN',
-            'finland': 'HEL',
-            'denmark': 'CPH',
-            'netherlands': 'AMS',
-            'belgium': 'BRU',
-            'switzerland': 'ZUR',
-            'austria': 'VIE',
-            'poland': 'WAW',
-            'czech republic': 'PRG',
-            'hungary': 'BUD',
-            'croatia': 'ZAG',
-            'slovenia': 'LJU',
-            'slovakia': 'BTS',
-            'romania': 'OTP',
-            'bulgaria': 'SOF',
-            'serbia': 'BEG',
-            'montenegro': 'TGD',
-            'bosnia': 'SJJ',
-            'albania': 'TIA',
-            'macedonia': 'SKP',
-            'moldova': 'KIV',
-            'ukraine': 'KBP',
-            'belarus': 'MSQ',
-            'lithuania': 'VNO',
-            'latvia': 'RIX',
-            'estonia': 'TLL',
-            'luxembourg': 'LUX',
-            'malta': 'MLA',
-            'cyprus': 'LCA',
-            'israel': 'TLV',
-            'jordan': 'AMM',
-            'lebanon': 'BEY',
-            'syria': 'DAM',
-            'iraq': 'BGW',
-            'iran': 'IKA',
-            'saudi arabia': 'RUH',
-            'uae': 'DXB',
-            'qatar': 'DOH',
-            'kuwait': 'KWI',
-            'bahrain': 'BAH',
-            'oman': 'MCT',
-            'yemen': 'SAH',
-            'afghanistan': 'KBL',
-            'pakistan': 'KHI',
-            'bangladesh': 'DAC',
-            'sri lanka': 'CMB',
-            'maldives': 'MLE',
-            'nepal': 'KTM',
-            'bhutan': 'PBH',
-            'myanmar': 'RGN',
-            'laos': 'VTE',
-            'cambodia': 'PNH',
-            'malaysia': 'KUL',
-            'singapore': 'SIN',
-            'indonesia': 'CGK',
-            'philippines': 'MNL',
-            'brunei': 'BWN',
-            'east timor': 'DIL',
-            'mongolia': 'ULN',
-            'kazakhstan': 'ALA',
-            'uzbekistan': 'TAS',
-            'turkmenistan': 'ASB',
-            'tajikistan': 'DYU',
-            'kyrgyzstan': 'FRU',
-            'georgia': 'TBS',
-            'armenia': 'EVN',
-            'azerbaijan': 'GYD'
-        }
-        return airport_codes.get(destination.lower(), 'UNK')
+        """Get airport code for destination using simplified lookup."""
+        try:
+            destination_lower = destination.lower()
+            
+            # Common major airports for popular destinations only
+            major_airports = {
+                'iceland': 'KEF', 'japan': 'NRT', 'france': 'CDG', 'italy': 'FCO',
+                'spain': 'MAD', 'germany': 'FRA', 'thailand': 'BKK', 'vietnam': 'SGN',
+                'india': 'DEL', 'brazil': 'GRU', 'argentina': 'EZE', 'chile': 'SCL',
+                'mexico': 'MEX', 'canada': 'YYZ', 'australia': 'SYD', 'uk': 'LHR',
+                'china': 'PEK', 'russia': 'SVO', 'greece': 'ATH', 'turkey': 'IST',
+                'egypt': 'CAI', 'morocco': 'CMN', 'south africa': 'JNB', 'norway': 'OSL',
+                'sweden': 'ARN', 'finland': 'HEL', 'denmark': 'CPH', 'netherlands': 'AMS',
+                'belgium': 'BRU', 'switzerland': 'ZUR', 'austria': 'VIE', 'poland': 'WAW',
+                'czech republic': 'PRG', 'hungary': 'BUD', 'croatia': 'ZAG', 'romania': 'OTP',
+                'bulgaria': 'SOF', 'serbia': 'BEG', 'ukraine': 'KBP', 'lithuania': 'VNO',
+                'latvia': 'RIX', 'estonia': 'TLL', 'luxembourg': 'LUX', 'malta': 'MLA',
+                'cyprus': 'LCA', 'israel': 'TLV', 'jordan': 'AMM', 'lebanon': 'BEY',
+                'saudi arabia': 'RUH', 'uae': 'DXB', 'qatar': 'DOH', 'kuwait': 'KWI',
+                'bahrain': 'BAH', 'oman': 'MCT', 'afghanistan': 'KBL', 'pakistan': 'KHI',
+                'bangladesh': 'DAC', 'sri lanka': 'CMB', 'maldives': 'MLE', 'nepal': 'KTM',
+                'myanmar': 'RGN', 'laos': 'VTE', 'cambodia': 'PNH', 'malaysia': 'KUL',
+                'singapore': 'SIN', 'indonesia': 'CGK', 'philippines': 'MNL', 'brunei': 'BWN',
+                'mongolia': 'ULN', 'kazakhstan': 'ALA', 'uzbekistan': 'TAS', 'georgia': 'TBS',
+                'armenia': 'EVN', 'azerbaijan': 'GYD'
+            }
+            
+            for country, code in major_airports.items():
+                if country in destination_lower:
+                    return code
+            
+            # For cities, try to extract the first 3 letters as a code
+            if len(destination) >= 3:
+                return destination[:3].upper()
+            
+            # Default fallback
+            return 'UNK'
+            
+        except Exception as e:
+            logger.error(f"Error getting airport code for {destination}: {e}")
+            return 'UNK'
     
     async def _handle_destination_query(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
         """Handle destination-specific queries with attractions."""

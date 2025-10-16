@@ -143,12 +143,13 @@ class AviationStackClient:
             # This could include scraping public flight information
             # For now, we'll return a minimal set based on common routes
             
+            # Simplified route data - in production, this would come from a real flight API
             common_routes = {
-                "TLV": {"destinations": ["JFK", "LHR", "CDG", "FRA", "IST"], "base_price": 800},
-                "JFK": {"destinations": ["TLV", "LHR", "CDG", "FRA", "LAX"], "base_price": 600},
-                "LHR": {"destinations": ["TLV", "JFK", "CDG", "FRA", "IST"], "base_price": 500},
-                "CDG": {"destinations": ["TLV", "JFK", "LHR", "FRA", "IST"], "base_price": 550},
-                "FRA": {"destinations": ["TLV", "JFK", "LHR", "CDG", "IST"], "base_price": 520}
+                "TLV": {"destinations": ["JFK", "LHR", "CDG", "FRA", "IST", "KEF", "NRT", "BKK"], "base_price": 800},
+                "JFK": {"destinations": ["TLV", "LHR", "CDG", "FRA", "LAX", "KEF", "NRT", "BKK"], "base_price": 600},
+                "LHR": {"destinations": ["TLV", "JFK", "CDG", "FRA", "IST", "KEF", "NRT", "BKK"], "base_price": 500},
+                "CDG": {"destinations": ["TLV", "JFK", "LHR", "FRA", "IST", "KEF", "NRT", "BKK"], "base_price": 550},
+                "FRA": {"destinations": ["TLV", "JFK", "LHR", "CDG", "IST", "KEF", "NRT", "BKK"], "base_price": 520}
             }
             
             origin_upper = origin.upper()

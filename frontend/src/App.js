@@ -458,7 +458,7 @@ function App() {
 
   const loadChatHistory = async () => {
     try {
-      const response = await fetch('http://localhost:8000/chat-history');
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/chat-history`);
       const data = await response.json();
       
       if (data.conversations && data.conversations.length > 0) {

@@ -1075,7 +1075,60 @@ class AdvancedContextManager(ContextProvider):
         """Update context summaries based on conversation turn."""
         try:
             # Generate summaries based on conversation content
-            # This would create intelligent summaries of user preferences and conversation topics
-            pass
+            # This creates intelligent summaries of user preferences and conversation topics
+            if not turn or not turn.get('user') or not turn.get('assistant'):
+                return
+            
+            user_message = turn['user'].lower()
+            assistant_message = turn['assistant'].lower()
+            
+            # Extract travel preferences from conversation
+            if any(word in user_message for word in ['budget', 'money', 'cost', 'price', '$']):
+                self._update_preference_summary('budget_conscious', True)
+            
+            if any(word in user_message for word in ['luxury', 'expensive', 'high-end', 'premium']):
+                self._update_preference_summary('travel_style', 'luxury')
+            elif any(word in user_message for word in ['budget', 'cheap', 'affordable', 'economical']):
+                self._update_preference_summary('travel_style', 'budget')
+            
+            if any(word in user_message for word in ['culture', 'museum', 'history', 'art']):
+                self._update_preference_summary('interests', 'culture')
+            elif any(word in user_message for word in ['nature', 'hiking', 'outdoor', 'adventure']):
+                self._update_preference_summary('interests', 'nature')
+            elif any(word in user_message for word in ['food', 'restaurant', 'cuisine', 'dining']):
+                self._update_preference_summary('interests', 'food')
+            
+            # Update conversation topic summaries
+            if any(word in user_message for word in ['flight', 'airline', 'airport']):
+                self._update_topic_summary('flights', user_message)
+            elif any(word in user_message for word in ['hotel', 'accommodation', 'stay']):
+                self._update_topic_summary('accommodation', user_message)
+            elif any(word in user_message for word in ['weather', 'climate', 'temperature']):
+                self._update_topic_summary('weather', user_message)
+                
         except Exception as e:
             logger.error(f"Error updating context summaries: {e}")
+    
+    def _update_preference_summary(self, key: str, value: Any):
+        """Update preference summary with new information."""
+        if not hasattr(self, '_preference_summaries'):
+            self._preference_summaries = {}
+        
+        if key not in self._preference_summaries:
+            self._preference_summaries[key] = {'value': value, 'count': 1}
+        else:
+            self._preference_summaries[key]['count'] += 1
+            # Update value if it's different (for non-boolean values)
+            if isinstance(value, str) and value != self._preference_summaries[key]['value']:
+                self._preference_summaries[key]['value'] = value
+    
+    def _update_topic_summary(self, topic: str, content: str):
+        """Update topic summary with conversation content."""
+        if not hasattr(self, '_topic_summaries'):
+            self._topic_summaries = {}
+        
+        if topic not in self._topic_summaries:
+            self._topic_summaries[topic] = {'mentions': 1, 'last_mentioned': content[:100]}
+        else:
+            self._topic_summaries[topic]['mentions'] += 1
+            self._topic_summaries[topic]['last_mentioned'] = content[:100]
