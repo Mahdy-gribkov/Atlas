@@ -300,7 +300,7 @@ function App() {
                   });
                   
                   // Extract travel plan data from the response
-                  extractTravelPlanData(assistantMessage.trim(), userMessage);
+                  await extractTravelPlanData(assistantMessage.trim(), userMessage);
                 }
                 break;
               }
@@ -485,7 +485,7 @@ function App() {
     }
   };
 
-  const extractTravelPlanData = (response, userMessage) => {
+  const extractTravelPlanData = async (response, userMessage) => {
     try {
       // Check if this is a travel planning response
       if (response.includes('Flight Options') || response.includes('Hotel Options') || response.includes('Itinerary')) {
@@ -494,7 +494,23 @@ function App() {
         // Extract destination from response
         const destinationMatch = response.match(/Flight Options to (\w+)/);
         if (destinationMatch) {
-          newTravelPlan.destination = destinationMatch[1];
+          const destination = destinationMatch[1];
+          newTravelPlan.destination = destination;
+          
+          // Use real geocoding to set destination location on map
+          try {
+            const geocodedLocation = await mapService.geocodeAddress(destination);
+            if (geocodedLocation && geocodedLocation.lat && geocodedLocation.lng) {
+              setDestinationLocation({
+                name: geocodedLocation.name || destination,
+                lat: geocodedLocation.lat,
+                lng: geocodedLocation.lng
+              });
+              console.log('Set destination location:', geocodedLocation);
+            }
+          } catch (error) {
+            console.error('Failed to geocode destination:', error);
+          }
         }
         
         // Extract budget from user message or response
@@ -596,43 +612,9 @@ function App() {
       }
     }
     
-    // Simple location detection with fallback coordinates
-    const locations = {
-      'new york': { lat: 40.7128, lng: -74.0060, name: 'New York' },
-      'tokyo': { lat: 35.6762, lng: 139.6503, name: 'Tokyo' },
-      'japan': { lat: 35.6762, lng: 139.6503, name: 'Japan' },
-      'bangkok': { lat: 13.7563, lng: 100.5018, name: 'Bangkok' },
-      'peru': { lat: -12.0464, lng: -77.0428, name: 'Peru' },
-      'london': { lat: 51.5074, lng: -0.1278, name: 'London' },
-      'paris': { lat: 48.8566, lng: 2.3522, name: 'Paris' },
-      'rome': { lat: 41.9028, lng: 12.4964, name: 'Rome' },
-      'madrid': { lat: 40.4168, lng: -3.7038, name: 'Madrid' },
-      'berlin': { lat: 52.5200, lng: 13.4050, name: 'Berlin' },
-      'israel': { lat: 31.0461, lng: 34.8516, name: 'Israel' },
-      'tel aviv': { lat: 32.0853, lng: 34.7818, name: 'Tel Aviv' }
-    };
-    
-    for (const [key, location] of Object.entries(locations)) {
-      if (content.includes(key)) {
-        // Try to geocode with backend first, fallback to predefined coordinates
-        try {
-          const geocodedLocation = await mapService.geocodeAddress(location.name);
-          if (geocodedLocation && geocodedLocation.lat && geocodedLocation.lng) {
-            setDestinationLocation({
-              name: geocodedLocation.name || location.name,
-              lat: geocodedLocation.lat,
-              lng: geocodedLocation.lng
-            });
-          } else {
-            setDestinationLocation(location);
-          }
-        } catch (error) {
-          console.log('Using fallback coordinates for:', location.name);
-          setDestinationLocation(location);
-        }
-        break;
-      }
-    }
+    // REAL DATA ONLY - Let the backend handle destination detection
+    // The backend should extract destination from travel planning queries and return coordinates
+    // We'll extract destination info from the assistant's response instead of hardcoded lists
   };
 
   // Update map when new messages arrive
