@@ -1003,21 +1003,21 @@ class SecureDatabase:
             encrypted_user_msg = self._encrypt_data(user_message)
             encrypted_assistant_msg = self._encrypt_data(assistant_response)
             
-            # Store in a simple conversations table
+            # Store in a simple conversations table (use same schema as main table)
             await self._execute_query("""
-                CREATE TABLE IF NOT EXISTS conversations (
+                CREATE TABLE IF NOT EXISTS conversations_simple (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id TEXT NOT NULL,
                     user_message TEXT NOT NULL,
                     assistant_response TEXT NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    timestamp TEXT NOT NULL
                 )
             """)
             
             await self._execute_query("""
-                INSERT INTO conversations (user_id, user_message, assistant_response)
-                VALUES (?, ?, ?)
-            """, (user_id, encrypted_user_msg, encrypted_assistant_msg))
+                INSERT INTO conversations_simple (user_id, user_message, assistant_response, timestamp)
+                VALUES (?, ?, ?, ?)
+            """, (user_id, encrypted_user_msg, encrypted_assistant_msg, datetime.now().isoformat()))
             
             conn = await self._ensure_connection()
             conn.commit()
@@ -1197,10 +1197,10 @@ class SecureDatabase:
             await self._ensure_connection()
             
             query = """
-                SELECT user_message, assistant_response, created_at 
-                FROM conversations 
+                SELECT user_message, assistant_response, timestamp 
+                FROM conversations_simple 
                 WHERE user_id = ? 
-                ORDER BY created_at DESC 
+                ORDER BY timestamp DESC 
                 LIMIT ?
             """
             

@@ -298,6 +298,9 @@ function App() {
                     }
                     return newMessages;
                   });
+                  
+                  // Extract travel plan data from the response
+                  extractTravelPlanData(assistantMessage.trim(), userMessage);
                 }
                 break;
               }
@@ -479,6 +482,50 @@ function App() {
     } catch (error) {
       console.error('Error loading chat history:', error);
       alert('Error loading chat history');
+    }
+  };
+
+  const extractTravelPlanData = (response, userMessage) => {
+    try {
+      // Check if this is a travel planning response
+      if (response.includes('Flight Options') || response.includes('Hotel Options') || response.includes('Itinerary')) {
+        const newTravelPlan = { ...travelPlan };
+        
+        // Extract destination from response
+        const destinationMatch = response.match(/Flight Options to (\w+)/);
+        if (destinationMatch) {
+          newTravelPlan.destination = destinationMatch[1];
+        }
+        
+        // Extract budget from user message or response
+        const budgetMatch = userMessage.match(/(\d+)\s*(usd|dollars?|\$)/i) || response.match(/Budget.*?\$(\d+)/);
+        if (budgetMatch) {
+          newTravelPlan.budget = `$${budgetMatch[1]}`;
+        }
+        
+        // Extract dates from user message
+        const dateMatch = userMessage.match(/(\w+)\s+(\d{4})/i);
+        if (dateMatch) {
+          newTravelPlan.dates = `${dateMatch[1]} ${dateMatch[2]}`;
+        }
+        
+        // Extract activities from response
+        const activities = [];
+        const activityMatches = response.match(/- ([^-]+)/g);
+        if (activityMatches) {
+          activityMatches.forEach(match => {
+            const activity = match.replace('- ', '').trim();
+            if (activity && !activity.includes('Option') && !activity.includes('Price')) {
+              activities.push(activity);
+            }
+          });
+        }
+        newTravelPlan.activities = activities.slice(0, 5); // Limit to 5 activities
+        
+        setTravelPlan(newTravelPlan);
+      }
+    } catch (error) {
+      console.error('Error extracting travel plan data:', error);
     }
   };
 

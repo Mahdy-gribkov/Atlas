@@ -49,6 +49,28 @@ class NominatimClient:
             logger.error(f"Geocoding error for {address}: {e}")
             return []
     
+    async def search_location(self, query: str) -> List[Dict[str, Any]]:
+        """
+        Search for locations using Nominatim (completely free, no API key).
+        
+        Args:
+            query: Location search query
+            
+        Returns:
+            List of location results
+        """
+        try:
+            # Use Nominatim search (completely free, no API key)
+            results = await self._search_nominatim(query)
+            if results:
+                return results
+            
+            return []
+            
+        except Exception as e:
+            logger.error(f"Location search error for {query}: {e}")
+            return []
+
     async def reverse_geocode(self, latitude: float, longitude: float) -> Optional[Dict[str, Any]]:
         """
         Reverse geocode coordinates to get address using Nominatim (completely free, no API key).
