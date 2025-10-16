@@ -43,7 +43,7 @@ class SimplePerformanceMonitor:
         self.start_time = time.time()
         self.last_cleanup = time.time()
         
-        logger.info("📊 Simple Performance Monitor initialized")
+        logger.info("Simple Performance Monitor initialized")
     
     def record_response_time(self, endpoint: str, duration: float):
         """Record response time for an endpoint."""
@@ -159,7 +159,7 @@ class SimplePerformanceMonitor:
                 ], maxlen=self.max_history)
                 
                 self.last_cleanup = current_time
-                logger.info("🧹 Performance monitor data cleaned up")
+                logger.info("Performance monitor data cleaned up")
     
     def reset_stats(self):
         """Reset all statistics."""
@@ -170,7 +170,7 @@ class SimplePerformanceMonitor:
             self.api_calls.clear()
             self.api_errors.clear()
             self.start_time = time.time()
-            logger.info("🔄 Performance monitor stats reset")
+            logger.info("Performance monitor stats reset")
 
 
 # Global instance
@@ -180,6 +180,12 @@ performance_monitor = SimplePerformanceMonitor()
 def record_response_time(endpoint: str, duration: float):
     """Record response time for an endpoint."""
     performance_monitor.record_response_time(endpoint, duration)
+
+
+def record_metric(metric_name: str, value: float, tags: Dict[str, str] = None):
+    """Record a custom metric."""
+    # For simplicity, we'll just log it
+    logger.info(f"Metric recorded: {metric_name}={value}, tags={tags}")
 
 
 def record_api_call(service: str, success: bool = True):
@@ -200,3 +206,38 @@ def get_performance_stats() -> Dict[str, Any]:
 def get_health_status() -> Dict[str, Any]:
     """Get system health status."""
     return performance_monitor.get_health_status()
+
+
+def performance_timer(endpoint: str):
+    """Decorator for timing function execution."""
+    def decorator(func):
+        import functools
+        import time
+        import asyncio
+        
+        @functools.wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            start_time = time.time()
+            try:
+                result = await func(*args, **kwargs)
+                return result
+            finally:
+                duration = time.time() - start_time
+                record_response_time(endpoint, duration)
+        
+        @functools.wraps(func)
+        def sync_wrapper(*args, **kwargs):
+            start_time = time.time()
+            try:
+                result = func(*args, **kwargs)
+                return result
+            finally:
+                duration = time.time() - start_time
+                record_response_time(endpoint, duration)
+        
+        if asyncio.iscoroutinefunction(func):
+            return async_wrapper
+        else:
+            return sync_wrapper
+    
+    return decorator

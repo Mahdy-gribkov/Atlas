@@ -14,7 +14,7 @@ import json
 import re
 
 from .advanced_cache import AdvancedCache, cached
-from .performance_monitor import record_response_time, record_metric
+from .simple_performance_monitor import record_response_time, record_metric
 
 logger = logging.getLogger(__name__)
 

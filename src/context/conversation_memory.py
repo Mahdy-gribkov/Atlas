@@ -48,10 +48,16 @@ class ConversationMemory:
         self.importance_threshold = 0.3
         self.cache_ttl_hours = 24
         
-        # Initialize memory tables
-        asyncio.create_task(self._initialize_memory_tables())
+        # Memory tables will be initialized on first use
+        self._tables_initialized = False
         
-        logger.info("🧠 Conversation Memory System initialized")
+        logger.info("Conversation Memory System initialized")
+    
+    async def _ensure_tables_initialized(self):
+        """Ensure memory tables are initialized."""
+        if not self._tables_initialized:
+            await self._initialize_memory_tables()
+            self._tables_initialized = True
     
     async def store_memory(self, user_id: str, content: str, content_type: str, 
                           importance: float = 0.5, tags: List[str] = None, 
@@ -71,6 +77,8 @@ class ConversationMemory:
             Memory entry ID
         """
         try:
+            await self._ensure_tables_initialized()
+            
             # Generate unique memory ID
             memory_id = self._generate_memory_id(user_id, content, content_type)
             
@@ -98,7 +106,7 @@ class ConversationMemory:
             # Update search index
             await self._update_search_index(memory_entry)
             
-            logger.info(f"✅ Memory stored: {memory_id} for user {user_id}")
+            logger.info(f"Memory stored: {memory_id} for user {user_id}")
             return memory_id
             
         except Exception as e:
@@ -200,7 +208,7 @@ class ConversationMemory:
                         memory.importance = new_importance
                         break
             
-            logger.info(f"✅ Memory importance updated: {memory_id}")
+            logger.info(f"Memory importance updated: {memory_id}")
             return True
             
         except Exception as e:
@@ -237,7 +245,7 @@ class ConversationMemory:
                         if m.timestamp > cutoff_date and m.importance > self.importance_threshold
                     ]
             
-            logger.info(f"✅ Forgot {removed_count} old memories")
+            logger.info(f"Forgot {removed_count} old memories")
             return removed_count
             
         except Exception as e:
@@ -333,7 +341,7 @@ class ConversationMemory:
             if self.database:
                 # Initialize memory tables in the database
                 await self.database.initialize_memory_tables()
-                logger.info("✅ Memory tables initialized")
+                logger.info("Memory tables initialized")
             else:
                 logger.warning("Database not available, memory tables not initialized")
         except Exception as e:

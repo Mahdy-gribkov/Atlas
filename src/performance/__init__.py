@@ -6,7 +6,7 @@ Provides advanced caching, monitoring, and response optimization.
 from .advanced_cache import AdvancedCache, cached, get_cache, cache_get, cache_set, cache_delete, cache_clear
 from .simple_performance_monitor import (
     SimplePerformanceMonitor, record_metric, record_response_time, 
-    record_error, get_performance_stats, get_health_status
+    record_error, get_performance_stats, get_health_status, performance_timer
 )
 from .response_optimizer import (
     ResponseOptimizer, OptimizationRule, ResponseCache,
@@ -30,6 +30,7 @@ __all__ = [
     'record_error',
     'get_performance_stats',
     'get_health_status',
+    'performance_timer',
     
     # Response Optimizer
     'ResponseOptimizer',

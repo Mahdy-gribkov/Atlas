@@ -23,7 +23,7 @@ class AsyncDatabase:
         """Initialize the async database wrapper."""
         self.db = SecureDatabase(db_path, encryption_key)
         self.executor = None
-        logger.info("🔄 Async Database wrapper initialized")
+        logger.info("Async Database wrapper initialized")
     
     async def _run_in_executor(self, func, *args, **kwargs):
         """Run a synchronous function in a thread pool."""
@@ -116,7 +116,7 @@ class AsyncDatabase:
         """Close database connection."""
         if hasattr(self.db, 'close'):
             await self._run_in_executor(self.db.close)
-        logger.info("🔒 Async Database connection closed")
+        logger.info("Async Database connection closed")
     
     def __enter__(self):
         """Context manager entry."""

@@ -6,6 +6,7 @@ Integrates with the MCP server to provide real-time data access.
 import asyncio
 import json
 import logging
+import os
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
@@ -24,7 +25,7 @@ class TravelMCPClient:
         self.session_id = None
         self.context = {}
         
-        logger.info("🔗 Travel MCP Client initialized")
+        logger.info("Travel MCP Client initialized")
     
     async def call_tool(self, tool_name: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
         """

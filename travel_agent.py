@@ -64,7 +64,7 @@ from src.context.context_provider import ContextProvider
 from src.routing import IntentRouter, IntentType
 from src.performance import (
     AdvancedCache, ResponseOptimizer, SimplePerformanceMonitor,
-    record_metric, record_response_time, get_performance_stats, get_health_status
+    record_metric, record_response_time, get_performance_stats, get_health_status, performance_timer
 )
 from src.services.llm_service import LLMService
 
@@ -995,16 +995,16 @@ Just ask me anything about travel, and I'll help you plan the perfect trip!"""
             
             # Extract travel information and enhance with context
             travel_info = self.extract_travel_info(query)
-            if context:
+            if intelligent_context:
                 # Enhance travel info with context
-                if context.get('departureLocation') and not travel_info.get('origin'):
-                    travel_info['origin'] = context['departureLocation']
-                if context.get('destination') and not travel_info.get('destination'):
-                    travel_info['destination'] = context['destination']
-                if context.get('travelDates') and not travel_info.get('dates'):
-                    travel_info['dates'] = context['travelDates']
-                if context.get('budget') and not travel_info.get('budget'):
-                    travel_info['budget'] = context['budget']
+                if intelligent_context.get('departureLocation') and not travel_info.get('origin'):
+                    travel_info['origin'] = intelligent_context['departureLocation']
+                if intelligent_context.get('destination') and not travel_info.get('destination'):
+                    travel_info['destination'] = intelligent_context['destination']
+                if intelligent_context.get('travelDates') and not travel_info.get('dates'):
+                    travel_info['dates'] = intelligent_context['travelDates']
+                if intelligent_context.get('budget') and not travel_info.get('budget'):
+                    travel_info['budget'] = intelligent_context['budget']
             
             query_lower = query.lower()
             

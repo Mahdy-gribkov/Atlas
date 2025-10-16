@@ -78,7 +78,7 @@ class LLMService:
         self.response_cache = {}
         self.service_stats = {service['name']: {'success': 0, 'failures': 0} for service in self.services}
         
-        logger.info("🤖 LLM Service initialized with multiple fallbacks")
+        logger.info("LLM Service initialized with multiple fallbacks")
     
     async def get_response(self, prompt: str, context: str = "", user_id: str = None) -> str:
         """
@@ -97,7 +97,7 @@ class LLMService:
         # Check cache first
         cache_key = f"{user_id}:{hash(prompt)}" if user_id else str(hash(prompt))
         if cache_key in self.response_cache:
-            logger.info("📋 Using cached LLM response")
+            logger.info("Using cached LLM response")
             return self.response_cache[cache_key]
         
         # Try each LLM service
@@ -113,11 +113,11 @@ class LLMService:
                     self.service_stats[service['name']]['success'] += 1
                     
                     response_time = time.time() - start_time
-                    logger.info(f"✅ LLM response from {service['name']} in {response_time:.2f}s")
+                    logger.info(f"LLM response from {service['name']} in {response_time:.2f}s")
                     return response
                     
             except Exception as e:
-                logger.warning(f"❌ {service['name']} failed: {e}")
+                logger.warning(f"{service['name']} failed: {e}")
                 self.service_stats[service['name']]['failures'] += 1
         
         # All services failed, use intelligent fallback
@@ -127,7 +127,7 @@ class LLMService:
         self.response_cache[cache_key] = fallback_response
         
         response_time = time.time() - start_time
-        logger.info(f"🔄 Using intelligent fallback in {response_time:.2f}s")
+        logger.info(f"Using intelligent fallback in {response_time:.2f}s")
         return fallback_response
     
     async def _try_service(self, service: Dict[str, Any], prompt: str, context: str) -> Optional[str]:
@@ -259,7 +259,7 @@ class LLMService:
     def clear_cache(self):
         """Clear response cache."""
         self.response_cache.clear()
-        logger.info("🧹 LLM response cache cleared")
+        logger.info("LLM response cache cleared")
     
     def disable_service(self, service_name: str):
         """Disable a specific service."""
@@ -274,5 +274,5 @@ class LLMService:
         for service in self.services:
             if service['name'] == service_name:
                 service['enabled'] = True
-                logger.info(f"✅ Enabled LLM service: {service_name}")
+                logger.info(f"Enabled LLM service: {service_name}")
                 break

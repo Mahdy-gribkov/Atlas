@@ -73,7 +73,7 @@ class AdvancedContextManager(ContextProvider):
         self.context_decay_days = 30
         self.preference_confidence_threshold = 0.7
         
-        logger.info("🧠 Advanced Context Manager initialized")
+        logger.info("Advanced Context Manager initialized")
     
     # ContextProvider Interface Implementation
     async def get_user_context(self, user_id: str) -> Dict[str, Any]:
@@ -345,7 +345,7 @@ class AdvancedContextManager(ContextProvider):
             # Update context summaries
             await self._update_context_summaries(turn)
             
-            logger.info(f"✅ Conversation turn added for user {user_id}")
+            logger.info(f"Conversation turn added for user {user_id}")
             return True
             
         except Exception as e:

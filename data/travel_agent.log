@@ -566,3 +566,19 @@
 2025-10-16 04:55:47,489 - INFO - SUCCESS: TravelAgent integration works correctly
 2025-10-16 04:55:47,489 - INFO - SUCCESS: End-to-end workflow works correctly
 2025-10-16 04:55:47,489 - INFO - SUCCESS: Architecture refactor is fully functional!
+2025-10-16 05:41:03,731 - INFO - Intent Router initialized with pattern matching
+2025-10-16 05:42:00,620 - INFO - Travel MCP Client initialized
+2025-10-16 05:42:00,626 - INFO - Intent Router initialized with pattern matching
+2025-10-16 05:42:00,627 - INFO - Advanced Context Manager initialized
+2025-10-16 05:42:00,627 - INFO - Conversation Memory System initialized
+2025-10-16 05:42:00,680 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
+2025-10-16 05:42:00,707 - INFO - Travel agent initialized successfully
+2025-10-16 05:43:36,871 - INFO - Processing new request: i want a 3 day trip plan to ivalnd on jan 26. im on my own and i start the journey in tel aviv...
+2025-10-16 05:43:36,890 - INFO - Processing query with intelligent routing: i want a 3 day trip plan to ivalnd on jan 26. im on my own and i start the journey in tel aviv...
+2025-10-16 05:43:36,916 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-16 05:43:36,919 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-16 05:43:36,920 - INFO - Orchestrating context flow for user default_user
+2025-10-16 05:43:36,931 - INFO - Context orchestration complete for user default_user
+2025-10-16 05:43:36,934 - INFO - Loaded user preferences for default_user
+2025-10-16 05:43:36,937 - INFO - Added to knowledge base: query_1
+2025-10-16 05:43:36,948 - ERROR - Error in full processing logic: name 'context' is not defined
