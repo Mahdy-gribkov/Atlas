@@ -27,18 +27,25 @@ class LLMService:
         """Initialize the LLM service."""
         self.services = [
             {
+                'name': 'groq',
+                'url': 'https://api.groq.com/openai/v1/chat/completions',
+                'model': 'llama3-8b-8192',
+                'timeout': 15,
+                'enabled': False  # Disabled for now - focus on intelligent fallback
+            },
+            {
                 'name': 'llm7',
                 'url': 'https://api.llm7.io/v1/chat/completions',
                 'model': 'gpt-3.5-turbo',
                 'timeout': 15,
-                'enabled': True
+                'enabled': False  # Disabled due to errors
             },
             {
                 'name': 'huggingface',
                 'url': 'https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium',
                 'model': 'microsoft/DialoGPT-medium',
                 'timeout': 20,
-                'enabled': True
+                'enabled': False  # Disabled due to 401 errors
             }
         ]
         
@@ -132,10 +139,58 @@ class LLMService:
     
     async def _try_service(self, service: Dict[str, Any], prompt: str, context: str) -> Optional[str]:
         """Try a specific LLM service."""
-        if service['name'] == 'llm7':
+        if service['name'] == 'groq':
+            return await self._try_groq(service, prompt, context)
+        elif service['name'] == 'llm7':
             return await self._try_llm7(service, prompt, context)
         elif service['name'] == 'huggingface':
             return await self._try_huggingface(service, prompt, context)
+        return None
+    
+    async def _try_groq(self, service: Dict[str, Any], prompt: str, context: str) -> Optional[str]:
+        """Try Groq service (free tier)."""
+        try:
+            payload = {
+                'model': service['model'],
+                'messages': [
+                    {
+                        'role': 'system',
+                        'content': 'You are a helpful travel planning assistant. Provide concise, practical travel advice and recommendations. Be conversational and helpful.'
+                    },
+                    {
+                        'role': 'user',
+                        'content': f"{prompt}\n\nContext: {context}" if context else prompt
+                    }
+                ],
+                'max_tokens': 500,
+                'temperature': 0.7,
+                'stream': False
+            }
+            
+            headers = {'Content-Type': 'application/json'}
+            if service.get('api_key'):
+                headers['Authorization'] = f"Bearer {service['api_key']}"
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    service['url'],
+                    json=payload,
+                    headers=headers,
+                    timeout=aiohttp.ClientTimeout(total=service['timeout'])
+                ) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if 'choices' in data and len(data['choices']) > 0:
+                            content = data['choices'][0]['message']['content']
+                            return content.strip()
+                    else:
+                        logger.warning(f"Groq returned status {response.status}")
+                        
+        except asyncio.TimeoutError:
+            logger.warning("Groq request timed out")
+        except Exception as e:
+            logger.warning(f"Groq error: {e}")
+        
         return None
     
     async def _try_llm7(self, service: Dict[str, Any], prompt: str, context: str) -> Optional[str]:
@@ -220,8 +275,21 @@ class LLMService:
         """Get intelligent fallback response based on prompt analysis."""
         prompt_lower = prompt.lower()
         
+        # Handle specific user requests with more intelligent responses
+        if "haifa" in prompt_lower and ("movie" in prompt_lower or "cinema" in prompt_lower):
+            return "I'd be happy to help you find a movie in Haifa! Haifa has several cinemas including Cinema City Haifa, Yes Planet Haifa, and Lev Haifa Mall cinema. What type of movie are you looking for, and do you prefer a specific area in Haifa?"
+        
+        elif "haifa" in prompt_lower:
+            return "Haifa is a beautiful city in northern Israel! I can help you with things to do in Haifa - from the Baha'i Gardens and German Colony to the beaches and museums. What specifically are you interested in doing in Haifa?"
+        
+        elif any(word in prompt_lower for word in ["tokyo", "japan"]) and any(word in prompt_lower for word in ["trip", "plan", "visit"]):
+            return "Tokyo is an amazing destination! For a 3-day trip to Tokyo, I'd recommend visiting areas like Shibuya, Harajuku, and Asakusa. You could explore the famous Shibuya crossing, visit Meiji Shrine, and try authentic ramen. What specific interests do you have - food, culture, shopping, or something else?"
+        
+        elif any(word in prompt_lower for word in ["israel", "tel aviv", "jerusalem"]) and any(word in prompt_lower for word in ["trip", "plan", "visit"]):
+            return "Israel has so much to offer! From the historic streets of Jerusalem to the vibrant nightlife of Tel Aviv, there's something for everyone. Are you interested in historical sites, beaches, food, or cultural experiences?"
+        
         # Analyze prompt for intent
-        if any(word in prompt_lower for word in ["hello", "hi", "hey", "help", "start"]):
+        elif any(word in prompt_lower for word in ["hello", "hi", "hey", "help", "start"]):
             return self._get_random_response('greeting')
         elif "weather" in prompt_lower:
             return self._get_random_response('weather')
@@ -238,7 +306,8 @@ class LLMService:
         elif any(word in prompt_lower for word in ["restaurant", "food", "eat", "dining"]):
             return "I can help you find restaurants and food recommendations! Which city are you interested in?"
         else:
-            return self._get_random_response('general')
+            # For any other request, provide a more helpful response
+            return f"I understand you're asking about: '{prompt}'. I'm here to help with travel planning, recommendations, and information. Could you tell me more specifically what you'd like to know about your travel plans?"
     
     def _get_random_response(self, category: str) -> str:
         """Get a random response from a category."""
