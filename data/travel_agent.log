@@ -1115,3 +1115,74 @@
 2025-10-18 00:01:56,568 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
 2025-10-18 00:01:56,569 - INFO - LLM Service initialized with multiple fallbacks
 2025-10-18 00:01:56,569 - INFO - Travel agent initialized successfully
+2025-10-18 00:02:06,225 - INFO - Processing simple chat request: ok fuck it i want a movie in haifa now...
+2025-10-18 00:02:06,225 - INFO - Processing query with intelligent routing: ok fuck it i want a movie in haifa now...
+2025-10-18 00:02:06,228 - INFO - Query routed: complex_query -> full_context (latency: 1500ms)
+2025-10-18 00:02:06,228 - INFO - Query routed: complex_query -> full_context (latency: 1500ms)
+2025-10-18 00:02:06,231 - INFO - Loaded user preferences for default_user
+2025-10-18 00:02:06,232 - INFO - Added to knowledge base: query_1
+2025-10-18 00:02:06,232 - ERROR - Location search error for ok fuck it i want a movie in haifa now: NominatimClient._search_nominatim() missing 1 required positional argument: 'limit'
+2025-10-18 00:02:06,234 - INFO - Getting information about Haifa...
+2025-10-18 00:02:06,651 - ERROR - Country info error: API request failed: 404
+2025-10-18 00:02:06,651 - ERROR - Destination query error: cannot access local variable 'country_info' where it is not associated with a value
+2025-10-18 00:02:06,652 - INFO - Using intelligent fallback in 0.00s
+2025-10-18 00:02:06,653 - INFO - Metric recorded: response_optimizer_duration=0.0012354850769042969, tags=None
+2025-10-18 00:02:06,654 - INFO - Memory tables initialized
+2025-10-18 00:02:06,655 - INFO - Memory stored: default_user_conversation_20251018000206_f4e66774 for user default_user
+2025-10-18 00:02:06,655 - INFO - ✅ Learned preferences for user default_user
+2025-10-18 00:02:10,876 - INFO - Processing simple chat request: 3 day trip to Tokyo - jan 2026 - just me - i start in israel...
+2025-10-18 00:02:10,876 - INFO - Processing query with intelligent routing: 3 day trip to Tokyo - jan 2026 - just me - i start in israel...
+2025-10-18 00:02:10,877 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-18 00:02:10,877 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-18 00:02:10,882 - INFO - Added to knowledge base: query_3
+2025-10-18 00:02:10,882 - ERROR - Location search error for 3 day trip to Tokyo - jan 2026 - just me - i start in israel: NominatimClient._search_nominatim() missing 1 required positional argument: 'limit'
+2025-10-18 00:02:10,883 - INFO - Creating comprehensive travel plan for Tokyo
+2025-10-18 00:02:11,528 - ERROR - Food data error: 'str' object has no attribute 'get'
+2025-10-18 00:02:14,777 - INFO - Using intelligent fallback in 0.00s
+2025-10-18 00:02:14,778 - INFO - Memory stored: default_user_conversation_20251018000214_f4b5e42e for user default_user
+2025-10-18 00:02:14,779 - INFO - ✅ Learned preferences for user default_user
+2025-10-18 00:03:39,512 - INFO - Processing new request: 3 day trip - full plan - jan 2026 - just me - i start in israel - open to anything -i like pineaplle...
+2025-10-18 00:03:39,512 - INFO - Processing query with intelligent routing: 3 day trip - full plan - jan 2026 - just me - i start in israel - open to anything -i like pineaplle...
+2025-10-18 00:03:39,513 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-18 00:03:39,513 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-18 00:03:39,518 - INFO - Added to knowledge base: query_5
+2025-10-18 00:03:39,519 - ERROR - Location search error for 3 day trip - full plan - jan 2026 - just me - i start in israel - open to anything -i like pineaplles.: NominatimClient._search_nominatim() missing 1 required positional argument: 'limit'
+2025-10-18 00:03:39,519 - INFO - Creating comprehensive travel plan for Anything
+2025-10-18 00:03:40,358 - ERROR - Food data error: 'str' object has no attribute 'get'
+2025-10-18 00:03:41,875 - INFO - Using intelligent fallback in 0.00s
+2025-10-18 00:03:41,882 - INFO - Memory stored: default_user_conversation_20251018000341_7acaf24e for user default_user
+2025-10-18 00:03:41,886 - INFO - ✅ Learned preferences for user default_user
+2025-10-18 00:07:34,820 - INFO - Travel MCP Client initialized
+2025-10-18 00:07:34,822 - INFO - Intent Router initialized with pattern matching
+2025-10-18 00:07:34,823 - INFO - Database Context Provider initialized
+2025-10-18 00:07:34,823 - INFO - Conversation Memory System initialized
+2025-10-18 00:07:34,823 - INFO - Preference Learning System initialized
+2025-10-18 00:07:34,823 - INFO - Advanced Cache System initialized
+2025-10-18 00:07:34,824 - INFO - Simple Performance Monitor initialized
+2025-10-18 00:07:34,824 - INFO - Initialized 5 optimization rules
+2025-10-18 00:07:34,824 - INFO - Response Optimizer initialized
+2025-10-18 00:07:34,824 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
+2025-10-18 00:07:34,824 - INFO - LLM Service initialized with multiple fallbacks
+2025-10-18 00:07:34,825 - INFO - Travel agent initialized successfully
+2025-10-18 00:07:42,304 - INFO - Processing simple chat request: 3 day trip to Tokyo - jan 2026 - just me - i start in israel...
+2025-10-18 00:07:42,305 - INFO - Processing query with intelligent routing: 3 day trip to Tokyo - jan 2026 - just me - i start in israel...
+2025-10-18 00:07:42,310 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-18 00:07:42,312 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-18 00:07:42,321 - INFO - Loaded user preferences for default_user
+2025-10-18 00:07:42,321 - INFO - Added to knowledge base: query_1
+2025-10-18 00:07:42,322 - ERROR - Location search error for 3 day trip to Tokyo - jan 2026 - just me - i start in israel: NominatimClient._search_nominatim() missing 1 required positional argument: 'limit'
+2025-10-18 00:07:42,326 - INFO - Creating comprehensive travel plan for Tokyo
+2025-10-18 00:07:43,072 - ERROR - Food data error: 'str' object has no attribute 'get'
+2025-10-18 00:07:44,512 - ERROR - Error in full processing logic: name 'destination' is not defined
+2025-10-18 00:07:55,105 - INFO - Travel MCP Client initialized
+2025-10-18 00:07:55,105 - INFO - Intent Router initialized with pattern matching
+2025-10-18 00:07:55,106 - INFO - Database Context Provider initialized
+2025-10-18 00:07:55,106 - INFO - Conversation Memory System initialized
+2025-10-18 00:07:55,106 - INFO - Preference Learning System initialized
+2025-10-18 00:07:55,106 - INFO - Advanced Cache System initialized
+2025-10-18 00:07:55,106 - INFO - Simple Performance Monitor initialized
+2025-10-18 00:07:55,107 - INFO - Initialized 5 optimization rules
+2025-10-18 00:07:55,107 - INFO - Response Optimizer initialized
+2025-10-18 00:07:55,107 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
+2025-10-18 00:07:55,107 - INFO - LLM Service initialized with multiple fallbacks
+2025-10-18 00:07:55,108 - INFO - Travel agent initialized successfully

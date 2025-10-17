@@ -1128,8 +1128,11 @@ Just ask me anything about travel, and I'll help you plan the perfect trip!"""
                     if part.strip():
                         formatted_sections.append(part.strip())
                 
-                # Join sections with proper spacing
-                structured_data = "\n\n".join(formatted_sections)
+                # Join sections with proper spacing and add a nice header
+                destination = travel_info.get('destination', 'Unknown')
+                duration = travel_info.get('duration', '3')
+                date = travel_info.get('date', 'Not specified')
+                structured_data = self._format_travel_plan_response(formatted_sections, destination, duration, date)
                 context_text = "\n".join(context_parts) if context_parts else "No additional context available."
                 
                 # Create enhanced prompt for LLM to analyze and improve the structured data
@@ -1751,16 +1754,21 @@ Response:"""
                 
                 for i, flight in enumerate(flights[:3], 1):  # Show top 3 options
                     flight_info += f"**Option {i}:**\n"
-                    flight_info += f"- Airline: {flight.get('airline', 'N/A')}\n"
-                    flight_info += f"- Price: ${flight.get('price', 'N/A')}\n"
-                    flight_info += f"- Duration: {flight.get('duration', 'N/A')}\n"
-                    flight_info += f"- Departure: {flight.get('departure_time', 'N/A')}\n"
-                    flight_info += f"- Arrival: {flight.get('arrival_time', 'N/A')}\n"
-                    # Add dynamic booking links
+                    flight_info += f"- **Airline:** {flight.get('airline', 'N/A')}\n"
+                    flight_info += f"- **Price:** ${flight.get('price', 'N/A')}\n"
+                    flight_info += f"- **Duration:** {flight.get('duration', 'N/A')}\n"
+                    flight_info += f"- **Departure:** {flight.get('departure_time', 'N/A')}\n"
+                    flight_info += f"- **Arrival:** {flight.get('arrival_time', 'N/A')}\n"
+                    flight_info += f"- **Flight Number:** {flight.get('flight_number', 'N/A')}\n"
+                    flight_info += f"- **Aircraft:** {flight.get('aircraft', 'N/A')}\n"
+                    flight_info += f"- **Stops:** {flight.get('stops', 'N/A')}\n\n"
+                    
+                    # Add booking links with better formatting
                     dest_code = self._get_airport_code(destination)
-                    flight_info += f"- [Book on Skyscanner]({self._generate_booking_url('skyscanner', origin_airport, dest_code, date)})\n"
-                    flight_info += f"- [Book on Google Flights]({self._generate_booking_url('google', origin_airport, dest_code, date)})\n"
-                    flight_info += f"- [Book on Kayak]({self._generate_booking_url('kayak', origin_airport, dest_code, date)})\n\n"
+                    flight_info += f"**Book this flight:**\n"
+                    flight_info += f"• [Skyscanner]({self._generate_booking_url('skyscanner', origin_airport, dest_code, date)}) - Compare prices\n"
+                    flight_info += f"• [Google Flights]({self._generate_booking_url('google', origin_airport, dest_code, date)}) - Direct booking\n"
+                    flight_info += f"• [Kayak]({self._generate_booking_url('kayak', origin_airport, dest_code, date)}) - Best deals\n\n"
                 
                 return flight_info
             else:
@@ -1788,13 +1796,19 @@ Response:"""
                 
                 for i, hotel in enumerate(hotels[:3], 1):  # Show top 3 options
                     hotel_info += f"**Option {i}:**\n"
-                    hotel_info += f"- Name: {hotel.get('name', 'N/A')}\n"
-                    hotel_info += f"- Price: ${hotel.get('price', 'N/A')}/night\n"
-                    hotel_info += f"- Rating: {hotel.get('rating', 'N/A')}\n"
-                    hotel_info += f"- Location: {hotel.get('location', 'N/A')}\n"
+                    hotel_info += f"- **Hotel:** {hotel.get('name', 'N/A')}\n"
+                    hotel_info += f"- **Price:** ${hotel.get('price', 'N/A')}/night\n"
+                    hotel_info += f"- **Rating:** {hotel.get('rating', 'N/A')} ⭐\n"
+                    hotel_info += f"- **Location:** {hotel.get('location', 'N/A')}\n"
+                    hotel_info += f"- **Amenities:** {', '.join(hotel.get('amenities', ['N/A'])[:3])}\n"
+                    hotel_info += f"- **Reviews:** {hotel.get('reviews_count', 'N/A')} reviews\n\n"
+                    
+                    # Add booking links with better formatting
                     if hotel.get('booking_url'):
-                        hotel_info += f"- [Book Now]({hotel['booking_url']})\n"
-                    hotel_info += "\n"
+                        hotel_info += f"**Book this hotel:**\n"
+                        hotel_info += f"• [Book Now]({hotel['booking_url']}) - Direct booking\n"
+                        hotel_info += f"• [Compare Prices](https://www.booking.com/searchresults.html?ss={destination.replace(' ', '+')}) - Best deals\n"
+                        hotel_info += f"• [Read Reviews](https://www.tripadvisor.com/Search?q={hotel.get('name', destination).replace(' ', '+')}) - Guest reviews\n\n"
                 
                 return hotel_info
             else:
@@ -2691,26 +2705,54 @@ Privacy:
     
     def _generate_booking_url(self, provider: str, origin: str, destination: str, date: str) -> str:
         """Generate dynamic booking URL for flight providers."""
-        # Generate dynamic booking URLs instead of hardcoded patterns
-        # This allows for configuration and avoids hardcoded URLs
-        
-        # Use configurable booking URLs
-        base_urls = {
-            'skyscanner': os.getenv("SKYSCANNER_URL", "https://www.skyscanner.com/transport/flights"),
-            'google': os.getenv("GOOGLE_FLIGHTS_URL", "https://www.google.com/travel/flights"),
-            'kayak': os.getenv("KAYAK_URL", "https://www.kayak.com/flights")
-        }
-        
-        base_url = base_urls.get(provider, 'https://booking.example.com')
+        # Generate more useful booking URLs with proper parameters
         
         if provider == 'skyscanner':
-            return f"{base_url}/{origin.lower()}/{destination.lower()}/{date}/"
+            # Skyscanner URL with proper parameters
+            return f"https://www.skyscanner.com/transport/flights/{origin.lower()}/{destination.lower()}/{date}/?adults=1&children=0&infants=0&cabinclass=economy"
         elif provider == 'google':
-            return f"{base_url}?q=Flights+from+{origin}+to+{destination}+on+{date}"
+            # Google Flights URL with proper parameters
+            return f"https://www.google.com/travel/flights?q=Flights+from+{origin}+to+{destination}+on+{date}&adults=1&children=0&infants=0"
         elif provider == 'kayak':
-            return f"{base_url}/{origin}-{destination}/{date}"
+            # Kayak URL with proper parameters
+            return f"https://www.kayak.com/flights/{origin}-{destination}/{date}?sort=bestflight_a&adults=1&children=0&infants=0"
         else:
-            return f"{base_url}/search?from={origin}&to={destination}&date={date}"
+            # Generic booking URL
+            return f"https://www.expedia.com/Flights-Search?flight-type=on&starDate={date}&mode=search&trip=oneway&leg1=from:{origin},to:{destination},departure:{date}TANYT&passengers=adults:1,children:0,seniors:0,infantinlap:N"
+
+    def _format_travel_plan_response(self, sections: List[str], destination: str, duration: str, date: str) -> str:
+        """Format the travel plan response with a modern, clean structure."""
+        if not sections:
+            return "I couldn't find specific travel information, but I'm here to help! What would you like to know about your trip?"
+        
+        # Create a beautiful header
+        header = f"# 🌍 Your {duration}-Day Trip to {destination}\n"
+        header += f"**Travel Date:** {date}\n"
+        header += f"**Destination:** {destination}\n\n"
+        header += "---\n\n"
+        
+        # Add sections with better formatting
+        formatted_sections = []
+        for section in sections:
+            if section.strip():
+                # Clean up the section formatting
+                cleaned_section = section.strip()
+                formatted_sections.append(cleaned_section)
+        
+        # Join with proper spacing
+        content = "\n\n".join(formatted_sections)
+        
+        # Add a footer with helpful tips
+        footer = "\n\n---\n\n"
+        footer += "## 💡 **Travel Tips**\n"
+        footer += "• **Book early** for better prices and availability\n"
+        footer += "• **Check visa requirements** for your destination\n"
+        footer += "• **Download offline maps** before you travel\n"
+        footer += "• **Keep digital copies** of important documents\n"
+        footer += "• **Check travel advisories** before departure\n\n"
+        footer += "Need more specific information? Just ask! I can help with detailed planning, local recommendations, or any other travel questions."
+        
+        return header + content + footer
 
 
 def main():
