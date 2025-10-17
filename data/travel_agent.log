@@ -1262,3 +1262,25 @@
 2025-10-18 00:13:12,898 - INFO - Metric recorded: response_optimizer_duration=0.0022935867309570312, tags=None
 2025-10-18 00:13:12,902 - INFO - Memory stored: default_user_conversation_20251018001312_7108b876 for user default_user
 2025-10-18 00:13:12,903 - INFO - ✅ Learned preferences for user default_user
+2025-10-18 00:25:36,030 - INFO - Travel MCP Client initialized
+2025-10-18 00:25:36,030 - INFO - Intent Router initialized with pattern matching
+2025-10-18 00:25:36,031 - INFO - Database Context Provider initialized
+2025-10-18 00:25:36,031 - INFO - Conversation Memory System initialized
+2025-10-18 00:25:36,031 - INFO - Preference Learning System initialized
+2025-10-18 00:25:36,031 - INFO - Advanced Cache System initialized
+2025-10-18 00:25:36,031 - INFO - Simple Performance Monitor initialized
+2025-10-18 00:25:36,031 - INFO - Initialized 5 optimization rules
+2025-10-18 00:25:36,032 - INFO - Response Optimizer initialized
+2025-10-18 00:25:36,032 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
+2025-10-18 00:27:09,806 - INFO - Travel MCP Client initialized
+2025-10-18 00:27:09,806 - INFO - Intent Router initialized with pattern matching
+2025-10-18 00:27:09,807 - INFO - Database Context Provider initialized
+2025-10-18 00:27:09,807 - INFO - Conversation Memory System initialized
+2025-10-18 00:27:09,807 - INFO - Preference Learning System initialized
+2025-10-18 00:27:09,807 - INFO - Advanced Cache System initialized
+2025-10-18 00:27:09,807 - INFO - Simple Performance Monitor initialized
+2025-10-18 00:27:09,808 - INFO - Initialized 5 optimization rules
+2025-10-18 00:27:09,808 - INFO - Response Optimizer initialized
+2025-10-18 00:27:09,808 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
+2025-10-18 00:27:09,808 - INFO - LLM Service initialized with multiple fallbacks
+2025-10-18 00:27:09,808 - INFO - Travel agent initialized successfully

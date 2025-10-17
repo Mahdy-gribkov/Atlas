@@ -887,24 +887,33 @@ What destination are you most interested in?"""
     @performance_timer('process_query')
     async def process_query(self, query: str, context: Optional[Dict[str, Any]] = None) -> str:
         """
-        Process a travel query with direct LLM processing.
+        Process a travel query with intelligent routing and context management.
         
-        Simplified approach: All queries go directly to LLM for proper AI responses.
+        This method uses the IntentRouter to determine the optimal processing path,
+        but now with working Gemini LLM integration.
         
         Args:
             query: User's travel query
             context: User context including departure location, destination, etc.
             
         Returns:
-            AI-generated response from DeepSeek
+            Comprehensive travel response with real AI and travel data
         """
-        logger.info(f"Processing query with direct LLM: {query[:100]}...")
+        logger.info(f"Processing query with intelligent routing: {query[:100]}...")
         
         # Generate user ID from context or use default
         user_id = context.get('user_id', 'default_user') if context else 'default_user'
         
-        # Direct LLM processing for all queries
-        return await self._process_direct_llm(query, user_id)
+        # Route the query to determine optimal processing path
+        routing_decision = await self.intent_router.route_query(query, user_id)
+        
+        logger.info(f"Query routed: {routing_decision['intent']} -> {routing_decision['routing_path']} (latency: {routing_decision['estimated_latency']}ms)")
+        
+        # Process based on routing decision
+        if routing_decision['bypass_context']:
+            return await self._process_bypass_query(query, routing_decision, user_id)
+        else:
+            return await self._process_context_query(query, routing_decision, user_id)
     
     async def _process_direct_llm(self, query: str, user_id: str) -> str:
         """Process query directly with LLM for proper AI responses."""

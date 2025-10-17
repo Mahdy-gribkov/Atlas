@@ -4,6 +4,7 @@ Provides reliable LLM responses with multiple fallback strategies.
 """
 
 import logging
+import os
 import time
 import json
 import requests
@@ -27,12 +28,12 @@ class LLMService:
         """Initialize the LLM service."""
         self.services = [
             {
-                'name': 'deepseek',
-                'url': 'https://api.deepseek.com/v1/chat/completions',
-                'model': 'deepseek-chat',
+                'name': 'gemini',
+                'url': 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
+                'model': 'gemini-pro',
                 'timeout': 30,
                 'enabled': True,
-                'api_key': os.getenv('DEEPSEEK_API_KEY')
+                'api_key': os.getenv('GEMINI_API_KEY')
             }
         ]
         
@@ -126,61 +127,56 @@ class LLMService:
     
     async def _try_service(self, service: Dict[str, Any], prompt: str, context: str) -> Optional[str]:
         """Try a specific LLM service."""
-        if service['name'] == 'deepseek':
-            return await self._try_deepseek(service, prompt, context)
+        if service['name'] == 'gemini':
+            return await self._try_gemini(service, prompt, context)
         return None
     
-    async def _try_deepseek(self, service: Dict[str, Any], prompt: str, context: str) -> Optional[str]:
-        """Try DeepSeek API service."""
+    async def _try_gemini(self, service: Dict[str, Any], prompt: str, context: str) -> Optional[str]:
+        """Try Gemini API service."""
         try:
             api_key = service.get('api_key')
             if not api_key:
-                logger.warning("DeepSeek API key not found")
+                logger.warning("Gemini API key not found")
                 return None
                 
+            # Gemini API format
+            full_prompt = f"{prompt}\n\nContext: {context}" if context else prompt
+            
             payload = {
-                'model': service['model'],
-                'messages': [
-                    {
-                        'role': 'system',
-                        'content': 'You are a helpful travel planning assistant. Provide conversational, helpful responses about travel, destinations, and trip planning. Be friendly and informative.'
-                    },
-                    {
-                        'role': 'user',
-                        'content': f"{prompt}\n\nContext: {context}" if context else prompt
-                    }
-                ],
-                'max_tokens': 1000,
-                'temperature': 0.7,
-                'stream': False
+                'contents': [{
+                    'parts': [{
+                        'text': full_prompt
+                    }]
+                }],
+                'generationConfig': {
+                    'temperature': 0.7,
+                    'maxOutputTokens': 1000,
+                }
             }
             
-            headers = {
-                'Content-Type': 'application/json',
-                'Authorization': f"Bearer {api_key}"
-            }
+            url = f"{service['url']}?key={api_key}"
             
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    service['url'],
+                    url,
                     json=payload,
-                    headers=headers,
+                    headers={'Content-Type': 'application/json'},
                     timeout=aiohttp.ClientTimeout(total=service['timeout'])
                 ) as response:
                     if response.status == 200:
                         data = await response.json()
-                        if 'choices' in data and len(data['choices']) > 0:
-                            content = data['choices'][0]['message']['content']
+                        if 'candidates' in data and len(data['candidates']) > 0:
+                            content = data['candidates'][0]['content']['parts'][0]['text']
                             return content.strip()
                     else:
-                        logger.warning(f"DeepSeek returned status {response.status}")
+                        logger.warning(f"Gemini returned status {response.status}")
                         response_text = await response.text()
-                        logger.warning(f"DeepSeek response: {response_text}")
+                        logger.warning(f"Gemini response: {response_text}")
                         
         except asyncio.TimeoutError:
-            logger.warning("DeepSeek request timed out")
+            logger.warning("Gemini request timed out")
         except Exception as e:
-            logger.warning(f"DeepSeek error: {e}")
+            logger.warning(f"Gemini error: {e}")
         
         return None
     
