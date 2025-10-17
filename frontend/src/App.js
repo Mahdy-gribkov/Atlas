@@ -1,8 +1,6 @@
-import React, { useState, useRef, useEffect, useCallback, Suspense } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './App.css';
 import ErrorBoundary from './components/ErrorBoundary';
-import LazyTravelMap from './components/LazyTravelMap';
-import { mapService } from './services/mapService';
 
 function App() {
   const [messages, setMessages] = useState([]);
@@ -13,11 +11,6 @@ function App() {
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [currentLocation, setCurrentLocation] = useState(null);
-  const [destinationLocation, setDestinationLocation] = useState(null);
-  const [suggestedLocations] = useState([]);
-  const [showDownloadOptions, setShowDownloadOptions] = useState(false);
-  const [isLocationLoading, setIsLocationLoading] = useState(false);
   const [userContext, setUserContext] = useState({
     departureLocation: null,
     destination: null,
@@ -26,15 +19,6 @@ function App() {
     interests: [],
     travelStyle: null
   });
-  const [travelPlan, setTravelPlan] = useState({
-    destination: null,
-    dates: null,
-    budget: null,
-    activities: [],
-    accommodations: null,
-    transportation: null
-  });
-  const [mapWidth, setMapWidth] = useState(40); // Map width percentage
 
   // Show first message loading animation
   useEffect(() => {
@@ -604,44 +588,9 @@ function App() {
     }
   };
 
-  // Function to extract location information from messages and geocode them
-  const updateMapFromMessage = async (message) => {
-    const content = message.content.toLowerCase();
-    
-    // Check if this is an attractions message and extract destination
-    if (content.includes('top attractions in') && content.includes('🎯')) {
-      const match = content.match(/top attractions in ([^🎯]+)/);
-      if (match) {
-        const destination = match[1].trim();
-        try {
-          const geocodedLocation = await mapService.geocodeAddress(destination);
-          if (geocodedLocation && geocodedLocation.lat && geocodedLocation.lng) {
-            setDestinationLocation({
-              name: geocodedLocation.name || destination,
-              lat: geocodedLocation.lat,
-              lng: geocodedLocation.lng
-            });
-          }
-        } catch (error) {
-          console.log('Failed to geocode destination for attractions:', error);
-        }
-      }
-    }
-    
-    // REAL DATA ONLY - Let the backend handle destination detection
-    // The backend should extract destination from travel planning queries and return coordinates
-    // We'll extract destination info from the assistant's response instead of hardcoded lists
-  };
+  // Map functionality removed - focusing on chat interface
 
-  // Update map when new messages arrive
-  useEffect(() => {
-    if (messages.length > 0) {
-      const lastMessage = messages[messages.length - 1];
-      if (lastMessage.role === 'user') {
-        updateMapFromMessage(lastMessage);
-      }
-    }
-  }, [messages]);
+  // Remove map-related functionality
 
   const exampleQueries = [
     "Find flights to New York",
@@ -731,88 +680,8 @@ function App() {
       )}
 
       <div className="main-content">
-        {/* Interactive Map - Responsive */}
-        <div className="map-panel" style={{ width: `${mapWidth}%` }}>
-          <div className="map-section">
-            <div className="map-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/>
-              </svg>
-              Travel Map
-            </div>
-            <div className="map-container">
-              <ErrorBoundary>
-                <LazyTravelMap 
-                  currentLocation={currentLocation}
-                  destinationLocation={destinationLocation}
-                  suggestedLocations={suggestedLocations}
-                />
-              </ErrorBoundary>
-            </div>
-            
-            {/* Travel Plan Tracker */}
-            <div className="travel-plan-tracker">
-              <div className="tracker-title">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-                </svg>
-                Travel Plan
-              </div>
-              <div className="tracker-content">
-                <div className="tracker-item">
-                  <span className="tracker-label">Destination:</span>
-                  <span className="tracker-value">{travelPlan.destination || 'Not set'}</span>
-                </div>
-                <div className="tracker-item">
-                  <span className="tracker-label">Dates:</span>
-                  <span className="tracker-value">{travelPlan.dates || 'Not set'}</span>
-                </div>
-                <div className="tracker-item">
-                  <span className="tracker-label">Budget:</span>
-                  <span className="tracker-value">{travelPlan.budget || 'Not set'}</span>
-                </div>
-                <div className="tracker-item">
-                  <span className="tracker-label">Activities:</span>
-                  <span className="tracker-value">{travelPlan.activities.length > 0 ? travelPlan.activities.join(', ') : 'Not set'}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Draggable Separator */}
-        <div 
-          className="resize-handle"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const startX = e.clientX;
-            const startWidth = mapWidth;
-            
-            const handleMouseMove = (e) => {
-              e.preventDefault();
-              const deltaX = e.clientX - startX;
-              const deltaPercent = (deltaX / window.innerWidth) * 100;
-              const newWidth = Math.max(25, Math.min(70, startWidth + deltaPercent));
-              setMapWidth(newWidth);
-            };
-            
-            const handleMouseUp = (e) => {
-              e.preventDefault();
-              document.removeEventListener('mousemove', handleMouseMove);
-              document.removeEventListener('mouseup', handleMouseUp);
-              document.body.style.userSelect = '';
-              document.body.style.cursor = '';
-            };
-            
-            document.body.style.userSelect = 'none';
-            document.body.style.cursor = 'col-resize';
-            document.addEventListener('mousemove', handleMouseMove);
-            document.addEventListener('mouseup', handleMouseUp);
-          }}
-        />
-
-        <div className="chat-container" style={{ width: `${100 - mapWidth}%` }}>
+        {/* Full-screen Chat */}
+        <div className="chat-container" style={{ width: '100%' }}>
         <div className="messages">
           {isFirstMessageLoading && (
             <div className="message assistant">
