@@ -56,7 +56,7 @@ from src.utils.text_beautifier import TextBeautifier
 from src.apis import (
     RestCountriesClient, WikipediaClient, NominatimClient, WebSearchClient, 
     AviationStackClient, FreeWeatherClient, OpenMeteoClient, CurrencyAPIClient,
-    RealFlightScraper, RealHotelScraper, RealAttractionsScraper
+    RealFlightScraper, RealHotelScraper, RealAttractionsScraper, RealFoodScraper
 )
 from src.mcp import TravelMCPClient
 from src.context import AdvancedContextManager, ConversationMemory, PreferenceLearningSystem
@@ -138,6 +138,7 @@ class TravelAgent:
         self.real_flight_scraper = RealFlightScraper()
         self.real_hotel_scraper = RealHotelScraper()
         self.real_attractions_scraper = RealAttractionsScraper()
+        self.real_food_scraper = RealFoodScraper()
         
         # Enhanced API Clients are integrated into existing clients
         
@@ -1703,6 +1704,11 @@ Response:"""
             if attractions_data:
                 response_parts.append(attractions_data)
             
+            # 4. Get food and restaurant recommendations
+            food_data = await self._get_food_data(destination)
+            if food_data:
+                response_parts.append(food_data)
+            
             # 4. Get weather information
             weather_data = await self._get_weather_data(destination, date)
             if weather_data:
@@ -2031,6 +2037,42 @@ Response:"""
             logger.error(f"Destination query error: {e}")
             context_parts.append(f"Destination information: Unable to retrieve detailed data for {destination}. Please check travel websites directly.")
     
+    async def _get_food_data(self, destination: str) -> Optional[str]:
+        """Get food/restaurant data for destination."""
+        try:
+            if not self.real_food_scraper:
+                return None
+            
+            restaurants = await self.real_food_scraper.search_restaurants(destination, limit=10)
+            
+            if restaurants:
+                food_info = f"""
+**🍽️ Top Restaurants in {destination}**
+
+"""
+                
+                # Group restaurants by cuisine
+                cuisines = {}
+                for restaurant in restaurants:
+                    cuisine = restaurant.get('cuisine_type', 'International')
+                    if cuisine not in cuisines:
+                        cuisines[cuisine] = []
+                    cuisines[cuisine].append(restaurant)
+                
+                for cuisine, restos in cuisines.items():
+                    food_info += f"**{cuisine}:**\n"
+                    for resto in restos[:3]:  # Top 3 per cuisine
+                        food_info += f"• **{resto['name']}** ⭐ {resto['rating']} - {resto['price_range']}\n"
+                    food_info += "\n"
+                
+                return food_info
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Food data error: {e}")
+            return None
+
     async def _get_attractions_data(self, destination: str) -> Optional[str]:
         """Get attractions data for a destination."""
         try:

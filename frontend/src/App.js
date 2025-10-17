@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, Suspense } from 'react';
 import './App.css';
-import TravelMap from './components/TravelMap';
+import ErrorBoundary from './components/ErrorBoundary';
+import LazyTravelMap from './components/LazyTravelMap';
 import { mapService } from './services/mapService';
 
 function App() {
@@ -740,11 +741,13 @@ function App() {
               Travel Map
             </div>
             <div className="map-container">
-              <TravelMap 
-                currentLocation={currentLocation}
-                destinationLocation={destinationLocation}
-                suggestedLocations={suggestedLocations}
-              />
+              <ErrorBoundary>
+                <LazyTravelMap 
+                  currentLocation={currentLocation}
+                  destinationLocation={destinationLocation}
+                  suggestedLocations={suggestedLocations}
+                />
+              </ErrorBoundary>
             </div>
             
             {/* Travel Plan Tracker */}
@@ -927,4 +930,13 @@ function App() {
   );
 }
 
-export default App;
+// Wrap the entire App in ErrorBoundary
+function AppWithErrorBoundary() {
+  return (
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  );
+}
+
+export default AppWithErrorBoundary;

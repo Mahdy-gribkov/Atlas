@@ -14,9 +14,9 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
 from apis.flight_client import AviationStackClient
 from apis.free_weather_client import FreeWeatherClient
-from apis.food_client import FoodClient
-from apis.hotel_search_client import HotelSearchClient
-from apis.attractions_client import AttractionsClient
+from apis.real_hotel_scraper import RealHotelScraper
+from apis.real_attractions_scraper import RealAttractionsScraper
+from apis.real_flight_scraper import RealFlightScraper
 from apis.country_client import RestCountriesClient
 from apis.wikipedia_client import WikipediaClient
 from apis.maps_client import NominatimClient
@@ -46,9 +46,9 @@ async def main():
     # Initialize clients
     flight_client = AviationStackClient()
     free_weather_client = FreeWeatherClient()
-    food_client = FoodClient()
-    hotel_client = HotelSearchClient()
-    attractions_client = AttractionsClient()
+    real_flight_scraper = RealFlightScraper()
+    real_hotel_scraper = RealHotelScraper()
+    real_attractions_scraper = RealAttractionsScraper()
     country_client = RestCountriesClient()
     wikipedia_client = WikipediaClient()
     maps_client = NominatimClient()
@@ -69,29 +69,29 @@ async def main():
     # Test flight API
     results.append(await test_api(
         flight_client, 
-        "Flight Search (OpenSky)", 
+        "Flight Search (AviationStack)", 
         lambda: flight_client.search_flights("LHR", "CDG", "2024-01-15")
     ))
     
-    # Test food API
+    # Test real flight scraper
     results.append(await test_api(
-        food_client, 
-        "Food Search (Zomato)", 
-        lambda: food_client.search_restaurants("London", "Italian")
+        real_flight_scraper, 
+        "Real Flight Scraper", 
+        lambda: real_flight_scraper.search_flights("London", "Paris", "2024-01-15")
     ))
     
-    # Test hotel API
+    # Test real hotel scraper
     results.append(await test_api(
-        hotel_client, 
-        "Hotel Search (Booking.com)", 
-        lambda: hotel_client.search_hotels("London", "2024-01-15", "2024-01-17", 2)
+        real_hotel_scraper, 
+        "Real Hotel Scraper", 
+        lambda: real_hotel_scraper.search_hotels("London", "2024-01-15", "2024-01-17", 2)
     ))
     
-    # Test attractions API
+    # Test real attractions scraper
     results.append(await test_api(
-        attractions_client, 
-        "Attractions (Foursquare)", 
-        lambda: attractions_client.search_attractions("London", "tourist")
+        real_attractions_scraper, 
+        "Real Attractions Scraper", 
+        lambda: real_attractions_scraper.search_attractions("London", "all", 10)
     ))
     
     # Test country API

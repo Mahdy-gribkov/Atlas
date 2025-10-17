@@ -10,6 +10,17 @@ import os
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
+# Static imports to avoid dynamic import issues
+from ..apis.real_flight_scraper import RealFlightScraper
+from ..apis.real_hotel_scraper import RealHotelScraper
+from ..apis.real_attractions_scraper import RealAttractionsScraper
+from ..apis.free_weather_client import FreeWeatherClient
+from ..apis.maps_client import NominatimClient
+from ..apis.currency_api_client import CurrencyAPIClient
+from ..apis.wikipedia_client import WikipediaClient
+from ..apis.web_search_client import WebSearchClient
+from ..apis.country_client import RestCountriesClient
+
 logger = logging.getLogger(__name__)
 
 
@@ -78,8 +89,6 @@ class TravelMCPClient:
     async def _real_flight_search(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Real flight search using web scrapers."""
         try:
-            from src.apis import RealFlightScraper
-            
             async with RealFlightScraper() as scraper:
                 flights = await scraper.search_flights(
                     origin=params.get('origin', ''),
@@ -102,8 +111,6 @@ class TravelMCPClient:
     async def _real_hotel_search(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Real hotel search using web scrapers."""
         try:
-            from src.apis import RealHotelScraper
-            
             async with RealHotelScraper() as scraper:
                 hotels = await scraper.search_hotels(
                     city=params.get('city', ''),
@@ -127,8 +134,6 @@ class TravelMCPClient:
     async def _real_attractions_search(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Real attractions search using web scrapers."""
         try:
-            from src.apis import RealAttractionsScraper
-            
             async with RealAttractionsScraper() as scraper:
                 attractions = await scraper.search_attractions(
                     city=params.get('city', ''),
@@ -149,8 +154,6 @@ class TravelMCPClient:
     async def _real_weather_search(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Real weather search using free APIs."""
         try:
-            from src.apis import FreeWeatherClient
-            
             weather_client = FreeWeatherClient()
             weather = await weather_client.get_current_weather(params.get('location', ''))
             
@@ -166,8 +169,6 @@ class TravelMCPClient:
     async def _real_geocode(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Real geocoding using free APIs."""
         try:
-            from src.apis import NominatimClient
-            
             maps_client = NominatimClient()
             location = await maps_client.geocode(params.get('address', ''))
             
@@ -183,8 +184,6 @@ class TravelMCPClient:
     async def _real_currency_conversion(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Real currency conversion using free APIs."""
         try:
-            from src.apis import CurrencyAPIClient
-            
             currency_client = CurrencyAPIClient()
             conversion = await currency_client.convert_currency(
                 amount=params.get('amount', 0),
@@ -204,8 +203,6 @@ class TravelMCPClient:
     async def _real_wikipedia_search(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Real Wikipedia search using free APIs."""
         try:
-            from src.apis import WikipediaClient
-            
             wikipedia_client = WikipediaClient()
             results = await wikipedia_client.search(
                 query=params.get('query', ''),
@@ -225,8 +222,6 @@ class TravelMCPClient:
     async def _real_web_search(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Real web search using free APIs."""
         try:
-            from src.apis import WebSearchClient
-            
             web_search_client = WebSearchClient()
             results = await web_search_client.search(
                 query=params.get('query', ''),
@@ -246,8 +241,6 @@ class TravelMCPClient:
     async def _real_country_info(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Real country information using free APIs."""
         try:
-            from src.apis import RestCountriesClient
-            
             country_client = RestCountriesClient()
             country_info = await country_client.get_country_info(params.get('country', ''))
             

@@ -327,23 +327,211 @@ async def search_locations(request: dict):
     except Exception as e:
         return {"error": str(e)}
 
+# Health Check endpoints
+@app.get("/api/health")
+async def health_check():
+    """Comprehensive health check endpoint."""
+    try:
+        from src.monitoring.health_monitor import health_monitor
+        
+        # Run all health checks
+        checks = await health_monitor.run_all_checks()
+        summary = health_monitor.get_health_summary()
+        
+        return {
+            "status": "success",
+            "health": summary,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Health check error: {e}")
+        return {
+            "status": "error",
+            "message": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+@app.get("/api/health/simple")
+async def simple_health_check():
+    """Simple health check for load balancers."""
+    try:
+        # Basic system check
+        import psutil
+        memory = psutil.virtual_memory()
+        disk = psutil.disk_usage('/')
+        
+        # Simple thresholds
+        if memory.percent > 90 or disk.percent > 90:
+            return {"status": "unhealthy", "timestamp": datetime.now().isoformat()}
+        else:
+            return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+    except Exception as e:
+        return {"status": "unhealthy", "error": str(e), "timestamp": datetime.now().isoformat()}
+
+# Backup Management endpoints
+@app.post("/api/backup/create")
+async def create_backup():
+    """Create a full system backup."""
+    try:
+        from src.backup.backup_manager import backup_manager
+        
+        backup_result = await backup_manager.create_full_backup()
+        
+        if 'error' in backup_result:
+            return {
+                "status": "error",
+                "message": backup_result['error'],
+                "timestamp": datetime.now().isoformat()
+            }
+        else:
+            return {
+                "status": "success",
+                "backup": backup_result,
+                "timestamp": datetime.now().isoformat()
+            }
+    except Exception as e:
+        logger.error(f"Backup creation error: {e}")
+        return {
+            "status": "error",
+            "message": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+@app.get("/api/backup/list")
+async def list_backups():
+    """List available backups."""
+    try:
+        from src.backup.backup_manager import backup_manager
+        
+        backups = backup_manager.list_backups()
+        
+        return {
+            "status": "success",
+            "backups": backups,
+            "count": len(backups),
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Backup listing error: {e}")
+        return {
+            "status": "error",
+            "message": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+@app.post("/api/backup/restore/{backup_name}")
+async def restore_backup(backup_name: str):
+    """Restore from a backup."""
+    try:
+        from src.backup.backup_manager import backup_manager
+        
+        restore_result = await backup_manager.restore_backup(backup_name)
+        
+        if 'error' in restore_result:
+            return {
+                "status": "error",
+                "message": restore_result['error'],
+                "timestamp": datetime.now().isoformat()
+            }
+        else:
+            return {
+                "status": "success",
+                "restore": restore_result,
+                "timestamp": datetime.now().isoformat()
+            }
+    except Exception as e:
+        logger.error(f"Backup restore error: {e}")
+        return {
+            "status": "error",
+            "message": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
 # API Authentication endpoints (for backend API access)
 @app.post("/api/auth/validate")
 async def validate_api_key(request: Dict[str, Any]):
     """Validate API key for backend access."""
     try:
+        from src.utils.auth import validate_api_key as auth_validate_api_key, get_user_from_api_key
+        
         api_key = request.get("api_key", "")
         if not api_key:
             return {"error": "API key is required"}
         
-        # Simple API key validation (in production, use proper key management)
-        valid_keys = os.getenv("VALID_API_KEYS", "").split(",")
-        if api_key in valid_keys:
-            return {"valid": True, "message": "API key is valid"}
+        # Validate API key using auth manager
+        if auth_validate_api_key(api_key):
+            username = get_user_from_api_key(api_key)
+            return {
+                "valid": True, 
+                "message": "API key is valid",
+                "user": username or "api_user"
+            }
         else:
             return {"valid": False, "error": "Invalid API key"}
     except Exception as e:
-        return {"error": str(e)}
+        logger.error(f"API key validation error: {e}")
+        return {"error": "Authentication service error"}
+
+@app.post("/api/auth/login")
+async def login(request: Dict[str, Any]):
+    """Login endpoint for user authentication."""
+    try:
+        from src.utils.auth import auth_manager, create_access_token
+        
+        username = request.get("username", "")
+        password = request.get("password", "")
+        
+        if not username or not password:
+            return {"error": "Username and password are required"}
+        
+        # Authenticate user
+        user = auth_manager.authenticate_user(username, password)
+        if not user:
+            return {"error": "Invalid username or password"}
+        
+        # Create access token
+        access_token = create_access_token(data={"sub": username})
+        
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": {
+                "username": user["username"],
+                "email": user["email"],
+                "role": user["role"]
+            }
+        }
+    except Exception as e:
+        logger.error(f"Login error: {e}")
+        return {"error": "Authentication service error"}
+
+@app.post("/api/auth/generate-api-key")
+async def generate_api_key(request: Dict[str, Any]):
+    """Generate API key for authenticated user."""
+    try:
+        from src.utils.auth import auth_manager
+        
+        username = request.get("username", "")
+        password = request.get("password", "")
+        
+        if not username or not password:
+            return {"error": "Username and password are required"}
+        
+        # Authenticate user
+        user = auth_manager.authenticate_user(username, password)
+        if not user:
+            return {"error": "Invalid username or password"}
+        
+        # Generate API key
+        api_key = auth_manager.generate_user_api_key(username)
+        
+        return {
+            "api_key": api_key,
+            "message": "API key generated successfully"
+        }
+    except Exception as e:
+        logger.error(f"API key generation error: {e}")
+        return {"error": "Authentication service error"}
 
 # Serve React build files
 if os.path.exists("frontend/build"):

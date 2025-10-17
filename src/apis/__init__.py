@@ -22,6 +22,7 @@ from .currency_api_client import CurrencyAPIClient
 from .real_flight_scraper import RealFlightScraper
 from .real_hotel_scraper import RealHotelScraper
 from .real_attractions_scraper import RealAttractionsScraper
+from .real_food_scraper import RealFoodScraper
 
 # Enhanced API Clients - Multiple Free Sources
 # (Enhanced clients are integrated into existing clients)
@@ -46,6 +47,7 @@ __all__ = [
     'RealFlightScraper',
     'RealHotelScraper',
     'RealAttractionsScraper',
+    'RealFoodScraper',
     
     # Enhanced API Clients - Multiple Free Sources
     # (Enhanced clients are integrated into existing clients)
