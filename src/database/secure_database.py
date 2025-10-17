@@ -215,6 +215,20 @@ class SecureDatabase:
                         SELECT * FROM user_preferences
                     """)
                     self.conn.execute("DROP TABLE user_preferences")
+                    # Create the new user_preferences table with proper structure
+                    self.conn.execute("""
+                        CREATE TABLE IF NOT EXISTS user_preferences (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            user_id TEXT NOT NULL DEFAULT 'default',
+                            preference_type TEXT NOT NULL,
+                            preference_value TEXT NOT NULL,
+                            confidence REAL DEFAULT 0.5,
+                            source TEXT DEFAULT 'user',
+                            usage_count INTEGER DEFAULT 1,
+                            timestamp TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                            expires_at TIMESTAMP
+                        )
+                    """)
                     print("Migrated user_preferences table to new structure")
             
             self.conn.commit()

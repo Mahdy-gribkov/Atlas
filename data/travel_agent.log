@@ -955,3 +955,118 @@
 2025-10-17 23:32:07,283 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
 2025-10-17 23:32:07,283 - INFO - LLM Service initialized with multiple fallbacks
 2025-10-17 23:32:07,283 - INFO - Travel agent initialized successfully
+2025-10-17 23:44:34,818 - INFO - Travel MCP Client initialized
+2025-10-17 23:44:34,829 - INFO - Intent Router initialized with pattern matching
+2025-10-17 23:44:34,833 - INFO - Database Context Provider initialized
+2025-10-17 23:44:34,834 - INFO - Conversation Memory System initialized
+2025-10-17 23:44:34,834 - INFO - Preference Learning System initialized
+2025-10-17 23:44:34,851 - INFO - Advanced Cache System initialized
+2025-10-17 23:44:34,866 - INFO - Simple Performance Monitor initialized
+2025-10-17 23:44:34,867 - INFO - Initialized 5 optimization rules
+2025-10-17 23:44:34,868 - INFO - Response Optimizer initialized
+2025-10-17 23:44:34,868 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
+2025-10-17 23:44:34,879 - INFO - LLM Service initialized with multiple fallbacks
+2025-10-17 23:44:34,881 - INFO - Travel agent initialized successfully
+2025-10-17 23:44:49,006 - INFO - Travel MCP Client initialized
+2025-10-17 23:44:49,006 - INFO - Intent Router initialized with pattern matching
+2025-10-17 23:44:49,006 - INFO - Database Context Provider initialized
+2025-10-17 23:44:49,006 - INFO - Conversation Memory System initialized
+2025-10-17 23:44:49,006 - INFO - Preference Learning System initialized
+2025-10-17 23:44:49,007 - INFO - Advanced Cache System initialized
+2025-10-17 23:44:49,008 - INFO - Simple Performance Monitor initialized
+2025-10-17 23:44:49,008 - INFO - Initialized 5 optimization rules
+2025-10-17 23:44:49,008 - INFO - Response Optimizer initialized
+2025-10-17 23:44:49,008 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
+2025-10-17 23:44:49,008 - INFO - LLM Service initialized with multiple fallbacks
+2025-10-17 23:44:49,008 - INFO - Travel agent initialized successfully
+2025-10-17 23:44:55,983 - INFO - Processing query with intelligent routing: Hello...
+2025-10-17 23:44:55,985 - INFO - Query routed: unknown -> direct_llm (latency: 200ms)
+2025-10-17 23:44:55,985 - INFO - Query routed: unknown -> direct_llm (latency: 200ms)
+2025-10-17 23:45:09,199 - INFO - LLM response from llm7 in 13.21s
+2025-10-17 23:45:16,774 - INFO - Processing simple chat request: Hello, can you help me plan a trip to Japan?...
+2025-10-17 23:45:16,775 - INFO - Processing query with intelligent routing: Hello, can you help me plan a trip to Japan?...
+2025-10-17 23:45:16,777 - INFO - Query routed: greeting -> direct_llm (latency: 200ms)
+2025-10-17 23:45:16,777 - INFO - Query routed: greeting -> direct_llm (latency: 200ms)
+2025-10-17 23:45:19,887 - ERROR - Login error: argon2: no backends available -- recommend you install one (e.g. 'pip install argon2_cffi')
+2025-10-17 23:49:28,406 - INFO - Travel MCP Client initialized
+2025-10-17 23:49:28,407 - INFO - Intent Router initialized with pattern matching
+2025-10-17 23:49:28,407 - INFO - Database Context Provider initialized
+2025-10-17 23:49:28,407 - INFO - Conversation Memory System initialized
+2025-10-17 23:49:28,407 - INFO - Preference Learning System initialized
+2025-10-17 23:49:28,408 - INFO - Advanced Cache System initialized
+2025-10-17 23:49:28,408 - INFO - Simple Performance Monitor initialized
+2025-10-17 23:49:28,408 - INFO - Initialized 5 optimization rules
+2025-10-17 23:49:28,408 - INFO - Response Optimizer initialized
+2025-10-17 23:49:28,408 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
+2025-10-17 23:49:28,408 - INFO - LLM Service initialized with multiple fallbacks
+2025-10-17 23:49:28,408 - INFO - Travel agent initialized successfully
+2025-10-17 23:49:33,536 - INFO - Processing query with intelligent routing: Hello...
+2025-10-17 23:49:33,537 - INFO - Query routed: unknown -> direct_llm (latency: 200ms)
+2025-10-17 23:49:33,537 - INFO - Query routed: unknown -> direct_llm (latency: 200ms)
+2025-10-17 23:49:34,327 - WARNING - LLM7.io error: 400, message:
+  Can not decode content-encoding: zstd
+2025-10-17 23:49:34,584 - WARNING - Hugging Face returned status 401
+2025-10-17 23:49:34,586 - INFO - Using intelligent fallback in 1.05s
+2025-10-17 23:49:38,534 - INFO - Processing simple chat request: Plan a 3-day trip to Tokyo with budget...
+2025-10-17 23:49:38,534 - INFO - Processing query with intelligent routing: Plan a 3-day trip to Tokyo with budget...
+2025-10-17 23:49:38,538 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-17 23:49:38,539 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-17 23:49:38,544 - INFO - Loaded user preferences for default_user
+2025-10-17 23:49:38,545 - INFO - Saved user preference: travel_style
+2025-10-17 23:49:38,545 - INFO - Added to knowledge base: query_1
+2025-10-17 23:49:38,545 - ERROR - Location search error for Plan a 3-day trip to Tokyo with budget: NominatimClient._search_nominatim() missing 1 required positional argument: 'limit'
+2025-10-17 23:49:38,549 - INFO - Planning budget...
+2025-10-17 23:49:42,627 - WARNING - LLM7.io error: 400, message:
+  Can not decode content-encoding: zstd
+2025-10-17 23:49:42,858 - WARNING - Hugging Face returned status 401
+2025-10-17 23:49:42,859 - INFO - Using intelligent fallback in 4.31s
+2025-10-17 23:49:42,860 - INFO - Metric recorded: response_optimizer_duration=4.311360836029053, tags=None
+2025-10-17 23:49:42,882 - INFO - Memory tables initialized
+2025-10-17 23:49:42,885 - INFO - Memory stored: default_user_conversation_20251017234942_12854117 for user default_user
+2025-10-17 23:50:31,104 - INFO - Travel MCP Client initialized
+2025-10-17 23:50:31,104 - INFO - Intent Router initialized with pattern matching
+2025-10-17 23:50:31,105 - INFO - Database Context Provider initialized
+2025-10-17 23:50:31,105 - INFO - Conversation Memory System initialized
+2025-10-17 23:50:31,105 - INFO - Preference Learning System initialized
+2025-10-17 23:50:31,105 - INFO - Advanced Cache System initialized
+2025-10-17 23:50:31,105 - INFO - Simple Performance Monitor initialized
+2025-10-17 23:50:31,105 - INFO - Initialized 5 optimization rules
+2025-10-17 23:50:31,106 - INFO - Response Optimizer initialized
+2025-10-17 23:50:31,106 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
+2025-10-17 23:50:31,106 - INFO - LLM Service initialized with multiple fallbacks
+2025-10-17 23:50:31,106 - INFO - Travel agent initialized successfully
+2025-10-17 23:50:38,888 - INFO - Processing query with intelligent routing: Hello...
+2025-10-17 23:50:38,890 - INFO - Query routed: unknown -> direct_llm (latency: 200ms)
+2025-10-17 23:50:38,890 - INFO - Query routed: unknown -> direct_llm (latency: 200ms)
+2025-10-17 23:50:39,574 - WARNING - LLM7.io error: 400, message:
+  Can not decode content-encoding: zstd
+2025-10-17 23:50:39,876 - WARNING - Hugging Face returned status 401
+2025-10-17 23:50:39,878 - INFO - Using intelligent fallback in 0.99s
+2025-10-17 23:51:07,159 - INFO - Processing new request: 3 day trip - full plan - jan 2026 - just me - i start in israel - open to anything - like pineaplles...
+2025-10-17 23:51:07,161 - INFO - Processing query with intelligent routing: 3 day trip - full plan - jan 2026 - just me - i start in israel - open to anything - like pineaplles...
+2025-10-17 23:51:07,165 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-17 23:51:07,166 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-17 23:51:07,174 - INFO - Loaded user preferences for default_user
+2025-10-17 23:51:07,175 - INFO - Added to knowledge base: query_1
+2025-10-17 23:51:07,175 - ERROR - Location search error for 3 day trip - full plan - jan 2026 - just me - i start in israel - open to anything - like pineaplles.: NominatimClient._search_nominatim() missing 1 required positional argument: 'limit'
+2025-10-17 23:51:07,176 - INFO - Creating comprehensive travel plan for Anything
+2025-10-17 23:51:08,052 - ERROR - Food data error: 'TravelAgent' object has no attribute 'food_client'
+2025-10-17 23:51:09,832 - ERROR - Budget breakdown error: '<=' not supported between instances of 'int' and 'NoneType'
+2025-10-17 23:51:15,754 - WARNING - LLM7.io error: 400, message:
+  Can not decode content-encoding: zstd
+2025-10-17 23:51:16,004 - WARNING - Hugging Face returned status 401
+2025-10-17 23:51:16,006 - INFO - Using intelligent fallback in 6.17s
+2025-10-17 23:51:16,007 - INFO - Memory tables initialized
+2025-10-17 23:51:16,008 - INFO - Memory stored: default_user_conversation_20251017235116_92204c94 for user default_user
+2025-10-17 23:57:54,100 - INFO - Travel MCP Client initialized
+2025-10-17 23:57:54,101 - INFO - Intent Router initialized with pattern matching
+2025-10-17 23:57:54,101 - INFO - Database Context Provider initialized
+2025-10-17 23:57:54,101 - INFO - Conversation Memory System initialized
+2025-10-17 23:57:54,101 - INFO - Preference Learning System initialized
+2025-10-17 23:57:54,102 - INFO - Advanced Cache System initialized
+2025-10-17 23:57:54,102 - INFO - Simple Performance Monitor initialized
+2025-10-17 23:57:54,102 - INFO - Initialized 5 optimization rules
+2025-10-17 23:57:54,102 - INFO - Response Optimizer initialized
+2025-10-17 23:57:54,102 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
+2025-10-17 23:57:54,102 - INFO - LLM Service initialized with multiple fallbacks
+2025-10-17 23:57:54,102 - INFO - Travel agent initialized successfully

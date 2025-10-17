@@ -76,7 +76,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('data/travel_agent.log'),
+        logging.FileHandler('data/travel_agent.log', encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
@@ -139,6 +139,9 @@ class TravelAgent:
         self.real_hotel_scraper = RealHotelScraper()
         self.real_attractions_scraper = RealAttractionsScraper()
         self.real_food_scraper = RealFoodScraper()
+        
+        # Set food_client alias for compatibility
+        self.food_client = self.real_food_scraper
         
         # Enhanced API Clients are integrated into existing clients
         
@@ -1681,7 +1684,7 @@ Response:"""
     async def _handle_comprehensive_travel_plan(self, query: str, travel_info: Dict[str, Any], response_parts: List[str], context_parts: List[str]):
         """Handle comprehensive travel planning with real API searches."""
         destination = travel_info.get('destination', 'Unknown')
-        budget = travel_info.get('budget', 0)
+        budget = travel_info.get('budget')  # Keep as None if not provided
         duration = travel_info.get('duration', '3')
         date = travel_info.get('date', 'Not specified')
         travelers = travel_info.get('travelers', 1)
@@ -1912,7 +1915,12 @@ Response:"""
     async def _create_budget_breakdown(self, budget: float, flight_data: str, hotel_data: str, duration: str) -> str:
         """Create a budget breakdown."""
         try:
-            breakdown = f"## 💰 Budget Breakdown (Total: ${budget})\n\n"
+            # Handle None budget - provide estimates without a specific budget
+            if budget is None:
+                breakdown = f"## 💰 Budget Breakdown (No budget specified - showing estimates)\n\n"
+                breakdown += "💡 **Tip:** Specify a budget like '$2000' for personalized recommendations!\n\n"
+            else:
+                breakdown = f"## 💰 Budget Breakdown (Total: ${budget})\n\n"
             
             # Estimate costs based on available data
             flight_cost = 800  # Default estimate
@@ -1930,10 +1938,17 @@ Response:"""
             breakdown += f"- **Local Transport:** ${transport_cost}\n"
             breakdown += f"- **Total Estimated:** ${total_estimated}\n\n"
             
-            if total_estimated <= budget:
-                breakdown += f"✅ **Within Budget!** You have ${budget - total_estimated} remaining for extras.\n"
+            if budget is not None:
+                if total_estimated <= budget:
+                    breakdown += f"✅ **Within Budget!** You have ${budget - total_estimated} remaining for extras.\n"
+                else:
+                    breakdown += f"⚠️ **Over Budget** by ${total_estimated - budget}. Consider adjusting plans.\n"
             else:
-                breakdown += f"⚠️ **Over Budget** by ${total_estimated - budget}. Consider adjusting plans.\n"
+                breakdown += f"📊 **Estimated Total:** ${total_estimated} for {duration} days\n"
+                breakdown += f"💡 **Budget Tips:**\n"
+                breakdown += f"- Budget travelers: ${total_estimated * 0.7:.0f} (hostels, street food)\n"
+                breakdown += f"- Mid-range: ${total_estimated:.0f} (hotels, restaurants)\n"
+                breakdown += f"- Luxury: ${total_estimated * 1.5:.0f} (5-star hotels, fine dining)\n"
             
             return breakdown
         except Exception as e:
