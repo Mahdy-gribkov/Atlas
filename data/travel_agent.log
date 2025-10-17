@@ -1186,3 +1186,40 @@
 2025-10-18 00:07:55,107 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
 2025-10-18 00:07:55,107 - INFO - LLM Service initialized with multiple fallbacks
 2025-10-18 00:07:55,108 - INFO - Travel agent initialized successfully
+2025-10-18 00:08:00,798 - INFO - Processing simple chat request: 3 day trip to Tokyo - jan 2026 - just me - i start in israel...
+2025-10-18 00:08:00,799 - INFO - Processing query with intelligent routing: 3 day trip to Tokyo - jan 2026 - just me - i start in israel...
+2025-10-18 00:08:00,801 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-18 00:08:00,802 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-18 00:08:00,814 - INFO - Loaded user preferences for default_user
+2025-10-18 00:08:00,814 - INFO - Added to knowledge base: query_1
+2025-10-18 00:08:00,814 - ERROR - Location search error for 3 day trip to Tokyo - jan 2026 - just me - i start in israel: NominatimClient._search_nominatim() missing 1 required positional argument: 'limit'
+2025-10-18 00:08:00,817 - INFO - Creating comprehensive travel plan for Tokyo
+2025-10-18 00:08:01,548 - ERROR - Food data error: 'str' object has no attribute 'get'
+2025-10-18 00:08:03,983 - INFO - Using intelligent fallback in 0.00s
+2025-10-18 00:08:03,986 - INFO - Memory tables initialized
+2025-10-18 00:08:03,989 - INFO - Memory stored: default_user_conversation_20251018000803_d6763dd8 for user default_user
+2025-10-18 00:08:03,993 - INFO - ✅ Learned preferences for user default_user
+2025-10-18 00:08:43,445 - INFO - Processing new request: 3 day trip - full plan - jan 2026 - just me - i start in israel - open to anything - like pineaplles...
+2025-10-18 00:08:43,445 - INFO - Processing query with intelligent routing: 3 day trip - full plan - jan 2026 - just me - i start in israel - open to anything - like pineaplles...
+2025-10-18 00:08:43,446 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-18 00:08:43,446 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-18 00:08:43,457 - INFO - Added to knowledge base: query_3
+2025-10-18 00:08:43,459 - ERROR - Location search error for 3 day trip - full plan - jan 2026 - just me - i start in israel - open to anything - like pineaplles.: NominatimClient._search_nominatim() missing 1 required positional argument: 'limit'
+2025-10-18 00:08:43,460 - INFO - Creating comprehensive travel plan for Anything
+2025-10-18 00:08:43,794 - WARNING - OpenSky Network error: 'NoneType' object is not subscriptable
+2025-10-18 00:08:43,813 - ERROR - Food data error: 'str' object has no attribute 'get'
+2025-10-18 00:08:45,061 - INFO - Using intelligent fallback in 0.00s
+2025-10-18 00:08:45,062 - INFO - Memory stored: default_user_conversation_20251018000845_03542cdc for user default_user
+2025-10-18 00:08:45,063 - INFO - ✅ Learned preferences for user default_user
+2025-10-18 00:09:28,352 - INFO - Travel MCP Client initialized
+2025-10-18 00:09:28,355 - INFO - Intent Router initialized with pattern matching
+2025-10-18 00:09:28,362 - INFO - Database Context Provider initialized
+2025-10-18 00:09:28,365 - INFO - Conversation Memory System initialized
+2025-10-18 00:09:28,366 - INFO - Preference Learning System initialized
+2025-10-18 00:09:28,381 - INFO - Advanced Cache System initialized
+2025-10-18 00:09:28,385 - INFO - Simple Performance Monitor initialized
+2025-10-18 00:09:28,386 - INFO - Initialized 5 optimization rules
+2025-10-18 00:09:28,387 - INFO - Response Optimizer initialized
+2025-10-18 00:09:28,387 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
+2025-10-18 00:09:28,387 - INFO - LLM Service initialized with multiple fallbacks
+2025-10-18 00:09:28,387 - INFO - Travel agent initialized successfully
