@@ -887,34 +887,52 @@ What destination are you most interested in?"""
     @performance_timer('process_query')
     async def process_query(self, query: str, context: Optional[Dict[str, Any]] = None) -> str:
         """
-        Process a travel query with intelligent routing and context management.
+        Process a travel query with direct LLM processing.
         
-        This method now uses the IntentRouter to determine the optimal processing path,
-        addressing the "Centralized Core Bottleneck" by bypassing unnecessary context
-        processing for simple queries.
+        Simplified approach: All queries go directly to LLM for proper AI responses.
         
         Args:
             query: User's travel query
             context: User context including departure location, destination, etc.
             
         Returns:
-            Comprehensive travel response with intelligent routing and context optimization
+            AI-generated response from DeepSeek
         """
-        logger.info(f"Processing query with intelligent routing: {query[:100]}...")
+        logger.info(f"Processing query with direct LLM: {query[:100]}...")
         
         # Generate user ID from context or use default
         user_id = context.get('user_id', 'default_user') if context else 'default_user'
         
-        # Route the query to determine optimal processing path
-        routing_decision = await self.intent_router.route_query(query, user_id)
-        
-        logger.info(f"Query routed: {routing_decision['intent']} -> {routing_decision['routing_path']} (latency: {routing_decision['estimated_latency']}ms)")
-        
-        # Process based on routing decision
-        if routing_decision['bypass_context']:
-            return await self._process_bypass_query(query, routing_decision, user_id)
-        else:
-            return await self._process_context_query(query, routing_decision, user_id)
+        # Direct LLM processing for all queries
+        return await self._process_direct_llm(query, user_id)
+    
+    async def _process_direct_llm(self, query: str, user_id: str) -> str:
+        """Process query directly with LLM for proper AI responses."""
+        try:
+            # Create a comprehensive prompt for the LLM
+            system_prompt = """You are a helpful travel planning assistant. You can help with:
+- Travel planning and itineraries
+- Flight and hotel recommendations
+- Weather information
+- Local attractions and activities
+- Restaurant and food recommendations
+- Budget planning
+- General travel advice
+
+Provide helpful, conversational responses. If the user asks about specific travel planning, offer to help create detailed itineraries."""
+            
+            # Get response from LLM
+            response = await self._call_llm(system_prompt + "\n\nUser: " + query, "", user_id)
+            
+            if response and not response.startswith("I can help you"):
+                return response
+            else:
+                # Fallback if LLM fails
+                return "I'm here to help with your travel needs! What would you like to know about your trip?"
+                
+        except Exception as e:
+            logger.error(f"Direct LLM processing error: {e}")
+            return "I'm here to help with your travel planning. What specific information do you need?"
     
     async def _process_bypass_query(self, query: str, routing_decision: Dict[str, Any], user_id: str) -> str:
         """

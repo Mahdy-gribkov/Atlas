@@ -1223,3 +1223,42 @@
 2025-10-18 00:09:28,387 - INFO - Real Data APIs, Scrapers, MCP Client & Advanced Systems initialized: Weather, Wikipedia, Maps, Web Search, Currency, Countries, Real Flight/Hotel/Attractions Scrapers, MCP Tools, Advanced Context Management, Conversation Memory, Preference Learning, Performance Optimization
 2025-10-18 00:09:28,387 - INFO - LLM Service initialized with multiple fallbacks
 2025-10-18 00:09:28,387 - INFO - Travel agent initialized successfully
+2025-10-18 00:10:00,279 - INFO - Processing new request: 3 day trip - full plan - jan 2026 - just me - i start in israel - open to anything - like pineaplles...
+2025-10-18 00:10:00,281 - INFO - Processing query with intelligent routing: 3 day trip - full plan - jan 2026 - just me - i start in israel - open to anything - like pineaplles...
+2025-10-18 00:10:00,286 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-18 00:10:00,287 - INFO - Query routed: travel_planning -> full_context (latency: 1500ms)
+2025-10-18 00:10:00,328 - INFO - Loaded user preferences for default_user
+2025-10-18 00:10:00,329 - INFO - Added to knowledge base: query_1
+2025-10-18 00:10:00,329 - ERROR - Location search error for 3 day trip - full plan - jan 2026 - just me - i start in israel - open to anything - like pineaplles.: NominatimClient._search_nominatim() missing 1 required positional argument: 'limit'
+2025-10-18 00:10:00,333 - INFO - Creating comprehensive travel plan for Anything
+2025-10-18 00:10:01,107 - ERROR - Food data error: 'str' object has no attribute 'get'
+2025-10-18 00:10:04,587 - INFO - Using intelligent fallback in 0.00s
+2025-10-18 00:10:04,603 - INFO - Memory tables initialized
+2025-10-18 00:10:04,603 - INFO - Memory stored: default_user_conversation_20251018001004_4c92898b for user default_user
+2025-10-18 00:10:04,605 - INFO - ✅ Learned preferences for user default_user
+2025-10-18 00:11:28,493 - INFO - Processing new request: i want to know whats the best cheesecake in new york...
+2025-10-18 00:11:28,494 - INFO - Processing query with intelligent routing: i want to know whats the best cheesecake in new york...
+2025-10-18 00:11:28,496 - INFO - Query routed: complex_query -> full_context (latency: 1500ms)
+2025-10-18 00:11:28,496 - INFO - Query routed: complex_query -> full_context (latency: 1500ms)
+2025-10-18 00:11:28,506 - INFO - Added to knowledge base: query_3
+2025-10-18 00:11:28,507 - ERROR - Location search error for i want to know whats the best cheesecake in new york: NominatimClient._search_nominatim() missing 1 required positional argument: 'limit'
+2025-10-18 00:11:28,508 - INFO - Getting information about Know...
+2025-10-18 00:11:28,946 - ERROR - Country info error: API request failed: 404
+2025-10-18 00:11:28,948 - ERROR - Destination query error: cannot access local variable 'country_info' where it is not associated with a value
+2025-10-18 00:11:28,950 - INFO - Using intelligent fallback in 0.00s
+2025-10-18 00:11:28,951 - INFO - Metric recorded: response_optimizer_duration=0.0021758079528808594, tags=None
+2025-10-18 00:11:28,951 - INFO - Memory stored: default_user_conversation_20251018001128_21f5c888 for user default_user
+2025-10-18 00:11:28,952 - INFO - ✅ Learned preferences for user default_user
+2025-10-18 00:13:12,476 - INFO - Processing new request: i want to buy banans in israek - where?...
+2025-10-18 00:13:12,476 - INFO - Processing query with intelligent routing: i want to buy banans in israek - where?...
+2025-10-18 00:13:12,477 - INFO - Query routed: booking_request -> full_context (latency: 1500ms)
+2025-10-18 00:13:12,477 - INFO - Query routed: booking_request -> full_context (latency: 1500ms)
+2025-10-18 00:13:12,485 - INFO - Added to knowledge base: query_5
+2025-10-18 00:13:12,486 - ERROR - Location search error for i want to buy banans in israek - where?: NominatimClient._search_nominatim() missing 1 required positional argument: 'limit'
+2025-10-18 00:13:12,487 - INFO - Getting information about Buy...
+2025-10-18 00:13:12,895 - ERROR - Country info error: API request failed: 404
+2025-10-18 00:13:12,896 - ERROR - Destination query error: cannot access local variable 'country_info' where it is not associated with a value
+2025-10-18 00:13:12,897 - INFO - Using intelligent fallback in 0.00s
+2025-10-18 00:13:12,898 - INFO - Metric recorded: response_optimizer_duration=0.0022935867309570312, tags=None
+2025-10-18 00:13:12,902 - INFO - Memory stored: default_user_conversation_20251018001312_7108b876 for user default_user
+2025-10-18 00:13:12,903 - INFO - ✅ Learned preferences for user default_user

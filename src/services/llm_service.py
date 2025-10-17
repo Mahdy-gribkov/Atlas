@@ -27,25 +27,12 @@ class LLMService:
         """Initialize the LLM service."""
         self.services = [
             {
-                'name': 'groq',
-                'url': 'https://api.groq.com/openai/v1/chat/completions',
-                'model': 'llama3-8b-8192',
-                'timeout': 15,
-                'enabled': False  # Disabled for now - focus on intelligent fallback
-            },
-            {
-                'name': 'llm7',
-                'url': 'https://api.llm7.io/v1/chat/completions',
-                'model': 'gpt-3.5-turbo',
-                'timeout': 15,
-                'enabled': False  # Disabled due to errors
-            },
-            {
-                'name': 'huggingface',
-                'url': 'https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium',
-                'model': 'microsoft/DialoGPT-medium',
-                'timeout': 20,
-                'enabled': False  # Disabled due to 401 errors
+                'name': 'deepseek',
+                'url': 'https://api.deepseek.com/v1/chat/completions',
+                'model': 'deepseek-chat',
+                'timeout': 30,
+                'enabled': True,
+                'api_key': os.getenv('DEEPSEEK_API_KEY')
             }
         ]
         
@@ -139,12 +126,62 @@ class LLMService:
     
     async def _try_service(self, service: Dict[str, Any], prompt: str, context: str) -> Optional[str]:
         """Try a specific LLM service."""
-        if service['name'] == 'groq':
-            return await self._try_groq(service, prompt, context)
-        elif service['name'] == 'llm7':
-            return await self._try_llm7(service, prompt, context)
-        elif service['name'] == 'huggingface':
-            return await self._try_huggingface(service, prompt, context)
+        if service['name'] == 'deepseek':
+            return await self._try_deepseek(service, prompt, context)
+        return None
+    
+    async def _try_deepseek(self, service: Dict[str, Any], prompt: str, context: str) -> Optional[str]:
+        """Try DeepSeek API service."""
+        try:
+            api_key = service.get('api_key')
+            if not api_key:
+                logger.warning("DeepSeek API key not found")
+                return None
+                
+            payload = {
+                'model': service['model'],
+                'messages': [
+                    {
+                        'role': 'system',
+                        'content': 'You are a helpful travel planning assistant. Provide conversational, helpful responses about travel, destinations, and trip planning. Be friendly and informative.'
+                    },
+                    {
+                        'role': 'user',
+                        'content': f"{prompt}\n\nContext: {context}" if context else prompt
+                    }
+                ],
+                'max_tokens': 1000,
+                'temperature': 0.7,
+                'stream': False
+            }
+            
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': f"Bearer {api_key}"
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    service['url'],
+                    json=payload,
+                    headers=headers,
+                    timeout=aiohttp.ClientTimeout(total=service['timeout'])
+                ) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if 'choices' in data and len(data['choices']) > 0:
+                            content = data['choices'][0]['message']['content']
+                            return content.strip()
+                    else:
+                        logger.warning(f"DeepSeek returned status {response.status}")
+                        response_text = await response.text()
+                        logger.warning(f"DeepSeek response: {response_text}")
+                        
+        except asyncio.TimeoutError:
+            logger.warning("DeepSeek request timed out")
+        except Exception as e:
+            logger.warning(f"DeepSeek error: {e}")
+        
         return None
     
     async def _try_groq(self, service: Dict[str, Any], prompt: str, context: str) -> Optional[str]:
