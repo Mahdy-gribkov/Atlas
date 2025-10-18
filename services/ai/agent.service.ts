@@ -3,6 +3,10 @@ import { VectorService } from './vector.service';
 import { ItineraryService } from '../itinerary.service';
 import { ChatService } from '../chat.service';
 import { UserService } from '../user.service';
+import { WeatherService } from '../external/weather.service';
+import { FlightService } from '../external/flight.service';
+import { MapsService } from '../external/maps.service';
+import { CountriesService } from '../external/countries.service';
 import { Itinerary, ChatMessage } from '@/types';
 
 export interface AgentTool {
@@ -26,6 +30,10 @@ export class AgentService {
   private itineraryService: ItineraryService;
   private chatService: ChatService;
   private userService: UserService;
+  private weatherService: WeatherService;
+  private flightService: FlightService;
+  private mapsService: MapsService;
+  private countriesService: CountriesService;
   private tools: Map<string, AgentTool>;
 
   constructor() {
@@ -34,6 +42,10 @@ export class AgentService {
     this.itineraryService = new ItineraryService();
     this.chatService = new ChatService();
     this.userService = new UserService();
+    this.weatherService = new WeatherService();
+    this.flightService = new FlightService();
+    this.mapsService = new MapsService();
+    this.countriesService = new CountriesService();
     this.tools = new Map();
     
     this.initializeTools();
@@ -115,6 +127,91 @@ export class AgentService {
         required: ['location'],
       },
       handler: this.searchLocations.bind(this),
+    });
+
+    // Tool: Get weather information
+    this.registerTool({
+      name: 'get_weather',
+      description: 'Get current weather or forecast for a location',
+      parameters: {
+        type: 'object',
+        properties: {
+          location: { type: 'string', description: 'Location to get weather for' },
+          type: { type: 'string', enum: ['current', 'forecast'], description: 'Type of weather data' },
+          days: { type: 'number', description: 'Number of days for forecast (1-5)' },
+        },
+        required: ['location'],
+      },
+      handler: this.getWeather.bind(this),
+    });
+
+    // Tool: Search flights
+    this.registerTool({
+      name: 'search_flights',
+      description: 'Search for flight options between airports',
+      parameters: {
+        type: 'object',
+        properties: {
+          origin: { type: 'string', description: 'Origin airport code (e.g., JFK)' },
+          destination: { type: 'string', description: 'Destination airport code (e.g., LAX)' },
+          departureDate: { type: 'string', description: 'Departure date (YYYY-MM-DD)' },
+          returnDate: { type: 'string', description: 'Return date (YYYY-MM-DD)' },
+          adults: { type: 'number', description: 'Number of adult passengers' },
+          children: { type: 'number', description: 'Number of child passengers' },
+          travelClass: { type: 'string', enum: ['ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST'], description: 'Travel class' },
+        },
+        required: ['origin', 'destination', 'departureDate', 'adults'],
+      },
+      handler: this.searchFlights.bind(this),
+    });
+
+    // Tool: Search places
+    this.registerTool({
+      name: 'search_places',
+      description: 'Search for places, attractions, restaurants, and hotels',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'Search query for places' },
+          location: { type: 'string', description: 'Location coordinates (lat,lng) or address' },
+          type: { type: 'string', description: 'Type of place (restaurant, tourist_attraction, lodging, etc.)' },
+          radius: { type: 'number', description: 'Search radius in meters' },
+        },
+        required: ['query'],
+      },
+      handler: this.searchPlaces.bind(this),
+    });
+
+    // Tool: Get country information
+    this.registerTool({
+      name: 'get_country_info',
+      description: 'Get information about countries, regions, and travel destinations',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'Country name or code to search' },
+          action: { type: 'string', enum: ['search', 'region', 'popular', 'all'], description: 'Type of search' },
+          region: { type: 'string', description: 'Region name for regional search' },
+        },
+        required: ['query'],
+      },
+      handler: this.getCountryInfo.bind(this),
+    });
+
+    // Tool: Get directions
+    this.registerTool({
+      name: 'get_directions',
+      description: 'Get directions between two locations',
+      parameters: {
+        type: 'object',
+        properties: {
+          origin: { type: 'string', description: 'Starting location' },
+          destination: { type: 'string', description: 'Destination location' },
+          mode: { type: 'string', enum: ['driving', 'walking', 'bicycling', 'transit'], description: 'Travel mode' },
+        },
+        required: ['origin', 'destination'],
+      },
+      handler: this.getDirections.bind(this),
     });
   }
 
@@ -332,6 +429,181 @@ Provide a natural, conversational response that incorporates the tool result.`;
       return true;
     } catch (error) {
       return false;
+    }
+  }
+
+  // New tool handlers for real APIs
+  private async getWeather(params: any): Promise<any> {
+    const { location, type = 'current', days = 5 } = params;
+    
+    try {
+      if (type === 'forecast') {
+        const forecast = await this.weatherService.getWeatherForecast(location, days);
+        return forecast ? {
+          location: forecast.location,
+          country: forecast.country,
+          forecasts: forecast.forecasts,
+          type: 'forecast'
+        } : { error: 'Weather forecast not available' };
+      } else {
+        const weather = await this.weatherService.getCurrentWeather(location);
+        return weather ? {
+          location: weather.location,
+          country: weather.country,
+          temperature: weather.temperature,
+          description: weather.description,
+          humidity: weather.humidity,
+          windSpeed: weather.windSpeed,
+          type: 'current'
+        } : { error: 'Weather data not available' };
+      }
+    } catch (error) {
+      console.error('Error getting weather:', error);
+      return { error: 'Failed to get weather information' };
+    }
+  }
+
+  private async searchFlights(params: any): Promise<any> {
+    const { origin, destination, departureDate, returnDate, adults = 1, children, travelClass } = params;
+    
+    try {
+      const flightOffers = await this.flightService.searchFlights({
+        origin,
+        destination,
+        departureDate,
+        returnDate,
+        adults,
+        children,
+        travelClass,
+      });
+
+      return {
+        origin,
+        destination,
+        departureDate,
+        returnDate,
+        offers: flightOffers.map(offer => ({
+          id: offer.id,
+          price: offer.price,
+          itineraries: offer.itineraries,
+          bookingInfo: offer.bookingInfo,
+        })),
+        totalResults: flightOffers.length,
+      };
+    } catch (error) {
+      console.error('Error searching flights:', error);
+      return { error: 'Failed to search flights' };
+    }
+  }
+
+  private async searchPlaces(params: any): Promise<any> {
+    const { query, location, type, radius } = params;
+    
+    try {
+      let places;
+      
+      if (location && radius) {
+        // Parse location if it's coordinates
+        const [lat, lng] = location.includes(',') 
+          ? location.split(',').map((coord: string) => parseFloat(coord.trim()))
+          : [null, null];
+        
+        if (lat && lng) {
+          places = await this.mapsService.getNearbyPlaces({ lat, lng }, radius, type);
+        } else {
+          places = await this.mapsService.searchPlaces(query, undefined, radius, type);
+        }
+      } else {
+        places = await this.mapsService.searchPlaces(query, undefined, radius, type);
+      }
+
+      return {
+        query,
+        location,
+        type,
+        places: places.map(place => ({
+          id: place.id,
+          name: place.name,
+          address: place.address,
+          location: place.location,
+          rating: place.rating,
+          types: place.types,
+        })),
+        totalResults: places.length,
+      };
+    } catch (error) {
+      console.error('Error searching places:', error);
+      return { error: 'Failed to search places' };
+    }
+  }
+
+  private async getCountryInfo(params: any): Promise<any> {
+    const { query, action = 'search', region } = params;
+    
+    try {
+      let countries;
+      
+      switch (action) {
+        case 'region':
+          countries = await this.countriesService.getCountriesByRegion(region || query);
+          break;
+        case 'popular':
+          countries = await this.countriesService.getPopularDestinations();
+          break;
+        case 'all':
+          countries = await this.countriesService.getAllCountries();
+          break;
+        default:
+          countries = await this.countriesService.searchCountries(query);
+          break;
+      }
+
+      return {
+        query,
+        action,
+        region,
+        countries: countries.map(country => ({
+          name: country.name,
+          codes: country.codes,
+          region: country.region,
+          subregion: country.subregion,
+          capital: country.capital,
+          population: country.population,
+          area: country.area,
+          flag: country.flag,
+          location: country.location,
+        })),
+        totalResults: countries.length,
+      };
+    } catch (error) {
+      console.error('Error getting country info:', error);
+      return { error: 'Failed to get country information' };
+    }
+  }
+
+  private async getDirections(params: any): Promise<any> {
+    const { origin, destination, mode = 'driving' } = params;
+    
+    try {
+      const routes = await this.mapsService.getDirections(origin, destination, mode);
+
+      return {
+        origin,
+        destination,
+        mode,
+        routes: routes.map(route => ({
+          distance: route.distance,
+          duration: route.duration,
+          startAddress: route.startAddress,
+          endAddress: route.endAddress,
+          steps: route.steps.slice(0, 5), // Limit steps for brevity
+          summary: route.summary,
+        })),
+        totalRoutes: routes.length,
+      };
+    } catch (error) {
+      console.error('Error getting directions:', error);
+      return { error: 'Failed to get directions' };
     }
   }
 }
