@@ -1,12 +1,35 @@
 import { adminDb } from '@/lib/firebase/admin';
 import { Itinerary, ItineraryDay, Activity } from '@/types';
 import { createItinerarySchema, updateItinerarySchema } from '@/lib/validations/schemas';
+import { ItineraryGeneratorService, ItineraryRequest } from './itinerary/itinerary-generator.service';
 
 export class ItineraryService {
   private collection = adminDb?.collection('itineraries');
+  private generatorService = new ItineraryGeneratorService();
 
   async createItinerary(userId: string, itineraryData: any): Promise<Itinerary> {
     const validatedData = createItinerarySchema.parse(itineraryData);
+    
+    // Create itinerary request for the generator
+    const request: ItineraryRequest = {
+      destination: validatedData.destination,
+      startDate: validatedData.startDate,
+      endDate: validatedData.endDate,
+      travelers: validatedData.travelers,
+      budget: validatedData.budget,
+      interests: validatedData.preferences?.interests || [],
+      travelStyle: validatedData.preferences?.travelStyle?.budget || 'mid-range',
+      ...(validatedData.preferences?.accessibility && {
+        accessibility: {
+          wheelchairAccessible: validatedData.preferences.accessibility.mobility,
+          mobilityAssistance: validatedData.preferences.accessibility.mobility,
+        }
+      }),
+      dietaryRestrictions: validatedData.preferences?.dietary?.restrictions || [],
+    };
+
+    // Generate itinerary using the real service
+    const generatedItinerary = await this.generatorService.generateItinerary(request);
     
     const itinerary: Itinerary = {
       id: this.generateId(),
@@ -18,13 +41,54 @@ export class ItineraryService {
       travelers: validatedData.travelers,
       budget: validatedData.budget,
       status: 'draft',
-      days: [],
+      days: generatedItinerary.days.map(day => ({
+        day: day.day,
+        date: new Date(day.date),
+        activities: day.activities.map(activity => ({
+          id: activity.id,
+          name: activity.name,
+          type: 'attraction' as const,
+          description: activity.description,
+          location: {
+            name: activity.location.name,
+            address: activity.location.address,
+            city: (activity.location as any).city || '',
+            country: (activity.location as any).country || '',
+            coordinates: activity.location.coordinates,
+          },
+          duration: typeof activity.duration === 'string' ? parseInt(activity.duration) : activity.duration,
+          cost: typeof activity.cost === 'object' ? activity.cost.amount : activity.cost,
+          rating: (activity as any).rating,
+          bookingRequired: activity.bookingRequired,
+          accessibility: {
+            wheelchairAccessible: activity.accessibility?.wheelchairAccessible || false,
+            visualAccessibility: (activity.accessibility as any)?.visualAccessibility || false,
+            hearingAccessibility: (activity.accessibility as any)?.hearingAccessibility || false,
+            cognitiveAccessibility: (activity.accessibility as any)?.cognitiveAccessibility || false,
+            notes: (activity.accessibility as any)?.notes,
+          },
+          sustainability: {
+            ecoFriendly: activity.sustainability?.ecoFriendly || false,
+            carbonFootprint: (activity.sustainability as any)?.carbonFootprint || 0,
+            localBusiness: (activity.sustainability as any)?.localBusiness || false,
+            sustainableTransport: (activity.sustainability as any)?.sustainableTransport || false,
+            notes: (activity.sustainability as any)?.notes,
+          },
+          timeSlot: {
+            start: activity.startTime || '09:00',
+            end: activity.endTime || '11:00',
+            flexible: (activity as any).flexible || false,
+          },
+        })),
+        estimatedCost: day.estimatedCost,
+        notes: Array.isArray(day.notes) ? day.notes.join('; ') : day.notes || '',
+      })),
       metadata: {
-        totalCost: 0,
-        sustainabilityScore: 0,
-        accessibilityScore: 0,
-        tags: [],
-        source: 'user-created',
+        totalCost: (generatedItinerary as any).totalCost || 0,
+        sustainabilityScore: (generatedItinerary as any).sustainabilityScore || 0,
+        accessibilityScore: (generatedItinerary as any).accessibilityScore || 0,
+        tags: (generatedItinerary as any).tags || [],
+        source: 'ai-generated',
         version: 1,
       },
       createdAt: new Date(),

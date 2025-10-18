@@ -435,12 +435,7 @@ Remember: Traveling with disabilities requires extra planning, but it's absolute
 
   async getIngestionStats(): Promise<any> {
     try {
-      // Mock stats for now
-      return {
-        totalVectors: 100,
-        dimension: 768,
-        indexFullness: 0.1,
-      };
+      return await this.vectorService.getIndexStats();
     } catch (error) {
       console.error('Error getting ingestion stats:', error);
       return { error: 'Failed to get stats' };
