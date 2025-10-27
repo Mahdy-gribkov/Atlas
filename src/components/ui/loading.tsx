@@ -1,268 +1,435 @@
-import * as React from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@/lib/utils/atlas-utils';
+"use client";
 
-const spinnerVariants = cva(
-  'animate-spin rounded-full border-2 border-solid border-current border-r-transparent',
+import React, { forwardRef } from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/lib/utils";
+import { 
+  LoaderIcon,
+  RefreshCwIcon,
+  RotateCcwIcon,
+  ZapIcon,
+  TargetIcon,
+  ActivityIcon,
+  PulseIcon,
+  HeartIcon,
+  StarIcon,
+  SparklesIcon,
+  MoonIcon,
+  SunIcon,
+  CloudIcon,
+  WindIcon
+} from "lucide-react";
+
+// Loading Root Component
+const loadingVariants = cva(
+  "inline-flex items-center justify-center",
   {
     variants: {
-      size: {
-        sm: 'h-4 w-4',
-        default: 'h-6 w-6',
-        lg: 'h-8 w-8',
-        xl: 'h-12 w-12',
-      },
       variant: {
-        default: 'text-atlas-primary-main',
-        secondary: 'text-atlas-secondary-main',
-        ai: 'text-atlas-ai-main',
-        success: 'text-atlas-success-main',
-        error: 'text-atlas-error-main',
-        warning: 'text-atlas-warning-main',
-        info: 'text-atlas-info-main',
-        muted: 'text-atlas-text-tertiary',
+        default: "text-primary",
+        primary: "text-primary",
+        secondary: "text-secondary",
+        success: "text-green-500",
+        warning: "text-yellow-500",
+        error: "text-red-500",
+        info: "text-blue-500",
+        muted: "text-muted-foreground"
       },
+      size: {
+        sm: "h-4 w-4",
+        md: "h-6 w-6",
+        lg: "h-8 w-8",
+        xl: "h-12 w-12",
+        "2xl": "h-16 w-16"
+      },
+      type: {
+        spinner: "animate-spin",
+        pulse: "animate-pulse",
+        bounce: "animate-bounce",
+        ping: "animate-ping",
+        spin: "animate-spin",
+        rotate: "animate-spin",
+        heartbeat: "animate-pulse",
+        wave: "animate-pulse",
+        dots: "animate-pulse",
+        bars: "animate-pulse",
+        circles: "animate-pulse",
+        squares: "animate-pulse"
+      }
     },
     defaultVariants: {
-      size: 'default',
-      variant: 'default',
-    },
+      variant: "default",
+      size: "md",
+      type: "spinner"
+    }
   }
 );
 
-export interface SpinnerProps
+export interface LoadingProps
   extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof spinnerVariants> {
-  label?: string;
+    VariantProps<typeof loadingVariants> {
+  text?: string;
+  showText?: boolean;
+  icon?: React.ReactNode;
+  showIcon?: boolean;
+  overlay?: boolean;
+  fullscreen?: boolean;
+  centered?: boolean;
+  children?: React.ReactNode;
 }
 
-const Spinner = React.forwardRef<HTMLDivElement, SpinnerProps>(
-  ({ className, size, variant, label = 'Loading...', ...props }, ref) => (
+const Loading = forwardRef<HTMLDivElement, LoadingProps>(
+  ({
+    className,
+    variant,
+    size,
+    type,
+    text,
+    showText = false,
+    icon,
+    showIcon = true,
+    overlay = false,
+    fullscreen = false,
+    centered = true,
+    children,
+    ...props
+  }, ref) => {
+    const getDefaultIcon = () => {
+      if (icon) return icon;
+      
+      switch (type) {
+        case 'pulse':
+        case 'heartbeat':
+          return <PulseIcon className="h-full w-full" />;
+        case 'bounce':
+          return <TargetIcon className="h-full w-full" />;
+        case 'ping':
+          return <ActivityIcon className="h-full w-full" />;
+        case 'rotate':
+          return <RotateCcwIcon className="h-full w-full" />;
+        case 'wave':
+          return <ZapIcon className="h-full w-full" />;
+        case 'dots':
+          return <div className="flex space-x-1">
+            <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+            <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+            <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+          </div>;
+        case 'bars':
+          return <div className="flex space-x-1">
+            <div className="w-1 h-4 bg-current animate-pulse" style={{ animationDelay: '0ms' }} />
+            <div className="w-1 h-4 bg-current animate-pulse" style={{ animationDelay: '150ms' }} />
+            <div className="w-1 h-4 bg-current animate-pulse" style={{ animationDelay: '300ms' }} />
+          </div>;
+        case 'circles':
+          return <div className="flex space-x-1">
+            <div className="w-2 h-2 bg-current rounded-full animate-pulse" style={{ animationDelay: '0ms' }} />
+            <div className="w-2 h-2 bg-current rounded-full animate-pulse" style={{ animationDelay: '150ms' }} />
+            <div className="w-2 h-2 bg-current rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
+          </div>;
+        case 'squares':
+          return <div className="flex space-x-1">
+            <div className="w-2 h-2 bg-current animate-pulse" style={{ animationDelay: '0ms' }} />
+            <div className="w-2 h-2 bg-current animate-pulse" style={{ animationDelay: '150ms' }} />
+            <div className="w-2 h-2 bg-current animate-pulse" style={{ animationDelay: '300ms' }} />
+          </div>;
+        default:
+          return <LoaderIcon className="h-full w-full" />;
+      }
+    };
+
+    const loadingContent = (
+      <div className={cn("flex items-center space-x-2", className)} {...props}>
+        {showIcon && (
+          <div className={cn(loadingVariants({ variant, size, type }))}>
+            {getDefaultIcon()}
+          </div>
+        )}
+        
+        {showText && text && (
+          <span className="text-sm text-muted-foreground">
+            {text}
+          </span>
+        )}
+        
+        {children}
+      </div>
+    );
+
+    if (overlay) {
+      return (
     <div
       ref={ref}
-      className={cn(spinnerVariants({ size, variant, className }))}
-      role="status"
-      aria-label={label}
-      {...props}
-    >
-      <span className="sr-only">{label}</span>
+          className={cn(
+            "absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50",
+            fullscreen && "fixed inset-0",
+            centered && "items-center justify-center"
+          )}
+        >
+          {loadingContent}
     </div>
-  )
-);
-Spinner.displayName = 'Spinner';
+      );
+    }
 
-// Pulse spinner variant
-const pulseSpinnerVariants = cva(
-  'animate-pulse rounded-full bg-current',
-  {
-    variants: {
-      size: {
-        sm: 'h-4 w-4',
-        default: 'h-6 w-6',
-        lg: 'h-8 w-8',
-        xl: 'h-12 w-12',
-      },
-      variant: {
-        default: 'text-atlas-primary-main',
-        secondary: 'text-atlas-secondary-main',
-        ai: 'text-atlas-ai-main',
-        success: 'text-atlas-success-main',
-        error: 'text-atlas-error-main',
-        warning: 'text-atlas-warning-main',
-        info: 'text-atlas-info-main',
-        muted: 'text-atlas-text-tertiary',
-      },
-    },
-    defaultVariants: {
-      size: 'default',
-      variant: 'default',
-    },
-  }
-);
-
-export interface PulseSpinnerProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof pulseSpinnerVariants> {
-  label?: string;
-}
-
-const PulseSpinner = React.forwardRef<HTMLDivElement, PulseSpinnerProps>(
-  ({ className, size, variant, label = 'Loading...', ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn(pulseSpinnerVariants({ size, variant, className }))}
-      role="status"
-      aria-label={label}
-      {...props}
-    >
-      <span className="sr-only">{label}</span>
-    </div>
-  )
-);
-PulseSpinner.displayName = 'PulseSpinner';
-
-// Dots spinner
-const dotsSpinnerVariants = cva(
-  'inline-flex space-x-1',
-  {
-    variants: {
-      size: {
-        sm: 'space-x-1',
-        default: 'space-x-1.5',
-        lg: 'space-x-2',
-      },
-    },
-    defaultVariants: {
-      size: 'default',
-    },
-  }
-);
-
-export interface DotsSpinnerProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof dotsSpinnerVariants> {
-  variant?: 'default' | 'secondary' | 'ai' | 'success' | 'error' | 'warning' | 'info' | 'muted';
-  label?: string;
-}
-
-const DotsSpinner = React.forwardRef<HTMLDivElement, DotsSpinnerProps>(
-  ({ className, size, variant = 'default', label = 'Loading...', ...props }, ref) => {
-    const dotColor = {
-      default: 'bg-atlas-primary-main',
-      secondary: 'bg-atlas-secondary-main',
-      ai: 'bg-atlas-ai-main',
-      success: 'bg-atlas-success-main',
-      error: 'bg-atlas-error-main',
-      warning: 'bg-atlas-warning-main',
-      info: 'bg-atlas-info-main',
-      muted: 'bg-atlas-text-tertiary',
-    }[variant];
-
-    const dotSize = {
-      sm: 'h-2 w-2',
-      default: 'h-2.5 w-2.5',
-      lg: 'h-3 w-3',
-    }[size || 'default'];
-
+    if (fullscreen) {
     return (
       <div
         ref={ref}
-        className={cn(dotsSpinnerVariants({ size, className }))}
-        role="status"
-        aria-label={label}
+          className={cn(
+            "fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50",
+            className
+          )}
         {...props}
       >
-        <div className={cn('rounded-full animate-bounce', dotColor, dotSize)} style={{ animationDelay: '0ms' }} />
-        <div className={cn('rounded-full animate-bounce', dotColor, dotSize)} style={{ animationDelay: '150ms' }} />
-        <div className={cn('rounded-full animate-bounce', dotColor, dotSize)} style={{ animationDelay: '300ms' }} />
-        <span className="sr-only">{label}</span>
+          {loadingContent}
+        </div>
+      );
+    }
+
+    return (
+      <div ref={ref} className={cn(centered && "flex items-center justify-center", className)} {...props}>
+        {loadingContent}
       </div>
     );
   }
 );
-DotsSpinner.displayName = 'DotsSpinner';
 
-// Skeleton component
-const skeletonVariants = cva(
-  'animate-pulse rounded-md bg-atlas-border-subtle',
-  {
-    variants: {
-      variant: {
-        default: 'bg-atlas-border-subtle',
-        card: 'bg-atlas-border-subtle',
-        text: 'bg-atlas-border-subtle',
-        avatar: 'rounded-full bg-atlas-border-subtle',
-        button: 'rounded-md bg-atlas-border-subtle',
-      },
-    },
-    defaultVariants: {
-      variant: 'default',
-    },
-  }
-);
+Loading.displayName = "Loading";
 
-export interface SkeletonProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof skeletonVariants> {
-  width?: string | number;
-  height?: string | number;
-}
-
-const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(
-  ({ className, variant, width, height, style, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn(skeletonVariants({ variant, className }))}
-      style={{
-        width: typeof width === 'number' ? `${width}px` : width,
-        height: typeof height === 'number' ? `${height}px` : height,
-        ...style,
-      }}
-      {...props}
-    />
+// Loading Sub-components
+const LoadingSpinner = forwardRef<HTMLDivElement, LoadingProps>(
+  ({ type = "spinner", ...props }, ref) => (
+    <Loading ref={ref} type={type} {...props} />
   )
 );
-Skeleton.displayName = 'Skeleton';
+LoadingSpinner.displayName = "LoadingSpinner";
 
-// Loading states
-export interface LoadingStateProps {
-  loading?: boolean;
-  children: React.ReactNode;
-  fallback?: React.ReactNode;
-  spinner?: React.ReactNode;
-}
-
-const LoadingState = React.forwardRef<HTMLDivElement, LoadingStateProps>(
-  ({ loading = false, children, fallback, spinner, ...props }, ref) => {
-    if (loading) {
-      return (
-        <div ref={ref} {...props}>
-          {fallback || spinner || <Spinner />}
-        </div>
-      );
-    }
-    
-    return <>{children}</>;
-  }
+const LoadingPulse = forwardRef<HTMLDivElement, LoadingProps>(
+  ({ type = "pulse", ...props }, ref) => (
+    <Loading ref={ref} type={type} {...props} />
+  )
 );
-LoadingState.displayName = 'LoadingState';
+LoadingPulse.displayName = "LoadingPulse";
 
-// Loading overlay
-export interface LoadingOverlayProps {
-  loading?: boolean;
-  children: React.ReactNode;
-  spinner?: React.ReactNode;
-  message?: string;
-}
+const LoadingBounce = forwardRef<HTMLDivElement, LoadingProps>(
+  ({ type = "bounce", ...props }, ref) => (
+    <Loading ref={ref} type={type} {...props} />
+  )
+);
+LoadingBounce.displayName = "LoadingBounce";
 
-const LoadingOverlay = React.forwardRef<HTMLDivElement, LoadingOverlayProps>(
-  ({ loading = false, children, spinner, message, ...props }, ref) => (
-    <div ref={ref} className="relative" {...props}>
-      {children}
-      {loading && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-atlas-card-bg/80 backdrop-blur-sm">
-          <div className="flex flex-col items-center space-y-2">
-            {spinner || <Spinner size="lg" />}
-            {message && (
-              <p className="text-sm text-atlas-text-secondary">{message}</p>
-            )}
-          </div>
-        </div>
+const LoadingPing = forwardRef<HTMLDivElement, LoadingProps>(
+  ({ type = "ping", ...props }, ref) => (
+    <Loading ref={ref} type={type} {...props} />
+  )
+);
+LoadingPing.displayName = "LoadingPing";
+
+const LoadingDots = forwardRef<HTMLDivElement, LoadingProps>(
+  ({ type = "dots", ...props }, ref) => (
+    <Loading ref={ref} type={type} {...props} />
+  )
+);
+LoadingDots.displayName = "LoadingDots";
+
+const LoadingBars = forwardRef<HTMLDivElement, LoadingProps>(
+  ({ type = "bars", ...props }, ref) => (
+    <Loading ref={ref} type={type} {...props} />
+  )
+);
+LoadingBars.displayName = "LoadingBars";
+
+const LoadingCircles = forwardRef<HTMLDivElement, LoadingProps>(
+  ({ type = "circles", ...props }, ref) => (
+    <Loading ref={ref} type={type} {...props} />
+  )
+);
+LoadingCircles.displayName = "LoadingCircles";
+
+const LoadingSquares = forwardRef<HTMLDivElement, LoadingProps>(
+  ({ type = "squares", ...props }, ref) => (
+    <Loading ref={ref} type={type} {...props} />
+  )
+);
+LoadingSquares.displayName = "LoadingSquares";
+
+// Size Variants
+const LoadingSmall = forwardRef<HTMLDivElement, LoadingProps>(
+  ({ size = "sm", ...props }, ref) => (
+    <Loading ref={ref} size={size} {...props} />
+  )
+);
+LoadingSmall.displayName = "LoadingSmall";
+
+const LoadingLarge = forwardRef<HTMLDivElement, LoadingProps>(
+  ({ size = "lg", ...props }, ref) => (
+    <Loading ref={ref} size={size} {...props} />
+  )
+);
+LoadingLarge.displayName = "LoadingLarge";
+
+const LoadingExtraLarge = forwardRef<HTMLDivElement, LoadingProps>(
+  ({ size = "xl", ...props }, ref) => (
+    <Loading ref={ref} size={size} {...props} />
+  )
+);
+LoadingExtraLarge.displayName = "LoadingExtraLarge";
+
+const LoadingHuge = forwardRef<HTMLDivElement, LoadingProps>(
+  ({ size = "2xl", ...props }, ref) => (
+    <Loading ref={ref} size={size} {...props} />
+  )
+);
+LoadingHuge.displayName = "LoadingHuge";
+
+// Variant Variants
+const LoadingPrimary = forwardRef<HTMLDivElement, LoadingProps>(
+  ({ variant = "primary", ...props }, ref) => (
+    <Loading ref={ref} variant={variant} {...props} />
+  )
+);
+LoadingPrimary.displayName = "LoadingPrimary";
+
+const LoadingSecondary = forwardRef<HTMLDivElement, LoadingProps>(
+  ({ variant = "secondary", ...props }, ref) => (
+    <Loading ref={ref} variant={variant} {...props} />
+  )
+);
+LoadingSecondary.displayName = "LoadingSecondary";
+
+const LoadingSuccess = forwardRef<HTMLDivElement, LoadingProps>(
+  ({ variant = "success", ...props }, ref) => (
+    <Loading ref={ref} variant={variant} {...props} />
+  )
+);
+LoadingSuccess.displayName = "LoadingSuccess";
+
+const LoadingWarning = forwardRef<HTMLDivElement, LoadingProps>(
+  ({ variant = "warning", ...props }, ref) => (
+    <Loading ref={ref} variant={variant} {...props} />
+  )
+);
+LoadingWarning.displayName = "LoadingWarning";
+
+const LoadingError = forwardRef<HTMLDivElement, LoadingProps>(
+  ({ variant = "error", ...props }, ref) => (
+    <Loading ref={ref} variant={variant} {...props} />
+  )
+);
+LoadingError.displayName = "LoadingError";
+
+const LoadingInfo = forwardRef<HTMLDivElement, LoadingProps>(
+  ({ variant = "info", ...props }, ref) => (
+    <Loading ref={ref} variant={variant} {...props} />
+  )
+);
+LoadingInfo.displayName = "LoadingInfo";
+
+const LoadingMuted = forwardRef<HTMLDivElement, LoadingProps>(
+  ({ variant = "muted", ...props }, ref) => (
+    <Loading ref={ref} variant={variant} {...props} />
+  )
+);
+LoadingMuted.displayName = "LoadingMuted";
+
+// Overlay Variants
+const LoadingOverlay = forwardRef<HTMLDivElement, LoadingProps>(
+  ({ overlay = true, ...props }, ref) => (
+    <Loading ref={ref} overlay={overlay} {...props} />
+  )
+);
+LoadingOverlay.displayName = "LoadingOverlay";
+
+const LoadingFullscreen = forwardRef<HTMLDivElement, LoadingProps>(
+  ({ fullscreen = true, ...props }, ref) => (
+    <Loading ref={ref} fullscreen={fullscreen} {...props} />
+  )
+);
+LoadingFullscreen.displayName = "LoadingFullscreen";
+
+// Responsive Loading
+const LoadingResponsive = forwardRef<HTMLDivElement, LoadingProps & { breakpoint?: 'sm' | 'md' | 'lg' | 'xl' }>(
+  ({ breakpoint = 'md', className, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn(
+        "w-full",
+        breakpoint === 'sm' && "sm:w-auto",
+        breakpoint === 'md' && "md:w-auto",
+        breakpoint === 'lg' && "lg:w-auto",
+        breakpoint === 'xl' && "xl:w-auto",
+        className
       )}
+    >
+      <Loading {...props} />
     </div>
   )
 );
-LoadingOverlay.displayName = 'LoadingOverlay';
+LoadingResponsive.displayName = "LoadingResponsive";
+
+// Size Utilities
+const LoadingSizes = {
+  sm: "h-4 w-4",
+  md: "h-6 w-6",
+  lg: "h-8 w-8",
+  xl: "h-12 w-12",
+  "2xl": "h-16 w-16"
+};
+
+// Type Utilities
+const LoadingTypes = {
+  spinner: "animate-spin",
+  pulse: "animate-pulse",
+  bounce: "animate-bounce",
+  ping: "animate-ping",
+  spin: "animate-spin",
+  rotate: "animate-spin",
+  heartbeat: "animate-pulse",
+  wave: "animate-pulse",
+  dots: "animate-pulse",
+  bars: "animate-pulse",
+  circles: "animate-pulse",
+  squares: "animate-pulse"
+};
+
+// Variant Colors
+const LoadingVariantColors = {
+  default: "text-primary",
+  primary: "text-primary",
+  secondary: "text-secondary",
+  success: "text-green-500",
+  warning: "text-yellow-500",
+  error: "text-red-500",
+  info: "text-blue-500",
+  muted: "text-muted-foreground"
+};
 
 export {
-  Spinner,
-  PulseSpinner,
-  DotsSpinner,
-  Skeleton,
-  LoadingState,
+  Loading,
+  LoadingSpinner,
+  LoadingPulse,
+  LoadingBounce,
+  LoadingPing,
+  LoadingDots,
+  LoadingBars,
+  LoadingCircles,
+  LoadingSquares,
+  LoadingSmall,
+  LoadingLarge,
+  LoadingExtraLarge,
+  LoadingHuge,
+  LoadingPrimary,
+  LoadingSecondary,
+  LoadingSuccess,
+  LoadingWarning,
+  LoadingError,
+  LoadingInfo,
+  LoadingMuted,
   LoadingOverlay,
-  spinnerVariants,
-  pulseSpinnerVariants,
-  dotsSpinnerVariants,
-  skeletonVariants,
+  LoadingFullscreen,
+  LoadingResponsive,
+  LoadingSizes,
+  LoadingTypes,
+  LoadingVariantColors,
+  loadingVariants
 };

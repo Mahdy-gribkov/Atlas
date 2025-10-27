@@ -1,386 +1,552 @@
-import * as React from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
+"use client";
+
+import React, { forwardRef, useState, useCallback } from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/lib/utils";
 import { 
-  AlertCircleIcon, 
-  CheckCircleIcon, 
-  InfoIcon, 
   AlertTriangleIcon,
+  CheckCircleIcon,
+  InfoIcon,
+  XCircleIcon,
   XIcon,
-  BellIcon,
+  AlertCircleIcon,
   ShieldCheckIcon,
-  ClockIcon
-} from 'lucide-react';
-import { cn } from '@/lib/utils/atlas-utils';
+  ShieldAlertIcon,
+  ShieldXIcon,
+  BellIcon,
+  MegaphoneIcon,
+  LightbulbIcon,
+  HeartIcon,
+  StarIcon,
+  ZapIcon,
+  MoreHorizontalIcon
+} from "lucide-react";
+import { Button } from "./button";
+import { Badge } from "./badge";
 
+// Alert Root Component
 const alertVariants = cva(
-  'relative w-full rounded-lg border px-4 py-3 text-sm transition-all duration-200',
+  "relative w-full rounded-lg border p-4",
   {
     variants: {
       variant: {
-        default: 'bg-atlas-card-bg border-atlas-border text-atlas-text-primary',
-        success: 'bg-atlas-success-bg border-atlas-success-main text-atlas-success-dark',
-        error: 'bg-atlas-error-bg border-atlas-error-main text-atlas-error-dark',
-        warning: 'bg-atlas-warning-bg border-atlas-warning-main text-atlas-warning-dark',
-        info: 'bg-atlas-info-bg border-atlas-info-main text-atlas-info-dark',
-        ai: 'bg-atlas-ai-lighter border-atlas-ai-main text-atlas-ai-dark',
-        neutral: 'bg-atlas-border-subtle border-atlas-border text-atlas-text-secondary',
+        default: "bg-background text-foreground",
+        destructive: "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
+        warning: "border-yellow-500/50 text-yellow-600 dark:border-yellow-500 [&>svg]:text-yellow-600",
+        success: "border-green-500/50 text-green-600 dark:border-green-500 [&>svg]:text-green-600",
+        info: "border-blue-500/50 text-blue-600 dark:border-blue-500 [&>svg]:text-blue-600",
+        error: "border-red-500/50 text-red-600 dark:border-red-500 [&>svg]:text-red-600",
+        critical: "border-red-600/50 text-red-700 dark:border-red-600 [&>svg]:text-red-700",
+        notice: "border-purple-500/50 text-purple-600 dark:border-purple-500 [&>svg]:text-purple-600",
+        announcement: "border-orange-500/50 text-orange-600 dark:border-orange-500 [&>svg]:text-orange-600",
+        tip: "border-cyan-500/50 text-cyan-600 dark:border-cyan-500 [&>svg]:text-cyan-600"
       },
       size: {
-        sm: 'px-3 py-2 text-xs',
-        default: 'px-4 py-3 text-sm',
-        lg: 'px-6 py-4 text-base',
+        sm: "text-sm p-3",
+        md: "text-base p-4",
+        lg: "text-lg p-5",
+        xl: "text-xl p-6"
       },
-      elevation: {
-        flat: 'shadow-none',
-        low: 'shadow-sm',
-        medium: 'shadow-md',
-        high: 'shadow-lg',
+      density: {
+        compact: "p-2",
+        normal: "p-4",
+        spacious: "p-6"
       },
-      dismissible: {
-        true: 'pr-10',
-        false: '',
-      },
-      interactive: {
-        true: 'cursor-pointer hover:shadow-md transition-shadow',
-        false: '',
-      },
+      style: {
+        solid: "border-0",
+        outlined: "bg-transparent",
+        filled: "border-0 text-white",
+        subtle: "bg-muted/50",
+        minimal: "bg-transparent border-0"
+      }
     },
     defaultVariants: {
-      variant: 'default',
-      size: 'default',
-      elevation: 'flat',
-      dismissible: false,
-      interactive: false,
-    },
-  }
-);
-
-const alertIconVariants = cva(
-  'flex-shrink-0',
-  {
-    variants: {
-      variant: {
-        default: 'text-atlas-text-tertiary',
-        success: 'text-atlas-success-main',
-        error: 'text-atlas-error-main',
-        warning: 'text-atlas-warning-main',
-        info: 'text-atlas-info-main',
-        ai: 'text-atlas-ai-main',
-        neutral: 'text-atlas-text-tertiary',
-      },
-      size: {
-        sm: 'h-4 w-4',
-        default: 'h-5 w-5',
-        lg: 'h-6 w-6',
-      },
-    },
-    defaultVariants: {
-      variant: 'default',
-      size: 'default',
-    },
-  }
-);
-
-const alertTitleVariants = cva(
-  'font-semibold leading-none tracking-tight',
-  {
-    variants: {
-      size: {
-        sm: 'text-xs',
-        default: 'text-sm',
-        lg: 'text-base',
-      },
-    },
-    defaultVariants: {
-      size: 'default',
-    },
-  }
-);
-
-const alertDescriptionVariants = cva(
-  'mt-1 leading-relaxed',
-  {
-    variants: {
-      size: {
-        sm: 'text-xs',
-        default: 'text-sm',
-        lg: 'text-base',
-      },
-    },
-    defaultVariants: {
-      size: 'default',
-      },
-  }
-);
-
-const alertActionVariants = cva(
-  'mt-3 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end',
-  {
-    variants: {
-      size: {
-        sm: 'gap-1',
-        default: 'gap-2',
-        lg: 'gap-3',
-      },
-    },
-    defaultVariants: {
-      size: 'default',
-    },
+      variant: "default",
+      size: "md",
+      density: "normal",
+      style: "outlined"
+    }
   }
 );
 
 export interface AlertProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof alertVariants> {
-  variant?: 'default' | 'success' | 'error' | 'warning' | 'info' | 'ai' | 'neutral';
-  size?: 'sm' | 'default' | 'lg';
-  elevation?: 'flat' | 'low' | 'medium' | 'high';
-  dismissible?: boolean;
-  interactive?: boolean;
-  onDismiss?: () => void;
-  icon?: React.ReactNode;
   title?: string;
   description?: string;
-  actions?: React.ReactNode;
-  role?: 'alert' | 'alertdialog' | 'status' | 'banner';
+  icon?: React.ReactNode;
+  dismissible?: boolean;
+  persistent?: boolean;
+  autoClose?: boolean;
+  autoCloseDelay?: number;
+  showIcon?: boolean;
+  showCloseButton?: boolean;
+  actions?: AlertAction[];
+  onClose?: () => void;
+  onAction?: (actionKey: string) => void;
+  children?: React.ReactNode;
 }
 
-export interface AlertTitleProps
-  extends React.HTMLAttributes<HTMLHeadingElement>,
-    VariantProps<typeof alertTitleVariants> {}
+export interface AlertAction {
+  key: string;
+  label: string;
+  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
+  onClick: () => void;
+  disabled?: boolean;
+}
 
-export interface AlertDescriptionProps
-  extends React.HTMLAttributes<HTMLParagraphElement>,
-    VariantProps<typeof alertDescriptionVariants> {}
-
-export interface AlertActionProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof alertActionVariants> {}
-
-const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
-  (
-    {
-      className,
-      variant,
-      size,
-      elevation,
-      dismissible,
-      interactive,
-      onDismiss,
-      icon,
-      title,
-      description,
-      actions,
-      role = 'alert',
-      children,
-      ...props
-    },
-    ref
-  ) => {
-    const [isVisible, setIsVisible] = React.useState(true);
-
-    const handleDismiss = React.useCallback(() => {
-      setIsVisible(false);
-      onDismiss?.();
-    }, [onDismiss]);
+const Alert = forwardRef<HTMLDivElement, AlertProps>(
+  ({
+    className,
+    variant,
+    size,
+    density,
+    style,
+    title,
+    description,
+    icon,
+    dismissible = false,
+    persistent = true,
+    autoClose = false,
+    autoCloseDelay = 5000,
+    showIcon = true,
+    showCloseButton = true,
+    actions = [],
+    onClose,
+    onAction,
+    children,
+    ...props
+  }, ref) => {
+    const [isVisible, setIsVisible] = useState(true);
+    const [isClosing, setIsClosing] = useState(false);
 
     const getDefaultIcon = () => {
+      if (icon) return icon;
+      
       switch (variant) {
-        case 'success':
-          return <CheckCircleIcon className={alertIconVariants({ variant, size })} />;
+        case 'destructive':
         case 'error':
-          return <AlertCircleIcon className={alertIconVariants({ variant, size })} />;
+        case 'critical':
+          return <XCircleIcon className="h-4 w-4" />;
         case 'warning':
-          return <AlertTriangleIcon className={alertIconVariants({ variant, size })} />;
+          return <AlertTriangleIcon className="h-4 w-4" />;
+        case 'success':
+          return <CheckCircleIcon className="h-4 w-4" />;
         case 'info':
-          return <InfoIcon className={alertIconVariants({ variant, size })} />;
-        case 'ai':
-          return <BellIcon className={alertIconVariants({ variant, size })} />;
-        case 'neutral':
-          return <ShieldCheckIcon className={alertIconVariants({ variant, size })} />;
+          return <InfoIcon className="h-4 w-4" />;
+        case 'notice':
+          return <BellIcon className="h-4 w-4" />;
+        case 'announcement':
+          return <MegaphoneIcon className="h-4 w-4" />;
+        case 'tip':
+          return <LightbulbIcon className="h-4 w-4" />;
         default:
-          return <InfoIcon className={alertIconVariants({ variant, size })} />;
+          return <AlertCircleIcon className="h-4 w-4" />;
       }
     };
+
+    const getBackgroundColor = () => {
+      if (style === 'filled') {
+        switch (variant) {
+          case 'destructive':
+          case 'error':
+          case 'critical':
+            return 'bg-red-500';
+          case 'warning':
+            return 'bg-yellow-500';
+          case 'success':
+            return 'bg-green-500';
+          case 'info':
+            return 'bg-blue-500';
+          case 'notice':
+            return 'bg-purple-500';
+          case 'announcement':
+            return 'bg-orange-500';
+          case 'tip':
+            return 'bg-cyan-500';
+          default:
+            return 'bg-primary';
+        }
+      }
+      return '';
+    };
+
+    const handleClose = useCallback(() => {
+      if (!dismissible) return;
+      
+      setIsClosing(true);
+      setTimeout(() => {
+        setIsVisible(false);
+        onClose?.();
+      }, 200);
+    }, [dismissible, onClose]);
+
+    const handleAction = useCallback((actionKey: string) => {
+      onAction?.(actionKey);
+    }, [onAction]);
+
+    // Auto-close functionality
+    React.useEffect(() => {
+      if (autoClose && !persistent && isVisible) {
+        const timer = setTimeout(() => {
+          handleClose();
+        }, autoCloseDelay);
+        
+        return () => clearTimeout(timer);
+      }
+    }, [autoClose, persistent, isVisible, autoCloseDelay, handleClose]);
 
     if (!isVisible) return null;
 
     return (
       <div
         ref={ref}
-        role={role}
-        className={cn(alertVariants({ variant, size, elevation, dismissible, interactive, className }))}
+        className={cn(
+          alertVariants({ variant, size, density, style }),
+          getBackgroundColor(),
+          isClosing && "opacity-0 scale-95 transition-all duration-200",
+          !isClosing && "opacity-100 scale-100 transition-all duration-200",
+          className
+        )}
+        role="alert"
+        aria-live="polite"
         {...props}
       >
-        <div className="flex items-start gap-3">
-          {(icon || variant !== 'default') && (
-            <div className="flex-shrink-0 mt-0.5" aria-hidden="true">
-              {icon || getDefaultIcon()}
+        <div className="flex items-start space-x-3">
+          {/* Icon */}
+          {showIcon && (
+            <div className="flex-shrink-0 mt-0.5">
+              {getDefaultIcon()}
             </div>
           )}
+
+          {/* Content */}
           <div className="flex-1 min-w-0">
             {title && (
-              <AlertTitle size={size} className="mb-1">
+              <h4 className="font-semibold leading-none tracking-tight mb-1">
                 {title}
-              </AlertTitle>
+              </h4>
             )}
+            
             {description && (
-              <AlertDescription size={size}>
+              <div className="text-sm opacity-90 mt-1">
                 {description}
-              </AlertDescription>
+              </div>
             )}
+
             {children && (
-              <div className={title || description ? 'mt-2' : ''}>
+              <div className="mt-2">
                 {children}
               </div>
             )}
-            {actions && (
-              <AlertAction size={size}>
-                {actions}
-              </AlertAction>
+
+            {/* Actions */}
+            {actions.length > 0 && (
+              <div className="flex items-center space-x-2 mt-3">
+                {actions.map(action => (
+                  <Button
+                    key={action.key}
+                    variant={action.variant || "outline"}
+                    size="sm"
+                    onClick={() => handleAction(action.key)}
+                    disabled={action.disabled}
+                    className="h-8"
+                  >
+                    {action.label}
+                  </Button>
+                ))}
+              </div>
             )}
           </div>
-          {dismissible && (
-            <button
-              type="button"
-              onClick={handleDismiss}
-              className="absolute top-3 right-3 flex-shrink-0 rounded-md p-1 hover:bg-black/5 focus:outline-none focus:ring-2 focus:ring-atlas-primary-main focus:ring-offset-2 transition-colors"
-              aria-label="Dismiss alert"
+
+          {/* Close Button */}
+          {dismissible && showCloseButton && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClose}
+              className="flex-shrink-0 h-6 w-6 p-0 opacity-70 hover:opacity-100"
+              aria-label="Close alert"
             >
-              <XIcon className="h-4 w-4" aria-hidden="true" />
-            </button>
+              <XIcon className="h-4 w-4" />
+            </Button>
           )}
         </div>
       </div>
     );
   }
 );
-Alert.displayName = 'Alert';
 
-const AlertTitle = React.forwardRef<HTMLHeadingElement, AlertTitleProps>(
-  ({ className, size, ...props }, ref) => (
-    <h5
+Alert.displayName = "Alert";
+
+// Alert Sub-components
+const AlertTitle = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <h4 ref={ref} className={cn("font-semibold leading-none tracking-tight", className)} {...props} />
+  )
+);
+AlertTitle.displayName = "AlertTitle";
+
+const AlertDescription = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={cn("text-sm opacity-90 mt-1", className)} {...props} />
+  )
+);
+AlertDescription.displayName = "AlertDescription";
+
+const AlertIcon = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={cn("flex-shrink-0 mt-0.5", className)} {...props} />
+  )
+);
+AlertIcon.displayName = "AlertIcon";
+
+const AlertContent = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={cn("flex-1 min-w-0", className)} {...props} />
+  )
+);
+AlertContent.displayName = "AlertContent";
+
+const AlertActions = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={cn("flex items-center space-x-2 mt-3", className)} {...props} />
+  )
+);
+AlertActions.displayName = "AlertActions";
+
+const AlertClose = forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(
+  ({ className, ...props }, ref) => (
+    <Button
       ref={ref}
-      className={cn(alertTitleVariants({ size, className }))}
+      variant="ghost"
+      size="sm"
+      className={cn("flex-shrink-0 h-6 w-6 p-0 opacity-70 hover:opacity-100", className)}
+      aria-label="Close alert"
       {...props}
     />
   )
 );
-AlertTitle.displayName = 'AlertTitle';
+AlertClose.displayName = "AlertClose";
 
-const AlertDescription = React.forwardRef<HTMLParagraphElement, AlertDescriptionProps>(
-  ({ className, size, ...props }, ref) => (
-    <p
-      ref={ref}
-      className={cn(alertDescriptionVariants({ size, className }))}
-      {...props}
-    />
+// Alert Variants
+const AlertSolid = forwardRef<HTMLDivElement, AlertProps>(
+  ({ style = "solid", ...props }, ref) => (
+    <Alert ref={ref} style={style} {...props} />
   )
 );
-AlertDescription.displayName = 'AlertDescription';
+AlertSolid.displayName = "AlertSolid";
 
-const AlertAction = React.forwardRef<HTMLDivElement, AlertActionProps>(
-  ({ className, size, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn(alertActionVariants({ size, className }))}
-      {...props}
-    />
+const AlertOutlined = forwardRef<HTMLDivElement, AlertProps>(
+  ({ style = "outlined", ...props }, ref) => (
+    <Alert ref={ref} style={style} {...props} />
   )
 );
-AlertAction.displayName = 'AlertAction';
+AlertOutlined.displayName = "AlertOutlined";
 
-// Additional utility components for advanced alert functionality
-const AlertGroup = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & {
-    spacing?: 'sm' | 'default' | 'lg';
-    maxHeight?: string;
-    scrollable?: boolean;
-  }
->(({ className, spacing = 'default', maxHeight, scrollable = false, children, ...props }, ref) => {
-  const spacingClass = {
-    sm: 'space-y-2',
-    default: 'space-y-3',
-    lg: 'space-y-4',
-  }[spacing];
+const AlertFilled = forwardRef<HTMLDivElement, AlertProps>(
+  ({ style = "filled", ...props }, ref) => (
+    <Alert ref={ref} style={style} {...props} />
+  )
+);
+AlertFilled.displayName = "AlertFilled";
 
-  return (
+const AlertSubtle = forwardRef<HTMLDivElement, AlertProps>(
+  ({ style = "subtle", ...props }, ref) => (
+    <Alert ref={ref} style={style} {...props} />
+  )
+);
+AlertSubtle.displayName = "AlertSubtle";
+
+const AlertMinimal = forwardRef<HTMLDivElement, AlertProps>(
+  ({ style = "minimal", ...props }, ref) => (
+    <Alert ref={ref} style={style} {...props} />
+  )
+);
+AlertMinimal.displayName = "AlertMinimal";
+
+// Severity Variants
+const AlertSuccess = forwardRef<HTMLDivElement, AlertProps>(
+  ({ variant = "success", ...props }, ref) => (
+    <Alert ref={ref} variant={variant} {...props} />
+  )
+);
+AlertSuccess.displayName = "AlertSuccess";
+
+const AlertWarning = forwardRef<HTMLDivElement, AlertProps>(
+  ({ variant = "warning", ...props }, ref) => (
+    <Alert ref={ref} variant={variant} {...props} />
+  )
+);
+AlertWarning.displayName = "AlertWarning";
+
+const AlertError = forwardRef<HTMLDivElement, AlertProps>(
+  ({ variant = "error", ...props }, ref) => (
+    <Alert ref={ref} variant={variant} {...props} />
+  )
+);
+AlertError.displayName = "AlertError";
+
+const AlertInfo = forwardRef<HTMLDivElement, AlertProps>(
+  ({ variant = "info", ...props }, ref) => (
+    <Alert ref={ref} variant={variant} {...props} />
+  )
+);
+AlertInfo.displayName = "AlertInfo";
+
+const AlertCritical = forwardRef<HTMLDivElement, AlertProps>(
+  ({ variant = "critical", ...props }, ref) => (
+    <Alert ref={ref} variant={variant} {...props} />
+  )
+);
+AlertCritical.displayName = "AlertCritical";
+
+const AlertNotice = forwardRef<HTMLDivElement, AlertProps>(
+  ({ variant = "notice", ...props }, ref) => (
+    <Alert ref={ref} variant={variant} {...props} />
+  )
+);
+AlertNotice.displayName = "AlertNotice";
+
+const AlertAnnouncement = forwardRef<HTMLDivElement, AlertProps>(
+  ({ variant = "announcement", ...props }, ref) => (
+    <Alert ref={ref} variant={variant} {...props} />
+  )
+);
+AlertAnnouncement.displayName = "AlertAnnouncement";
+
+const AlertTip = forwardRef<HTMLDivElement, AlertProps>(
+  ({ variant = "tip", ...props }, ref) => (
+    <Alert ref={ref} variant={variant} {...props} />
+  )
+);
+AlertTip.displayName = "AlertTip";
+
+// Size Variants
+const AlertSmall = forwardRef<HTMLDivElement, AlertProps>(
+  ({ size = "sm", ...props }, ref) => (
+    <Alert ref={ref} size={size} {...props} />
+  )
+);
+AlertSmall.displayName = "AlertSmall";
+
+const AlertLarge = forwardRef<HTMLDivElement, AlertProps>(
+  ({ size = "lg", ...props }, ref) => (
+    <Alert ref={ref} size={size} {...props} />
+  )
+);
+AlertLarge.displayName = "AlertLarge";
+
+const AlertExtraLarge = forwardRef<HTMLDivElement, AlertProps>(
+  ({ size = "xl", ...props }, ref) => (
+    <Alert ref={ref} size={size} {...props} />
+  )
+);
+AlertExtraLarge.displayName = "AlertExtraLarge";
+
+// Density Variants
+const AlertCompact = forwardRef<HTMLDivElement, AlertProps>(
+  ({ density = "compact", ...props }, ref) => (
+    <Alert ref={ref} density={density} {...props} />
+  )
+);
+AlertCompact.displayName = "AlertCompact";
+
+const AlertSpacious = forwardRef<HTMLDivElement, AlertProps>(
+  ({ density = "spacious", ...props }, ref) => (
+    <Alert ref={ref} density={density} {...props} />
+  )
+);
+AlertSpacious.displayName = "AlertSpacious";
+
+// Responsive Alert
+const AlertResponsive = forwardRef<HTMLDivElement, AlertProps & { breakpoint?: 'sm' | 'md' | 'lg' | 'xl' }>(
+  ({ breakpoint = 'md', className, ...props }, ref) => (
     <div
       ref={ref}
       className={cn(
-        'w-full',
-        spacingClass,
-        scrollable && 'overflow-y-auto',
+        "w-full",
+        breakpoint === 'sm' && "sm:w-auto",
+        breakpoint === 'md' && "md:w-auto",
+        breakpoint === 'lg' && "lg:w-auto",
+        breakpoint === 'xl' && "xl:w-auto",
         className
       )}
-      style={maxHeight ? { maxHeight } : undefined}
-      {...props}
     >
-      {children}
+      <Alert {...props} />
     </div>
-  );
-});
-AlertGroup.displayName = 'AlertGroup';
+  )
+);
+AlertResponsive.displayName = "AlertResponsive";
 
-const AlertToast = React.forwardRef<
-  HTMLDivElement,
-  AlertProps & {
-    duration?: number;
-    position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'top-center' | 'bottom-center';
-  }
->(({ className, duration = 5000, position = 'top-right', ...props }, ref) => {
-  const [isVisible, setIsVisible] = React.useState(true);
+// Spacing Utilities
+const AlertSpacing = {
+  compact: "p-2",
+  normal: "p-4",
+  spacious: "p-6"
+};
 
-  React.useEffect(() => {
-    if (duration > 0) {
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-      }, duration);
+// Size Utilities
+const AlertSizes = {
+  sm: "text-sm p-3",
+  md: "text-base p-4",
+  lg: "text-lg p-5",
+  xl: "text-xl p-6"
+};
 
-      return () => clearTimeout(timer);
-    }
-  }, [duration]);
+// Style Variants
+const AlertStyles = {
+  solid: "border-0",
+  outlined: "bg-transparent",
+  filled: "border-0 text-white",
+  subtle: "bg-muted/50",
+  minimal: "bg-transparent border-0"
+};
 
-  if (!isVisible) return null;
-
-  const positionClasses = {
-    'top-right': 'top-4 right-4',
-    'top-left': 'top-4 left-4',
-    'bottom-right': 'bottom-4 right-4',
-    'bottom-left': 'bottom-4 left-4',
-    'top-center': 'top-4 left-1/2 transform -translate-x-1/2',
-    'bottom-center': 'bottom-4 left-1/2 transform -translate-x-1/2',
-  };
-
-  return (
-    <div
-      className={cn(
-        'fixed z-toast max-w-sm w-full',
-        positionClasses[position],
-        'animate-slide-in-from-right'
-      )}
-    >
-      <Alert
-        ref={ref}
-        className={cn('shadow-lg', className)}
-        {...props}
-      />
-    </div>
-  );
-});
-AlertToast.displayName = 'AlertToast';
+// Severity Colors
+const AlertSeverityColors = {
+  default: "text-foreground",
+  destructive: "text-destructive",
+  warning: "text-yellow-600",
+  success: "text-green-600",
+  info: "text-blue-600",
+  error: "text-red-600",
+  critical: "text-red-700",
+  notice: "text-purple-600",
+  announcement: "text-orange-600",
+  tip: "text-cyan-600"
+};
 
 export {
   Alert,
   AlertTitle,
   AlertDescription,
-  AlertAction,
-  AlertGroup,
-  AlertToast,
-  alertVariants,
-  alertIconVariants,
-  alertTitleVariants,
-  alertDescriptionVariants,
-  alertActionVariants,
+  AlertIcon,
+  AlertContent,
+  AlertActions,
+  AlertClose,
+  AlertSolid,
+  AlertOutlined,
+  AlertFilled,
+  AlertSubtle,
+  AlertMinimal,
+  AlertSuccess,
+  AlertWarning,
+  AlertError,
+  AlertInfo,
+  AlertCritical,
+  AlertNotice,
+  AlertAnnouncement,
+  AlertTip,
+  AlertSmall,
+  AlertLarge,
+  AlertExtraLarge,
+  AlertCompact,
+  AlertSpacious,
+  AlertResponsive,
+  AlertSpacing,
+  AlertSizes,
+  AlertStyles,
+  AlertSeverityColors,
+  alertVariants
 };
