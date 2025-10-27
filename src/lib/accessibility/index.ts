@@ -18,16 +18,7 @@ export * from './motor';
 export * from './cognitive';
 
 // Hearing Accessibility
-export * from './hearing/audio-alternatives';
-export * from './hearing/visual-notifications';
-export * from './hearing/caption-support';
-export * from './hearing/sign-language';
-export * from './hearing/vibration-feedback';
-export * from './hearing/text-to-speech';
-export * from './hearing/audio-descriptions';
-export * from './hearing/sound-controls';
-export * from './hearing/visual-alerts';
-export * from './hearing/communication-aids';
+export * from './hearing';
 
 // Comprehensive Accessibility
 export * from './comprehensive/wcag-compliance';
