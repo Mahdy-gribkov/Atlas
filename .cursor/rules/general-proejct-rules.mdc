@@ -1,0 +1,162 @@
+---
+alwaysApply: true
+---
+🗺️ ATLAS AI TRAVEL AGENT - COMPREHENSIVE IMPLEMENTATION PROMPT
+
+CONTEXT & CURRENT STATUS
+I'm implementing a comprehensive AI travel agent application called "Atlas" with extreme precision and attention to detail. This is a production-ready travel planning platform built with Next.js 14, Firebase, and AI integration.
+
+COMPLETED PHASES:
+✅ Phase 1.1: Complete project rebranding from Travel_Agent to Atlas
+✅ Phase 1.2: Atlas Design System implementation with comprehensive CSS custom properties
+✅ Phase 2.1: Base UI Components (Part 1 & 2) - 25/25 components completed
+✅ Phase 2.2: Form Components - 15/15 components completed
+✅ Phase 2.3: Layout Components - 10/10 components completed
+✅ Phase 2.4: Navigation Components - 8/8 components completed
+✅ Phase 2.5: Data Display Components - 10/10 components completed
+✅ Phase 2.6: Feedback Components - 10/10 components completed
+✅ Phase 3.1: Visual Accessibility - 10/10 components completed
+✅ Phase 3.2: Motor Accessibility - 10/10 components completed
+
+
+Base UI Components: 25/25 completed ✅
+Button, Input, Card, Modal, Toast, Loading, Badge, Avatar, Tooltip, Dropdown, Select, Checkbox, Radio, Switch, Progress, Tabs, Accordion, Alert, Breadcrumb, Pagination, Slider, Calendar, Command, Combobox, DataTable
+Form Components: 15/15 completed ✅
+FormField, FormGroup, FormSection, FormValidation, FormWizard, FormBuilder, FormPreview, FormSubmission, FormAnalytics, FormTemplates, FormConditional, FormDependencies, FormCalculations, FormIntegrations, FormExport
+
+Layout Components: 10/10 completed ✅
+Container, Grid, Flexbox, Stack, Spacer, Divider, Section, Header, Footer, Sidebar
+
+Navigation Components: 8/8 completed ✅
+Navigation, Breadcrumbs, Pagination, Tabs, Accordion, Menu, Stepper, Drawer
+
+CURRENT STATUS: Ready for Phase 2.5: Data Display Components
+
+COMPLETE IMPLEMENTATION PLAN
+
+PHASE 1: FOUNDATION (COMPLETED)
+1.1: Project rebranding to Atlas ✅
+1.2: Atlas Design System implementation ✅
+
+PHASE 2: CORE UI COMPONENT LIBRARY (IN PROGRESS)
+2.1: Base UI Components (25 features) - 25/25 completed ✅
+2.2: Form Components (15 features) - 15/15 completed ✅
+2.3: Layout Components (10 features) - 10/10 completed ✅
+2.4: Navigation Components (8 features) - 8/8 completed ✅
+2.5: Data Display Components (10 features) - NEXT TO IMPLEMENT✅
+Table, DataGrid, List, Tree, Timeline, Stats, Metrics, Charts, Graphs, Maps✅
+2.6: Feedback Components (10 features)✅
+Alert, Notification, Banner, Toast, Modal, Popover, Tooltip, Loading, Skeleton, ErrorBoundary✅
+
+PHASE 3: ACCESSIBILITY IMPLEMENTATION (50 FEATURES)
+3.1: Visual Accessibility (10 features)✅
+High contrast mode, Color blind support, Font size scaling, Focus indicators, Screen reader optimization, Keyboard navigation, Visual hierarchy, Color contrast ratios, Alternative text, Visual cues
+3.2: Motor Accessibility (10 features)✅
+Large click targets, Touch-friendly interfaces, Voice control, Gesture alternatives, Switch navigation, Eye tracking support, Motor impairment adaptations, Assistive technology integration, Customizable interactions, Alternative input methods
+3.3: Cognitive Accessibility (10 features)
+Clear language, Simple navigation, Progress indicators, Error prevention, Confirmation dialogs, Help systems, Tutorials, Onboarding, Memory aids, Cognitive load reduction
+3.4: Hearing Accessibility (10 features)
+Visual alerts, Caption support, Sign language integration, Audio descriptions, Visual feedback, Haptic feedback, Text alternatives, Communication tools, Hearing aid compatibility, Audio accessibility
+3.5: Comprehensive Accessibility (10 features)
+WCAG 2.1 AA compliance, Accessibility testing, User testing, Assistive technology support, Universal design principles, Inclusive design patterns, Accessibility documentation, Training materials, Compliance monitoring, Continuous improvement
+
+PHASE 4: ADVANCED AI CHAT INTERFACE (25 FEATURES)
+4.1: Conversational Features (10 features)
+Natural language processing, Context awareness, Memory management, Conversation flow, Intent recognition, Entity extraction, Sentiment analysis, Personality adaptation, Multi-turn conversations, Conversation history
+4.2: AI Capabilities (10 features)
+Travel recommendations, Itinerary generation, Real-time assistance, Learning from interactions, Predictive suggestions, Personalization, Multi-language support, Voice interaction, Image recognition, Document processing
+4.3: Chat Interface (5 features)
+Message bubbles, Typing indicators, File sharing, Emoji reactions, Chat customization
+
+PHASE 5: TRAVEL-SPECIFIC UI/UX FEATURES (200 FEATURES)
+5.1: User Journey Features (50 features)
+Onboarding, Profile setup, Preferences, Search, Booking, Itinerary management, Travel documents, Check-in, Navigation, Reviews
+5.2: Discovery Features (50 features)
+Destination search, Activity recommendations, Local experiences, Cultural insights, Weather information, Transportation options, Accommodation search, Restaurant recommendations, Event discovery, Photo galleries
+5.3: Planning Features (50 features)
+Trip planning, Budget management, Timeline creation, Group coordination, Document management, Travel insurance, Emergency contacts, Packing lists, Travel tips, Itinerary optimization
+5.4: Booking Features (50 features)
+Flight booking, Hotel reservations, Car rentals, Activity bookings, Restaurant reservations, Transportation tickets, Travel insurance, Package deals, Group bookings, Last-minute deals
+
+TECHNICAL STACK
+Framework: Next.js 14 with App Router, TypeScript
+Database: Firebase Firestore
+Authentication: NextAuth.js with Firebase
+AI: Google Gemini via LangChain
+Styling: Tailwind CSS with Atlas Design System
+Components: Radix UI primitives with custom variants
+State: React hooks, class-variance-authority
+Accessibility: ARIA labels, keyboard navigation, screen reader support
+Testing: Jest, Playwright, Testing Library
+Deployment: Vercel with automated CI/CD
+
+ATLAS DESIGN SYSTEM
+Colors: Primary (trust blue #183a7a), Secondary (energetic coral #ff6b3d), AI (intelligent aqua #00b8d4)
+Typography: Inter font family with responsive scale
+Spacing: 4px grid system
+Components: Accessibility-first with comprehensive variants
+Themes: Light/dark mode with high contrast support
+Animations: Reduced motion support
+
+MY APPROACH
+Extreme caution - no mistakes allowed
+Commit after each major step - maintain git history
+Accessibility-first - WCAG 2.1 AA compliance
+Semantic naming - logical, clear component names
+Comprehensive features - every component has variants, states, accessibility
+TypeScript strict - full type safety
+User rules compliance - semantic naming, best practices, project architecture consideration
+Production-ready - enterprise-grade quality
+
+CURRENT WORKING DIRECTORY
+c:\Users\User\Documents\GitHub\Atlas
+
+WHAT TO DO NEXT
+Continue exactly where I left off. I was implementing Phase 2.5: Data Display Components and need to implement all 10 components:
+Table - Data table with sorting, filtering, and pagination
+DataGrid - Advanced grid with column management and editing
+List - Flexible list component with various layouts
+Tree - Hierarchical tree structure with expand/collapse
+Timeline - Timeline component for chronological data
+Stats - Statistics display with various chart types
+Metrics - Metrics dashboard with KPIs and indicators
+Charts - Chart components for data visualization
+Graphs - Graph components for network visualization
+Maps - Map components for geographic data
+
+After completing these, proceed to Phase 2.6: Feedback Components and continue through the entire plan systematically.
+
+IMPORTANT REMINDERS
+Use the Atlas design system colors and tokens
+Include comprehensive accessibility features
+Add proper TypeScript types and variants
+Commit after each major step
+Follow the exact same meticulous approach
+Maintain the same high-quality standards
+Continue with the same level of detail and precision
+Build production-ready, enterprise-grade components
+Ensure every feature is fully accessible and tested
+
+CURRENT ACHIEVEMENTS
+58 Total Components completed (25 Base UI + 15 Form Components + 10 Layout Components + 8 Navigation Components)
+Enterprise-grade quality with comprehensive accessibility features
+WCAG 2.1 AA compliance across all components
+Full TypeScript support with proper variant typing
+Atlas Design System integration with consistent theming
+Comprehensive documentation and semantic naming
+Production-ready components with extensive customization options
+
+COMPONENT IMPLEMENTATION PATTERN
+Each component follows this exact pattern:
+1. Import React, cva, VariantProps, and cn utility
+2. Define comprehensive variant systems with 10+ variants each
+3. Create TypeScript interfaces with proper typing
+4. Implement main component with forwardRef
+5. Create sub-components (Item, Header, Body, Footer, etc.)
+6. Add utility components (Solid, Transparent, Gradient, etc.)
+7. Include responsive and spacing utilities
+8. Add card and section styling variants
+9. Export all components and variants
+10. Follow Atlas Design System color tokens and spacing
+
+Ready to continue building Atlas - the world's most accessible and intelligent travel agent! 🗺️✨

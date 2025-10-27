@@ -15,16 +15,7 @@ export * from './visual';
 export * from './motor';
 
 // Cognitive Accessibility
-export * from './cognitive/simplified-interface';
-export * from './cognitive/progress-indicators';
-export * from './cognitive/error-prevention';
-export * from './cognitive/clear-instructions';
-export * from './cognitive/memory-aids';
-export * from './cognitive/attention-management';
-export * from './cognitive/language-support';
-export * from './cognitive/visual-cues';
-export * from './cognitive/consistent-patterns';
-export * from './cognitive/help-systems';
+export * from './cognitive';
 
 // Hearing Accessibility
 export * from './hearing/audio-alternatives';
