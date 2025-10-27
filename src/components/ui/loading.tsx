@@ -1,46 +1,127 @@
 "use client";
 
-import React, { forwardRef } from "react";
+import React, { forwardRef, useState, useCallback, useEffect } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/atlas-utils";
 import { 
-  LoaderIcon,
-  RefreshCwIcon,
-  RotateCcwIcon,
-  ZapIcon,
-  TargetIcon,
-  ActivityIcon,
-  PulseIcon,
-  HeartIcon,
-  StarIcon,
-  SparklesIcon,
-  MoonIcon,
-  SunIcon,
-  CloudIcon,
-  WindIcon
+  Loader2,
+  RefreshCw,
+  RotateCcw,
+  Zap,
+  Target,
+  Activity,
+  Pulse,
+  Heart,
+  Star,
+  Sparkles,
+  Moon,
+  Sun,
+  Cloud,
+  Wind,
+  Clock,
+  Calendar,
+  MapPin,
+  User,
+  Users,
+  Tag,
+  Filter,
+  Search,
+  Grid,
+  List,
+  Layout,
+  Image,
+  Video,
+  File,
+  Folder,
+  Archive,
+  Crown,
+  Award,
+  Trophy,
+  Medal,
+  Badge,
+  Flag,
+  Compass,
+  Navigation,
+  Route,
+  Map,
+  Globe,
+  Plane,
+  Car,
+  Train,
+  Ship,
+  Bike,
+  Camera,
+  Lightbulb,
+  Flashlight,
+  Battery,
+  Plug,
+  Wifi,
+  Bluetooth,
+  Signal,
+  Radio,
+  Tv,
+  Monitor,
+  Laptop,
+  Smartphone,
+  Tablet,
+  Watch,
+  Headphones,
+  Speaker,
+  Phone,
+  Mail,
+  Send,
+  Upload,
+  Database,
+  Server,
+  Network,
+  Clipboard,
+  FileText,
+  FileImage,
+  FileVideo,
+  FileAudio,
+  FolderOpen,
+  FolderPlus,
+  FolderMinus,
+  FolderX,
+  FolderCheck,
+  FolderSync,
+  FolderSearch,
+  FolderHeart,
+  FolderLock,
+  FolderArchive
 } from "lucide-react";
 
 // Loading Root Component
 const loadingVariants = cva(
-  "inline-flex items-center justify-center",
+  "inline-flex items-center justify-center transition-all duration-200",
   {
     variants: {
       variant: {
-        default: "text-primary",
-        primary: "text-primary",
-        secondary: "text-secondary",
-        success: "text-green-500",
-        warning: "text-yellow-500",
-        error: "text-red-500",
-        info: "text-blue-500",
-        muted: "text-muted-foreground"
+        default: "text-atlas-primary-main",
+        primary: "text-atlas-primary-main",
+        secondary: "text-atlas-secondary-main",
+        success: "text-atlas-success-main",
+        warning: "text-atlas-warning-main",
+        error: "text-atlas-error-main",
+        info: "text-atlas-info-main",
+        muted: "text-atlas-text-secondary",
+        glass: "text-white/80",
+        gradient: "text-transparent bg-gradient-to-r from-atlas-primary-main to-atlas-secondary-main bg-clip-text",
+        minimal: "text-atlas-text-primary/60",
+        premium: "text-atlas-warning-main",
+        featured: "text-atlas-ai-main",
+        compact: "text-atlas-text-primary/80",
+        spacious: "text-atlas-text-primary/70",
       },
       size: {
+        xs: "h-3 w-3",
         sm: "h-4 w-4",
         md: "h-6 w-6",
         lg: "h-8 w-8",
         xl: "h-12 w-12",
-        "2xl": "h-16 w-16"
+        "2xl": "h-16 w-16",
+        "3xl": "h-20 w-20",
+        "4xl": "h-24 w-24"
       },
       type: {
         spinner: "animate-spin",
@@ -54,27 +135,118 @@ const loadingVariants = cva(
         dots: "animate-pulse",
         bars: "animate-pulse",
         circles: "animate-pulse",
-        squares: "animate-pulse"
-      }
+        squares: "animate-pulse",
+        ripple: "animate-ping",
+        shimmer: "animate-pulse",
+        glow: "animate-pulse",
+        float: "animate-bounce",
+        shake: "animate-pulse",
+        wiggle: "animate-pulse",
+        elastic: "animate-bounce",
+        spring: "animate-bounce",
+        smooth: "animate-spin",
+        fast: "animate-spin",
+        slow: "animate-spin",
+      },
+      animation: {
+        none: "",
+        fade: "animate-in fade-in duration-200",
+        slide: "animate-in slide-in-from-bottom-4 duration-200",
+        scale: "animate-in zoom-in-95 duration-200",
+        bounce: "animate-in bounce-in duration-300",
+        spring: "animate-in spring-in duration-300",
+      },
+      rounded: {
+        none: "rounded-none",
+        sm: "rounded-sm",
+        default: "rounded-md",
+        md: "rounded-md",
+        lg: "rounded-lg",
+        xl: "rounded-xl",
+        full: "rounded-full",
+      },
+      shadow: {
+        none: "shadow-none",
+        sm: "shadow-sm",
+        md: "shadow-md",
+        lg: "shadow-lg",
+        xl: "shadow-xl",
+        inner: "shadow-inner",
+        glow: "shadow-lg shadow-atlas-primary-main/25",
+      },
     },
     defaultVariants: {
       variant: "default",
       size: "md",
-      type: "spinner"
+      type: "spinner",
+      animation: "fade",
+      rounded: "default",
+      shadow: "md",
     }
   }
 );
 
 export interface LoadingProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'content'>,
     VariantProps<typeof loadingVariants> {
+  // Basic props
   text?: string;
+  subtitle?: string;
+  description?: string;
+  content?: React.ReactNode;
+  
+  // Display props
   showText?: boolean;
-  icon?: React.ReactNode;
+  showSubtitle?: boolean;
+  showDescription?: boolean;
   showIcon?: boolean;
+  showProgress?: boolean;
+  
+  // Icon props
+  icon?: React.ReactNode;
+  iconPosition?: 'left' | 'right' | 'top' | 'bottom';
+  
+  // Overlay props
   overlay?: boolean;
   fullscreen?: boolean;
   centered?: boolean;
+  overlayOpacity?: number;
+  overlayBlur?: boolean;
+  
+  // Progress props
+  progress?: number;
+  progressMax?: number;
+  progressVariant?: 'default' | 'success' | 'warning' | 'error' | 'info';
+  showProgressValue?: boolean;
+  progressText?: string;
+  
+  // Animation props
+  animationDuration?: number;
+  animationEasing?: string;
+  onAnimationStart?: () => void;
+  onAnimationEnd?: () => void;
+  
+  // Responsive props
+  responsive?: boolean;
+  breakpoints?: {
+    sm?: Partial<LoadingProps>;
+    md?: Partial<LoadingProps>;
+    lg?: Partial<LoadingProps>;
+    xl?: Partial<LoadingProps>;
+  };
+  
+  // Accessibility props
+  ariaLabel?: string;
+  ariaDescription?: string;
+  ariaLabelledBy?: string;
+  ariaDescribedBy?: string;
+  role?: string;
+  
+  // Custom props
+  customStyles?: React.CSSProperties;
+  customClasses?: string;
+  
+  // Children
   children?: React.ReactNode;
 }
 
@@ -100,15 +272,15 @@ const Loading = forwardRef<HTMLDivElement, LoadingProps>(
       switch (type) {
         case 'pulse':
         case 'heartbeat':
-          return <PulseIcon className="h-full w-full" />;
+          return <Pulse className="h-full w-full" />;
         case 'bounce':
-          return <TargetIcon className="h-full w-full" />;
+          return <Target className="h-full w-full" />;
         case 'ping':
-          return <ActivityIcon className="h-full w-full" />;
+          return <Activity className="h-full w-full" />;
         case 'rotate':
-          return <RotateCcwIcon className="h-full w-full" />;
+          return <RotateCcw className="h-full w-full" />;
         case 'wave':
-          return <ZapIcon className="h-full w-full" />;
+          return <Zap className="h-full w-full" />;
         case 'dots':
           return <div className="flex space-x-1">
             <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -134,7 +306,7 @@ const Loading = forwardRef<HTMLDivElement, LoadingProps>(
             <div className="w-2 h-2 bg-current animate-pulse" style={{ animationDelay: '300ms' }} />
           </div>;
         default:
-          return <LoaderIcon className="h-full w-full" />;
+          return <Loader2 className="h-full w-full" />;
       }
     };
 
