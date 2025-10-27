@@ -12,16 +12,7 @@
 export * from './visual';
 
 // Motor Accessibility
-export * from './motor/keyboard-navigation';
-export * from './motor/voice-control';
-export * from './motor/touch-targets';
-export * from './motor/gesture-alternatives';
-export * from './motor/switch-navigation';
-export * from './motor/eye-tracking';
-export * from './motor/one-handed-mode';
-export * from './motor/customizable-shortcuts';
-export * from './motor/assistive-devices';
-export * from './motor/timeout-controls';
+export * from './motor';
 
 // Cognitive Accessibility
 export * from './cognitive/simplified-interface';
