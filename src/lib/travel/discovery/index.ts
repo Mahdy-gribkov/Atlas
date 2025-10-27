@@ -22,3 +22,18 @@ export * from './cultural-insights';
 
 // Weather Information
 export * from './weather-information';
+
+// Transportation Options
+export * from './transportation-options';
+
+// Accommodation Search
+export * from './accommodation-search';
+
+// Restaurant Recommendations
+export * from './restaurant-recommendations';
+
+// Event Discovery
+export * from './event-discovery';
+
+// Photo Galleries
+export * from './photo-galleries';
