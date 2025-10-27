@@ -21,16 +21,7 @@ export * from './cognitive';
 export * from './hearing';
 
 // Comprehensive Accessibility
-export * from './comprehensive/wcag-compliance';
-export * from './comprehensive/accessibility-testing';
-export * from './comprehensive/user-preferences';
-export * from './comprehensive/assistive-technology';
-export * from './comprehensive/universal-design';
-export * from './comprehensive/inclusive-features';
-export * from './comprehensive/accessibility-documentation';
-export * from './comprehensive/user-feedback';
-export * from './comprehensive/continuous-improvement';
-export * from './comprehensive/accessibility-standards';
+export * from './comprehensive';
 
 // Core Accessibility Utilities
 export * from './core/accessibility-manager';
