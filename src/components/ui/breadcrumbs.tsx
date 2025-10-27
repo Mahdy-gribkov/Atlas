@@ -2,8 +2,8 @@ import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils/atlas-utils';
 
-const paginationVariants = cva(
-  'flex items-center justify-center space-x-2',
+const breadcrumbsVariants = cva(
+  'flex items-center space-x-2',
   {
     variants: {
       variant: {
@@ -144,7 +144,7 @@ const paginationVariants = cva(
       variant: 'default',
       size: 'default',
       spacing: 2,
-      align: 'center',
+      align: 'start',
       direction: 'horizontal',
       wrap: 'nowrap',
       padding: 'none',
@@ -157,45 +157,45 @@ const paginationVariants = cva(
   }
 );
 
-const paginationItemVariants = cva(
-  'flex items-center justify-center min-w-[2.5rem] h-10 px-3 py-2 text-sm font-medium transition-colors',
+const breadcrumbItemVariants = cva(
+  'flex items-center',
   {
     variants: {
       variant: {
-        default: 'text-atlas-text-primary hover:text-atlas-primary-main hover:bg-atlas-primary-subtle',
-        primary: 'text-atlas-primary-main hover:text-atlas-primary-dark hover:bg-atlas-primary-subtle',
-        secondary: 'text-atlas-secondary-main hover:text-atlas-secondary-dark hover:bg-atlas-secondary-subtle',
-        success: 'text-atlas-success-main hover:text-atlas-success-dark hover:bg-atlas-success-subtle',
-        warning: 'text-atlas-warning-main hover:text-atlas-warning-dark hover:bg-atlas-warning-subtle',
-        error: 'text-atlas-error-main hover:text-atlas-error-dark hover:bg-atlas-error-subtle',
-        info: 'text-atlas-info-main hover:text-atlas-info-dark hover:bg-atlas-info-subtle',
-        inverse: 'text-atlas-text-inverse hover:text-atlas-text-inverse hover:bg-atlas-text-inverse-subtle',
-        muted: 'text-atlas-text-muted hover:text-atlas-text-primary hover:bg-atlas-border-subtle',
-        ghost: 'text-atlas-text-primary hover:text-atlas-primary-main hover:bg-transparent',
-        outline: 'text-atlas-text-primary border border-atlas-border hover:text-atlas-primary-main hover:border-atlas-primary-main',
-        solid: 'text-atlas-text-inverse bg-atlas-primary-main hover:bg-atlas-primary-dark',
+        default: 'text-atlas-text-primary',
+        primary: 'text-atlas-primary-main',
+        secondary: 'text-atlas-secondary-main',
+        success: 'text-atlas-success-main',
+        warning: 'text-atlas-warning-main',
+        error: 'text-atlas-error-main',
+        info: 'text-atlas-info-main',
+        inverse: 'text-atlas-text-inverse',
+        muted: 'text-atlas-text-muted',
+        link: 'text-atlas-primary-main hover:text-atlas-primary-dark hover:underline',
+        current: 'text-atlas-text-primary font-semibold',
+        disabled: 'text-atlas-text-muted opacity-50 cursor-not-allowed',
       },
       size: {
-        xs: 'min-w-[2rem] h-8 px-2 py-1 text-xs',
-        sm: 'min-w-[2.25rem] h-9 px-2.5 py-1.5 text-sm',
-        default: 'min-w-[2.5rem] h-10 px-3 py-2 text-sm',
-        lg: 'min-w-[3rem] h-11 px-4 py-2.5 text-base',
-        xl: 'min-w-[3.5rem] h-12 px-5 py-3 text-lg',
-        '2xl': 'min-w-[4rem] h-14 px-6 py-4 text-xl',
-        '3xl': 'min-w-[5rem] h-16 px-8 py-5 text-2xl',
-        '4xl': 'min-w-[6rem] h-18 px-10 py-6 text-3xl',
-        '5xl': 'min-w-[7rem] h-20 px-12 py-7 text-4xl',
-        '6xl': 'min-w-[8rem] h-24 px-16 py-8 text-5xl',
+        xs: 'text-xs',
+        sm: 'text-sm',
+        default: 'text-base',
+        lg: 'text-lg',
+        xl: 'text-xl',
+        '2xl': 'text-2xl',
+        '3xl': 'text-3xl',
+        '4xl': 'text-4xl',
+        '5xl': 'text-5xl',
+        '6xl': 'text-6xl',
       },
       state: {
         default: '',
-        active: 'bg-atlas-primary-main text-atlas-text-inverse',
-        disabled: 'opacity-50 cursor-not-allowed pointer-events-none',
-        loading: 'opacity-75 cursor-wait pointer-events-none',
-        error: 'text-atlas-error-main bg-atlas-error-subtle',
-        success: 'text-atlas-success-main bg-atlas-success-subtle',
-        warning: 'text-atlas-warning-main bg-atlas-warning-subtle',
-        info: 'text-atlas-info-main bg-atlas-info-subtle',
+        active: 'text-atlas-primary-main font-semibold',
+        disabled: 'text-atlas-text-muted opacity-50 cursor-not-allowed',
+        loading: 'opacity-75 cursor-wait',
+        error: 'text-atlas-error-main',
+        success: 'text-atlas-success-main',
+        warning: 'text-atlas-warning-main',
+        info: 'text-atlas-info-main',
       },
       weight: {
         light: 'font-light',
@@ -216,32 +216,72 @@ const paginationItemVariants = cva(
         '3xl': 'rounded-3xl',
         full: 'rounded-full',
       },
-      shadow: {
-        none: '',
-        sm: 'shadow-sm',
-        default: 'shadow-md',
-        lg: 'shadow-lg',
-        xl: 'shadow-xl',
-        '2xl': 'shadow-2xl',
-        inner: 'shadow-inner',
+      padding: {
+        none: 'p-0',
+        xs: 'px-1 py-0.5',
+        sm: 'px-2 py-1',
+        default: 'px-3 py-1.5',
+        lg: 'px-4 py-2',
+        xl: 'px-5 py-2.5',
+        '2xl': 'px-6 py-3',
+        '3xl': 'px-8 py-4',
+        '4xl': 'px-10 py-5',
+        '5xl': 'px-12 py-6',
+        '6xl': 'px-16 py-8',
+      },
+      margin: {
+        none: 'm-0',
+        xs: 'mx-1 my-0.5',
+        sm: 'mx-2 my-1',
+        default: 'mx-3 my-1.5',
+        lg: 'mx-4 my-2',
+        xl: 'mx-5 my-2.5',
+        '2xl': 'mx-6 my-3',
+        '3xl': 'mx-8 my-4',
+        '4xl': 'mx-10 my-5',
+        '5xl': 'mx-12 my-6',
+        '6xl': 'mx-16 my-8',
+        auto: 'mx-auto',
       },
     },
     defaultVariants: {
       variant: 'default',
       size: 'default',
       state: 'default',
-      weight: 'medium',
-      rounded: 'default',
-      shadow: 'none',
+      weight: 'normal',
+      rounded: 'none',
+      padding: 'none',
+      margin: 'none',
     },
   }
 );
 
-const paginationEllipsisVariants = cva(
-  'flex items-center justify-center min-w-[2.5rem] h-10 px-3 py-2 text-sm font-medium text-atlas-text-muted',
+const breadcrumbSeparatorVariants = cva(
+  'flex items-center text-atlas-text-muted',
   {
     variants: {
       variant: {
+        default: '',
+        slash: 'text-atlas-text-muted',
+        arrow: 'text-atlas-text-muted',
+        chevron: 'text-atlas-text-muted',
+        dot: 'text-atlas-text-muted',
+        pipe: 'text-atlas-text-muted',
+        custom: 'text-atlas-text-muted',
+      },
+      size: {
+        xs: 'text-xs',
+        sm: 'text-sm',
+        default: 'text-base',
+        lg: 'text-lg',
+        xl: 'text-xl',
+        '2xl': 'text-2xl',
+        '3xl': 'text-3xl',
+        '4xl': 'text-4xl',
+        '5xl': 'text-5xl',
+        '6xl': 'text-6xl',
+      },
+      color: {
         default: 'text-atlas-text-muted',
         primary: 'text-atlas-primary-main',
         secondary: 'text-atlas-secondary-main',
@@ -252,18 +292,6 @@ const paginationEllipsisVariants = cva(
         inverse: 'text-atlas-text-inverse',
         muted: 'text-atlas-text-muted',
       },
-      size: {
-        xs: 'min-w-[2rem] h-8 px-2 py-1 text-xs',
-        sm: 'min-w-[2.25rem] h-9 px-2.5 py-1.5 text-sm',
-        default: 'min-w-[2.5rem] h-10 px-3 py-2 text-sm',
-        lg: 'min-w-[3rem] h-11 px-4 py-2.5 text-base',
-        xl: 'min-w-[3.5rem] h-12 px-5 py-3 text-lg',
-        '2xl': 'min-w-[4rem] h-14 px-6 py-4 text-xl',
-        '3xl': 'min-w-[5rem] h-16 px-8 py-5 text-2xl',
-        '4xl': 'min-w-[6rem] h-18 px-10 py-6 text-3xl',
-        '5xl': 'min-w-[7rem] h-20 px-12 py-7 text-4xl',
-        '6xl': 'min-w-[8rem] h-24 px-16 py-8 text-5xl',
-      },
       weight: {
         light: 'font-light',
         normal: 'font-normal',
@@ -273,29 +301,19 @@ const paginationEllipsisVariants = cva(
         extrabold: 'font-extrabold',
         black: 'font-black',
       },
-      rounded: {
-        none: '',
-        sm: 'rounded-sm',
-        default: 'rounded-md',
-        lg: 'rounded-lg',
-        xl: 'rounded-xl',
-        '2xl': 'rounded-2xl',
-        '3xl': 'rounded-3xl',
-        full: 'rounded-full',
-      },
     },
     defaultVariants: {
       variant: 'default',
       size: 'default',
-      weight: 'medium',
-      rounded: 'default',
+      color: 'default',
+      weight: 'normal',
     },
   }
 );
 
-export interface PaginationProps
+export interface BreadcrumbsProps
   extends React.HTMLAttributes<HTMLElement>,
-    VariantProps<typeof paginationVariants> {
+    VariantProps<typeof breadcrumbsVariants> {
   variant?: 'default' | 'solid' | 'transparent' | 'gradient' | 'dark' | 'light' | 'minimal' | 'floating' | 'inline' | 'block';
   size?: 'xs' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl';
   spacing?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 8 | 10 | 12 | 16 | 20 | 24 | 32;
@@ -308,44 +326,39 @@ export interface PaginationProps
   border?: 'none' | 'subtle' | 'default' | 'strong' | 'primary' | 'success' | 'warning' | 'error' | 'top' | 'bottom' | 'left' | 'right';
   rounded?: 'none' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | '3xl' | 'full';
   shadow?: 'none' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | 'inner';
-  currentPage?: number;
-  totalPages?: number;
-  onPageChange?: (page: number) => void;
-  showFirstLast?: boolean;
-  showPrevNext?: boolean;
-  showEllipsis?: boolean;
-  maxVisiblePages?: number;
   asChild?: boolean;
   children?: React.ReactNode;
 }
 
-export interface PaginationItemProps
-  extends React.HTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof paginationItemVariants> {
-  variant?: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'inverse' | 'muted' | 'ghost' | 'outline' | 'solid';
+export interface BreadcrumbItemProps
+  extends React.HTMLAttributes<HTMLAnchorElement>,
+    VariantProps<typeof breadcrumbItemVariants> {
+  variant?: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'inverse' | 'muted' | 'link' | 'current' | 'disabled';
   size?: 'xs' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl';
   state?: 'default' | 'active' | 'disabled' | 'loading' | 'error' | 'success' | 'warning' | 'info';
   weight?: 'light' | 'normal' | 'medium' | 'semibold' | 'bold' | 'extrabold' | 'black';
   rounded?: 'none' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | '3xl' | 'full';
-  shadow?: 'none' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | 'inner';
-  page?: number;
-  onClick?: () => void;
+  padding?: 'none' | 'xs' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl';
+  margin?: 'none' | 'xs' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | 'auto';
+  href?: string;
+  target?: '_blank' | '_self' | '_parent' | '_top';
+  rel?: string;
   asChild?: boolean;
   children?: React.ReactNode;
 }
 
-export interface PaginationEllipsisProps
+export interface BreadcrumbSeparatorProps
   extends React.HTMLAttributes<HTMLSpanElement>,
-    VariantProps<typeof paginationEllipsisVariants> {
-  variant?: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'inverse' | 'muted';
+    VariantProps<typeof breadcrumbSeparatorVariants> {
+  variant?: 'default' | 'slash' | 'arrow' | 'chevron' | 'dot' | 'pipe' | 'custom';
   size?: 'xs' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl';
+  color?: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'inverse' | 'muted';
   weight?: 'light' | 'normal' | 'medium' | 'semibold' | 'bold' | 'extrabold' | 'black';
-  rounded?: 'none' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | '3xl' | 'full';
   asChild?: boolean;
   children?: React.ReactNode;
 }
 
-const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
+const Breadcrumbs = React.forwardRef<HTMLElement, BreadcrumbsProps>(
   ({
     className,
     variant,
@@ -360,23 +373,16 @@ const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
     border,
     rounded,
     shadow,
-    currentPage = 1,
-    totalPages = 1,
-    onPageChange,
-    showFirstLast = true,
-    showPrevNext = true,
-    showEllipsis = true,
-    maxVisiblePages = 5,
     asChild = false,
     children,
     ...props
   }, ref) => {
     const Comp = asChild ? React.Fragment : 'nav';
     
-    const paginationProps = asChild ? {} : {
+    const breadcrumbsProps = asChild ? {} : {
       ref,
       className: cn(
-        paginationVariants({
+        breadcrumbsVariants({
           variant,
           size,
           spacing,
@@ -392,106 +398,20 @@ const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
           className,
         })
       ),
-      'aria-label': 'Pagination',
+      'aria-label': 'Breadcrumb',
       ...props,
     };
 
-    const generatePageNumbers = () => {
-      const pages: (number | 'ellipsis')[] = [];
-      const startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-      const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-      
-      if (showFirstLast && startPage > 1) {
-        pages.push(1);
-        if (startPage > 2 && showEllipsis) {
-          pages.push('ellipsis');
-        }
-      }
-      
-      for (let i = startPage; i <= endPage; i++) {
-        pages.push(i);
-      }
-      
-      if (showFirstLast && endPage < totalPages) {
-        if (endPage < totalPages - 1 && showEllipsis) {
-          pages.push('ellipsis');
-        }
-        pages.push(totalPages);
-      }
-      
-      return pages;
-    };
-
-    const handlePageChange = (page: number) => {
-      if (onPageChange && page >= 1 && page <= totalPages) {
-        onPageChange(page);
-      }
-    };
-
     return (
-      <Comp {...paginationProps}>
-        {children || (
-          <>
-            {showPrevNext && (
-              <PaginationItem
-                variant="ghost"
-                size={size}
-                state={currentPage === 1 ? 'disabled' : 'default'}
-                onClick={() => handlePageChange(currentPage - 1)}
-                aria-label="Previous page"
-              >
-                ←
-              </PaginationItem>
-            )}
-            
-            {generatePageNumbers().map((page, index) => {
-              if (page === 'ellipsis') {
-                return (
-                  <PaginationEllipsis
-                    key={`ellipsis-${index}`}
-                    variant="default"
-                    size={size}
-                  >
-                    ...
-                  </PaginationEllipsis>
-                );
-              }
-              
-              return (
-                <PaginationItem
-                  key={page}
-                  variant="default"
-                  size={size}
-                  state={page === currentPage ? 'active' : 'default'}
-                  onClick={() => handlePageChange(page)}
-                  aria-label={`Page ${page}`}
-                  aria-current={page === currentPage ? 'page' : undefined}
-                >
-                  {page}
-                </PaginationItem>
-              );
-            })}
-            
-            {showPrevNext && (
-              <PaginationItem
-                variant="ghost"
-                size={size}
-                state={currentPage === totalPages ? 'disabled' : 'default'}
-                onClick={() => handlePageChange(currentPage + 1)}
-                aria-label="Next page"
-              >
-                →
-              </PaginationItem>
-            )}
-          </>
-        )}
+      <Comp {...breadcrumbsProps}>
+        {children}
       </Comp>
     );
   }
 );
-Pagination.displayName = 'Pagination';
+Breadcrumbs.displayName = 'Breadcrumbs';
 
-const PaginationItem = React.forwardRef<HTMLButtonElement, PaginationItemProps>(
+const BreadcrumbItem = React.forwardRef<HTMLAnchorElement, BreadcrumbItemProps>(
   ({
     className,
     variant,
@@ -499,30 +419,34 @@ const PaginationItem = React.forwardRef<HTMLButtonElement, PaginationItemProps>(
     state,
     weight,
     rounded,
-    shadow,
-    page,
-    onClick,
+    padding,
+    margin,
+    href,
+    target,
+    rel,
     asChild = false,
     children,
     ...props
   }, ref) => {
-    const Comp = asChild ? React.Fragment : 'button';
+    const Comp = asChild ? React.Fragment : 'a';
     
     const itemProps = asChild ? {} : {
       ref,
-      onClick,
+      href,
+      target,
+      rel,
       className: cn(
-        paginationItemVariants({
+        breadcrumbItemVariants({
           variant,
           size,
           state,
           weight,
           rounded,
-          shadow,
+          padding,
+          margin,
           className,
         })
       ),
-      disabled: state === 'disabled' || state === 'loading',
       ...props,
     };
 
@@ -533,29 +457,29 @@ const PaginationItem = React.forwardRef<HTMLButtonElement, PaginationItemProps>(
     );
   }
 );
-PaginationItem.displayName = 'PaginationItem';
+BreadcrumbItem.displayName = 'BreadcrumbItem';
 
-const PaginationEllipsis = React.forwardRef<HTMLSpanElement, PaginationEllipsisProps>(
+const BreadcrumbSeparator = React.forwardRef<HTMLSpanElement, BreadcrumbSeparatorProps>(
   ({
     className,
     variant,
     size,
+    color,
     weight,
-    rounded,
     asChild = false,
     children,
     ...props
   }, ref) => {
     const Comp = asChild ? React.Fragment : 'span';
     
-    const ellipsisProps = asChild ? {} : {
+    const separatorProps = asChild ? {} : {
       ref,
       className: cn(
-        paginationEllipsisVariants({
+        breadcrumbSeparatorVariants({
           variant,
           size,
+          color,
           weight,
-          rounded,
           className,
         })
       ),
@@ -563,160 +487,179 @@ const PaginationEllipsis = React.forwardRef<HTMLSpanElement, PaginationEllipsisP
       ...props,
     };
 
+    const getSeparatorContent = () => {
+      if (children) return children;
+      
+      switch (variant) {
+        case 'slash':
+          return '/';
+        case 'arrow':
+          return '→';
+        case 'chevron':
+          return '›';
+        case 'dot':
+          return '•';
+        case 'pipe':
+          return '|';
+        default:
+          return '/';
+      }
+    };
+
     return (
-      <Comp {...ellipsisProps}>
-        {children || '...'}
+      <Comp {...separatorProps}>
+        {getSeparatorContent()}
       </Comp>
     );
   }
 );
-PaginationEllipsis.displayName = 'PaginationEllipsis';
+BreadcrumbSeparator.displayName = 'BreadcrumbSeparator';
 
-// Additional utility components for advanced pagination functionality
-const PaginationSolid = React.forwardRef<
+// Additional utility components for advanced breadcrumbs functionality
+const BreadcrumbsSolid = React.forwardRef<
   HTMLElement,
-  Omit<PaginationProps, 'variant'>
+  Omit<BreadcrumbsProps, 'variant'>
 >(({ className, children, ...props }, ref) => (
-  <Pagination
+  <Breadcrumbs
     ref={ref}
     variant="solid"
     className={className}
     {...props}
   >
     {children}
-  </Pagination>
+  </Breadcrumbs>
 ));
-PaginationSolid.displayName = 'PaginationSolid';
+BreadcrumbsSolid.displayName = 'BreadcrumbsSolid';
 
-const PaginationTransparent = React.forwardRef<
+const BreadcrumbsTransparent = React.forwardRef<
   HTMLElement,
-  Omit<PaginationProps, 'variant'>
+  Omit<BreadcrumbsProps, 'variant'>
 >(({ className, children, ...props }, ref) => (
-  <Pagination
+  <Breadcrumbs
     ref={ref}
     variant="transparent"
     className={className}
     {...props}
   >
     {children}
-  </Pagination>
+  </Breadcrumbs>
 ));
-PaginationTransparent.displayName = 'PaginationTransparent';
+BreadcrumbsTransparent.displayName = 'BreadcrumbsTransparent';
 
-const PaginationGradient = React.forwardRef<
+const BreadcrumbsGradient = React.forwardRef<
   HTMLElement,
-  Omit<PaginationProps, 'variant'>
+  Omit<BreadcrumbsProps, 'variant'>
 >(({ className, children, ...props }, ref) => (
-  <Pagination
+  <Breadcrumbs
     ref={ref}
     variant="gradient"
     className={className}
     {...props}
   >
     {children}
-  </Pagination>
+  </Breadcrumbs>
 ));
-PaginationGradient.displayName = 'PaginationGradient';
+BreadcrumbsGradient.displayName = 'BreadcrumbsGradient';
 
-const PaginationDark = React.forwardRef<
+const BreadcrumbsDark = React.forwardRef<
   HTMLElement,
-  Omit<PaginationProps, 'variant'>
+  Omit<BreadcrumbsProps, 'variant'>
 >(({ className, children, ...props }, ref) => (
-  <Pagination
+  <Breadcrumbs
     ref={ref}
     variant="dark"
     className={className}
     {...props}
   >
     {children}
-  </Pagination>
+  </Breadcrumbs>
 ));
-PaginationDark.displayName = 'PaginationDark';
+BreadcrumbsDark.displayName = 'BreadcrumbsDark';
 
-const PaginationLight = React.forwardRef<
+const BreadcrumbsLight = React.forwardRef<
   HTMLElement,
-  Omit<PaginationProps, 'variant'>
+  Omit<BreadcrumbsProps, 'variant'>
 >(({ className, children, ...props }, ref) => (
-  <Pagination
+  <Breadcrumbs
     ref={ref}
     variant="light"
     className={className}
     {...props}
   >
     {children}
-  </Pagination>
+  </Breadcrumbs>
 ));
-PaginationLight.displayName = 'PaginationLight';
+BreadcrumbsLight.displayName = 'BreadcrumbsLight';
 
-const PaginationMinimal = React.forwardRef<
+const BreadcrumbsMinimal = React.forwardRef<
   HTMLElement,
-  Omit<PaginationProps, 'variant'>
+  Omit<BreadcrumbsProps, 'variant'>
 >(({ className, children, ...props }, ref) => (
-  <Pagination
+  <Breadcrumbs
     ref={ref}
     variant="minimal"
     className={className}
     {...props}
   >
     {children}
-  </Pagination>
+  </Breadcrumbs>
 ));
-PaginationMinimal.displayName = 'PaginationMinimal';
+BreadcrumbsMinimal.displayName = 'BreadcrumbsMinimal';
 
-const PaginationFloating = React.forwardRef<
+const BreadcrumbsFloating = React.forwardRef<
   HTMLElement,
-  Omit<PaginationProps, 'variant'>
+  Omit<BreadcrumbsProps, 'variant'>
 >(({ className, children, ...props }, ref) => (
-  <Pagination
+  <Breadcrumbs
     ref={ref}
     variant="floating"
     className={className}
     {...props}
   >
     {children}
-  </Pagination>
+  </Breadcrumbs>
 ));
-PaginationFloating.displayName = 'PaginationFloating';
+BreadcrumbsFloating.displayName = 'BreadcrumbsFloating';
 
-const PaginationInline = React.forwardRef<
+const BreadcrumbsInline = React.forwardRef<
   HTMLElement,
-  Omit<PaginationProps, 'variant'>
+  Omit<BreadcrumbsProps, 'variant'>
 >(({ className, children, ...props }, ref) => (
-  <Pagination
+  <Breadcrumbs
     ref={ref}
     variant="inline"
     className={className}
     {...props}
   >
     {children}
-  </Pagination>
+  </Breadcrumbs>
 ));
-PaginationInline.displayName = 'PaginationInline';
+BreadcrumbsInline.displayName = 'BreadcrumbsInline';
 
-const PaginationBlock = React.forwardRef<
+const BreadcrumbsBlock = React.forwardRef<
   HTMLElement,
-  Omit<PaginationProps, 'variant'>
+  Omit<BreadcrumbsProps, 'variant'>
 >(({ className, children, ...props }, ref) => (
-  <Pagination
+  <Breadcrumbs
     ref={ref}
     variant="block"
     className={className}
     {...props}
   >
     {children}
-  </Pagination>
+  </Breadcrumbs>
 ));
-PaginationBlock.displayName = 'PaginationBlock';
+BreadcrumbsBlock.displayName = 'BreadcrumbsBlock';
 
-// Pagination with responsive breakpoints
-const PaginationResponsive = React.forwardRef<
+// Breadcrumbs with responsive breakpoints
+const BreadcrumbsResponsive = React.forwardRef<
   HTMLElement,
-  PaginationProps & {
+  BreadcrumbsProps & {
     breakpoints?: {
-      sm?: Partial<PaginationProps>;
-      md?: Partial<PaginationProps>;
-      lg?: Partial<PaginationProps>;
-      xl?: Partial<PaginationProps>;
+      sm?: Partial<BreadcrumbsProps>;
+      md?: Partial<BreadcrumbsProps>;
+      lg?: Partial<BreadcrumbsProps>;
+      xl?: Partial<BreadcrumbsProps>;
     };
   }
 >(({ className, breakpoints, children, ...props }, ref) => {
@@ -742,21 +685,21 @@ const PaginationResponsive = React.forwardRef<
   }, [breakpoints]);
 
   return (
-    <Pagination
+    <Breadcrumbs
       ref={ref}
       className={cn(responsiveClasses, className)}
       {...props}
     >
       {children}
-    </Pagination>
+    </Breadcrumbs>
   );
 });
-PaginationResponsive.displayName = 'PaginationResponsive';
+BreadcrumbsResponsive.displayName = 'BreadcrumbsResponsive';
 
-// Pagination with spacing utilities
-const PaginationSpacing = React.forwardRef<
+// Breadcrumbs with spacing utilities
+const BreadcrumbsSpacing = React.forwardRef<
   HTMLElement,
-  PaginationProps & {
+  BreadcrumbsProps & {
     spacingSize?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   }
 >(({ className, spacingSize = 'md', children, ...props }, ref) => {
@@ -769,24 +712,24 @@ const PaginationSpacing = React.forwardRef<
   };
 
   return (
-    <Pagination
+    <Breadcrumbs
       ref={ref}
       size={spacingSizes[spacingSize]}
       className={className}
       {...props}
     >
       {children}
-    </Pagination>
+    </Breadcrumbs>
   );
 });
-PaginationSpacing.displayName = 'PaginationSpacing';
+BreadcrumbsSpacing.displayName = 'BreadcrumbsSpacing';
 
-// Pagination with card styling
-const PaginationCard = React.forwardRef<
+// Breadcrumbs with card styling
+const BreadcrumbsCard = React.forwardRef<
   HTMLElement,
-  Omit<PaginationProps, 'background' | 'border' | 'rounded' | 'shadow' | 'padding'>
+  Omit<BreadcrumbsProps, 'background' | 'border' | 'rounded' | 'shadow' | 'padding'>
 >(({ className, children, ...props }, ref) => (
-  <Pagination
+  <Breadcrumbs
     ref={ref}
     background="card"
     border="default"
@@ -797,16 +740,16 @@ const PaginationCard = React.forwardRef<
     {...props}
   >
     {children}
-  </Pagination>
+  </Breadcrumbs>
 ));
-PaginationCard.displayName = 'PaginationCard';
+BreadcrumbsCard.displayName = 'BreadcrumbsCard';
 
-// Pagination with section styling
-const PaginationSection = React.forwardRef<
+// Breadcrumbs with section styling
+const BreadcrumbsSection = React.forwardRef<
   HTMLElement,
-  Omit<PaginationProps, 'background' | 'padding'>
+  Omit<BreadcrumbsProps, 'background' | 'padding'>
 >(({ className, children, ...props }, ref) => (
-  <Pagination
+  <Breadcrumbs
     ref={ref}
     background="subtle"
     padding="xl"
@@ -814,28 +757,28 @@ const PaginationSection = React.forwardRef<
     {...props}
   >
     {children}
-  </Pagination>
+  </Breadcrumbs>
 ));
-PaginationSection.displayName = 'PaginationSection';
+BreadcrumbsSection.displayName = 'BreadcrumbsSection';
 
 export {
-  Pagination,
-  PaginationItem,
-  PaginationEllipsis,
-  PaginationSolid,
-  PaginationTransparent,
-  PaginationGradient,
-  PaginationDark,
-  PaginationLight,
-  PaginationMinimal,
-  PaginationFloating,
-  PaginationInline,
-  PaginationBlock,
-  PaginationResponsive,
-  PaginationSpacing,
-  PaginationCard,
-  PaginationSection,
-  paginationVariants,
-  paginationItemVariants,
-  paginationEllipsisVariants,
+  Breadcrumbs,
+  BreadcrumbItem,
+  BreadcrumbSeparator,
+  BreadcrumbsSolid,
+  BreadcrumbsTransparent,
+  BreadcrumbsGradient,
+  BreadcrumbsDark,
+  BreadcrumbsLight,
+  BreadcrumbsMinimal,
+  BreadcrumbsFloating,
+  BreadcrumbsInline,
+  BreadcrumbsBlock,
+  BreadcrumbsResponsive,
+  BreadcrumbsSpacing,
+  BreadcrumbsCard,
+  BreadcrumbsSection,
+  breadcrumbsVariants,
+  breadcrumbItemVariants,
+  breadcrumbSeparatorVariants,
 };

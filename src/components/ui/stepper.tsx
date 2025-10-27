@@ -2,19 +2,19 @@ import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils/atlas-utils';
 
-const accordionVariants = cva(
+const stepperVariants = cva(
   'w-full',
   {
     variants: {
       variant: {
         default: '',
-        solid: 'bg-atlas-card-bg border border-atlas-border rounded-lg',
+        solid: 'bg-atlas-card-bg border border-atlas-border rounded-lg p-4',
         transparent: 'bg-transparent',
-        gradient: 'bg-gradient-to-r from-atlas-primary-main to-atlas-secondary-main rounded-lg',
-        dark: 'bg-atlas-text-primary text-atlas-text-inverse rounded-lg',
-        light: 'bg-atlas-text-inverse text-atlas-text-primary rounded-lg',
-        minimal: 'bg-transparent border-b border-atlas-border-subtle',
-        floating: 'bg-atlas-card-bg border border-atlas-border rounded-lg shadow-lg',
+        gradient: 'bg-gradient-to-r from-atlas-primary-main to-atlas-secondary-main rounded-lg p-4',
+        dark: 'bg-atlas-text-primary text-atlas-text-inverse rounded-lg p-4',
+        light: 'bg-atlas-text-inverse text-atlas-text-primary rounded-lg p-4',
+        minimal: 'bg-transparent border-b border-atlas-border-subtle pb-2',
+        floating: 'bg-atlas-card-bg border border-atlas-border rounded-lg shadow-lg p-4',
         inline: 'inline-block',
         block: 'block',
       },
@@ -150,11 +150,11 @@ const accordionVariants = cva(
     defaultVariants: {
       variant: 'default',
       size: 'default',
-      direction: 'vertical',
-      align: 'start',
-      justify: 'start',
+      direction: 'horizontal',
+      align: 'center',
+      justify: 'between',
       wrap: 'nowrap',
-      gap: 0,
+      gap: 4,
       padding: 'none',
       margin: 'none',
       background: 'none',
@@ -165,19 +165,19 @@ const accordionVariants = cva(
   }
 );
 
-const accordionItemVariants = cva(
-  'border-b border-atlas-border last:border-b-0',
+const stepperStepVariants = cva(
+  'flex items-center',
   {
     variants: {
       variant: {
         default: '',
-        solid: 'bg-atlas-card-bg border border-atlas-border rounded-lg mb-2 last:mb-0',
+        solid: 'bg-atlas-card-bg border border-atlas-border rounded-lg p-3',
         transparent: 'bg-transparent',
-        gradient: 'bg-gradient-to-r from-atlas-primary-main to-atlas-secondary-main rounded-lg mb-2 last:mb-0',
-        dark: 'bg-atlas-text-primary text-atlas-text-inverse rounded-lg mb-2 last:mb-0',
-        light: 'bg-atlas-text-inverse text-atlas-text-primary rounded-lg mb-2 last:mb-0',
-        minimal: 'bg-transparent border-b border-atlas-border-subtle last:border-b-0',
-        floating: 'bg-atlas-card-bg border border-atlas-border rounded-lg shadow-lg mb-2 last:mb-0',
+        gradient: 'bg-gradient-to-r from-atlas-primary-main to-atlas-secondary-main rounded-lg p-3',
+        dark: 'bg-atlas-text-primary text-atlas-text-inverse rounded-lg p-3',
+        light: 'bg-atlas-text-inverse text-atlas-text-primary rounded-lg p-3',
+        minimal: 'bg-transparent border-b border-atlas-border-subtle pb-2',
+        floating: 'bg-atlas-card-bg border border-atlas-border rounded-lg shadow-lg p-3',
         inline: 'inline-block',
         block: 'block',
       },
@@ -193,30 +193,39 @@ const accordionItemVariants = cva(
         '5xl': 'text-5xl',
         '6xl': 'text-6xl',
       },
+      state: {
+        default: '',
+        active: 'text-atlas-primary-main',
+        completed: 'text-atlas-success-main',
+        disabled: 'text-atlas-text-muted opacity-50',
+        error: 'text-atlas-error-main',
+        warning: 'text-atlas-warning-main',
+        info: 'text-atlas-info-main',
+      },
       padding: {
         none: 'p-0',
-        xs: 'p-2',
-        sm: 'p-3',
-        default: 'p-4',
-        lg: 'p-5',
-        xl: 'p-6',
-        '2xl': 'p-8',
-        '3xl': 'p-10',
-        '4xl': 'p-12',
-        '5xl': 'p-14',
+        xs: 'p-1',
+        sm: 'p-2',
+        default: 'p-3',
+        lg: 'p-4',
+        xl: 'p-5',
+        '2xl': 'p-6',
+        '3xl': 'p-8',
+        '4xl': 'p-10',
+        '5xl': 'p-12',
         '6xl': 'p-16',
       },
       margin: {
         none: 'm-0',
-        xs: 'm-2',
-        sm: 'm-3',
-        default: 'm-4',
-        lg: 'm-5',
-        xl: 'm-6',
-        '2xl': 'm-8',
-        '3xl': 'm-10',
-        '4xl': 'm-12',
-        '5xl': 'm-14',
+        xs: 'm-1',
+        sm: 'm-2',
+        default: 'm-3',
+        lg: 'm-4',
+        xl: 'm-5',
+        '2xl': 'm-6',
+        '3xl': 'm-8',
+        '4xl': 'm-10',
+        '5xl': 'm-12',
         '6xl': 'm-16',
         auto: 'mx-auto',
       },
@@ -271,6 +280,7 @@ const accordionItemVariants = cva(
     defaultVariants: {
       variant: 'default',
       size: 'default',
+      state: 'default',
       padding: 'none',
       margin: 'none',
       background: 'none',
@@ -281,45 +291,44 @@ const accordionItemVariants = cva(
   }
 );
 
-const accordionTriggerVariants = cva(
-  'flex items-center justify-between w-full px-4 py-3 text-left font-medium transition-colors',
+const stepperStepIconVariants = cva(
+  'flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium',
   {
     variants: {
       variant: {
-        default: 'text-atlas-text-primary hover:text-atlas-primary-main hover:bg-atlas-primary-subtle',
-        primary: 'text-atlas-primary-main hover:text-atlas-primary-dark hover:bg-atlas-primary-subtle',
-        secondary: 'text-atlas-secondary-main hover:text-atlas-secondary-dark hover:bg-atlas-secondary-subtle',
-        success: 'text-atlas-success-main hover:text-atlas-success-dark hover:bg-atlas-success-subtle',
-        warning: 'text-atlas-warning-main hover:text-atlas-warning-dark hover:bg-atlas-warning-subtle',
-        error: 'text-atlas-error-main hover:text-atlas-error-dark hover:bg-atlas-error-subtle',
-        info: 'text-atlas-info-main hover:text-atlas-info-dark hover:bg-atlas-info-subtle',
-        inverse: 'text-atlas-text-inverse hover:text-atlas-text-inverse hover:bg-atlas-text-inverse-subtle',
-        muted: 'text-atlas-text-muted hover:text-atlas-text-primary hover:bg-atlas-border-subtle',
-        ghost: 'text-atlas-text-primary hover:text-atlas-primary-main hover:bg-transparent',
-        outline: 'text-atlas-text-primary border border-atlas-border hover:text-atlas-primary-main hover:border-atlas-primary-main',
-        solid: 'text-atlas-text-inverse bg-atlas-primary-main hover:bg-atlas-primary-dark',
+        default: 'bg-atlas-border-subtle text-atlas-text-muted',
+        primary: 'bg-atlas-primary-main text-atlas-text-inverse',
+        secondary: 'bg-atlas-secondary-main text-atlas-text-inverse',
+        success: 'bg-atlas-success-main text-atlas-text-inverse',
+        warning: 'bg-atlas-warning-main text-atlas-text-inverse',
+        error: 'bg-atlas-error-main text-atlas-text-inverse',
+        info: 'bg-atlas-info-main text-atlas-text-inverse',
+        inverse: 'bg-atlas-text-inverse text-atlas-text-primary',
+        muted: 'bg-atlas-text-muted text-atlas-text-inverse',
+        ghost: 'bg-transparent text-atlas-text-primary',
+        outline: 'bg-transparent border border-atlas-border text-atlas-text-primary',
+        solid: 'bg-atlas-text-primary text-atlas-text-inverse',
       },
       size: {
-        xs: 'px-2 py-1 text-xs',
-        sm: 'px-3 py-1.5 text-sm',
-        default: 'px-4 py-3 text-base',
-        lg: 'px-5 py-3.5 text-lg',
-        xl: 'px-6 py-4 text-xl',
-        '2xl': 'px-8 py-5 text-2xl',
-        '3xl': 'px-10 py-6 text-3xl',
-        '4xl': 'px-12 py-7 text-4xl',
-        '5xl': 'px-16 py-8 text-5xl',
-        '6xl': 'px-20 py-10 text-6xl',
+        xs: 'w-6 h-6 text-xs',
+        sm: 'w-7 h-7 text-sm',
+        default: 'w-8 h-8 text-sm',
+        lg: 'w-10 h-10 text-base',
+        xl: 'w-12 h-12 text-lg',
+        '2xl': 'w-14 h-14 text-xl',
+        '3xl': 'w-16 h-16 text-2xl',
+        '4xl': 'w-20 h-20 text-3xl',
+        '5xl': 'w-24 h-24 text-4xl',
+        '6xl': 'w-28 h-28 text-5xl',
       },
       state: {
         default: '',
         active: 'bg-atlas-primary-main text-atlas-text-inverse',
-        disabled: 'opacity-50 cursor-not-allowed pointer-events-none',
-        loading: 'opacity-75 cursor-wait pointer-events-none',
-        error: 'text-atlas-error-main bg-atlas-error-subtle',
-        success: 'text-atlas-success-main bg-atlas-success-subtle',
-        warning: 'text-atlas-warning-main bg-atlas-warning-subtle',
-        info: 'text-atlas-info-main bg-atlas-info-subtle',
+        completed: 'bg-atlas-success-main text-atlas-text-inverse',
+        disabled: 'bg-atlas-border-subtle text-atlas-text-muted opacity-50',
+        error: 'bg-atlas-error-main text-atlas-text-inverse',
+        warning: 'bg-atlas-warning-main text-atlas-text-inverse',
+        info: 'bg-atlas-info-main text-atlas-text-inverse',
       },
       weight: {
         light: 'font-light',
@@ -355,25 +364,25 @@ const accordionTriggerVariants = cva(
       size: 'default',
       state: 'default',
       weight: 'medium',
-      rounded: 'none',
+      rounded: 'full',
       shadow: 'none',
     },
   }
 );
 
-const accordionContentVariants = cva(
-  'overflow-hidden transition-all duration-300 ease-in-out',
+const stepperStepContentVariants = cva(
+  'ml-3',
   {
     variants: {
       variant: {
         default: '',
-        solid: 'bg-atlas-card-bg border border-atlas-border rounded-lg',
+        solid: 'bg-atlas-card-bg border border-atlas-border rounded-lg p-3',
         transparent: 'bg-transparent',
-        gradient: 'bg-gradient-to-r from-atlas-primary-main to-atlas-secondary-main rounded-lg',
-        dark: 'bg-atlas-text-primary text-atlas-text-inverse rounded-lg',
-        light: 'bg-atlas-text-inverse text-atlas-text-primary rounded-lg',
-        minimal: 'bg-transparent border-b border-atlas-border-subtle',
-        floating: 'bg-atlas-card-bg border border-atlas-border rounded-lg shadow-lg',
+        gradient: 'bg-gradient-to-r from-atlas-primary-main to-atlas-secondary-main rounded-lg p-3',
+        dark: 'bg-atlas-text-primary text-atlas-text-inverse rounded-lg p-3',
+        light: 'bg-atlas-text-inverse text-atlas-text-primary rounded-lg p-3',
+        minimal: 'bg-transparent border-b border-atlas-border-subtle pb-2',
+        floating: 'bg-atlas-card-bg border border-atlas-border rounded-lg shadow-lg p-3',
         inline: 'inline-block',
         block: 'block',
       },
@@ -389,30 +398,39 @@ const accordionContentVariants = cva(
         '5xl': 'text-5xl',
         '6xl': 'text-6xl',
       },
+      state: {
+        default: '',
+        active: 'text-atlas-primary-main',
+        completed: 'text-atlas-success-main',
+        disabled: 'text-atlas-text-muted opacity-50',
+        error: 'text-atlas-error-main',
+        warning: 'text-atlas-warning-main',
+        info: 'text-atlas-info-main',
+      },
       padding: {
         none: 'p-0',
-        xs: 'p-2',
-        sm: 'p-3',
-        default: 'p-4',
-        lg: 'p-5',
-        xl: 'p-6',
-        '2xl': 'p-8',
-        '3xl': 'p-10',
-        '4xl': 'p-12',
-        '5xl': 'p-14',
+        xs: 'p-1',
+        sm: 'p-2',
+        default: 'p-3',
+        lg: 'p-4',
+        xl: 'p-5',
+        '2xl': 'p-6',
+        '3xl': 'p-8',
+        '4xl': 'p-10',
+        '5xl': 'p-12',
         '6xl': 'p-16',
       },
       margin: {
         none: 'm-0',
-        xs: 'm-2',
-        sm: 'm-3',
-        default: 'm-4',
-        lg: 'm-5',
-        xl: 'm-6',
-        '2xl': 'm-8',
-        '3xl': 'm-10',
-        '4xl': 'm-12',
-        '5xl': 'm-14',
+        xs: 'm-1',
+        sm: 'm-2',
+        default: 'm-3',
+        lg: 'm-4',
+        xl: 'm-5',
+        '2xl': 'm-6',
+        '3xl': 'm-8',
+        '4xl': 'm-10',
+        '5xl': 'm-12',
         '6xl': 'm-16',
         auto: 'mx-auto',
       },
@@ -467,7 +485,8 @@ const accordionContentVariants = cva(
     defaultVariants: {
       variant: 'default',
       size: 'default',
-      padding: 'default',
+      state: 'default',
+      padding: 'none',
       margin: 'none',
       background: 'none',
       border: 'none',
@@ -477,9 +496,9 @@ const accordionContentVariants = cva(
   }
 );
 
-export interface AccordionProps
+export interface StepperProps
   extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof accordionVariants> {
+    VariantProps<typeof stepperVariants> {
   variant?: 'default' | 'solid' | 'transparent' | 'gradient' | 'dark' | 'light' | 'minimal' | 'floating' | 'inline' | 'block';
   size?: 'xs' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl';
   direction?: 'horizontal' | 'vertical' | 'horizontal-reverse' | 'vertical-reverse';
@@ -493,50 +512,50 @@ export interface AccordionProps
   border?: 'none' | 'subtle' | 'default' | 'strong' | 'primary' | 'success' | 'warning' | 'error' | 'top' | 'bottom' | 'left' | 'right';
   rounded?: 'none' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | '3xl' | 'full';
   shadow?: 'none' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | 'inner';
-  type?: 'single' | 'multiple';
-  collapsible?: boolean;
-  defaultValue?: string | string[];
-  value?: string | string[];
-  onValueChange?: (value: string | string[]) => void;
+  currentStep?: number;
+  totalSteps?: number;
+  onStepChange?: (step: number) => void;
   asChild?: boolean;
   children?: React.ReactNode;
 }
 
-export interface AccordionItemProps
+export interface StepperStepProps
   extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof accordionItemVariants> {
+    VariantProps<typeof stepperStepVariants> {
   variant?: 'default' | 'solid' | 'transparent' | 'gradient' | 'dark' | 'light' | 'minimal' | 'floating' | 'inline' | 'block';
   size?: 'xs' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl';
+  state?: 'default' | 'active' | 'completed' | 'disabled' | 'error' | 'warning' | 'info';
   padding?: 'none' | 'xs' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl';
   margin?: 'none' | 'xs' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | 'auto';
   background?: 'none' | 'subtle' | 'card' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'gradient' | 'pattern' | 'image';
   border?: 'none' | 'subtle' | 'default' | 'strong' | 'primary' | 'success' | 'warning' | 'error' | 'top' | 'bottom' | 'left' | 'right';
   rounded?: 'none' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | '3xl' | 'full';
   shadow?: 'none' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | 'inner';
-  value: string;
-  asChild?: boolean;
-  children?: React.ReactNode;
-}
-
-export interface AccordionTriggerProps
-  extends React.HTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof accordionTriggerVariants> {
-  variant?: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'inverse' | 'muted' | 'ghost' | 'outline' | 'solid';
-  size?: 'xs' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl';
-  state?: 'default' | 'active' | 'disabled' | 'loading' | 'error' | 'success' | 'warning' | 'info';
-  weight?: 'light' | 'normal' | 'medium' | 'semibold' | 'bold' | 'extrabold' | 'black';
-  rounded?: 'none' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | '3xl' | 'full';
-  shadow?: 'none' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | 'inner';
+  stepNumber?: number;
   onClick?: () => void;
   asChild?: boolean;
   children?: React.ReactNode;
 }
 
-export interface AccordionContentProps
+export interface StepperStepIconProps
   extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof accordionContentVariants> {
+    VariantProps<typeof stepperStepIconVariants> {
+  variant?: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'inverse' | 'muted' | 'ghost' | 'outline' | 'solid';
+  size?: 'xs' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl';
+  state?: 'default' | 'active' | 'completed' | 'disabled' | 'error' | 'warning' | 'info';
+  weight?: 'light' | 'normal' | 'medium' | 'semibold' | 'bold' | 'extrabold' | 'black';
+  rounded?: 'none' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | '3xl' | 'full';
+  shadow?: 'none' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | 'inner';
+  asChild?: boolean;
+  children?: React.ReactNode;
+}
+
+export interface StepperStepContentProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof stepperStepContentVariants> {
   variant?: 'default' | 'solid' | 'transparent' | 'gradient' | 'dark' | 'light' | 'minimal' | 'floating' | 'inline' | 'block';
   size?: 'xs' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl';
+  state?: 'default' | 'active' | 'completed' | 'disabled' | 'error' | 'warning' | 'info';
   padding?: 'none' | 'xs' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl';
   margin?: 'none' | 'xs' | 'sm' | 'default' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | 'auto';
   background?: 'none' | 'subtle' | 'card' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'gradient' | 'pattern' | 'image';
@@ -547,7 +566,7 @@ export interface AccordionContentProps
   children?: React.ReactNode;
 }
 
-const Accordion = React.forwardRef<HTMLDivElement, AccordionProps>(
+const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
   ({
     className,
     variant,
@@ -563,30 +582,19 @@ const Accordion = React.forwardRef<HTMLDivElement, AccordionProps>(
     border,
     rounded,
     shadow,
-    type = 'single',
-    collapsible = true,
-    defaultValue,
-    value,
-    onValueChange,
+    currentStep = 1,
+    totalSteps = 1,
+    onStepChange,
     asChild = false,
     children,
     ...props
   }, ref) => {
-    const [activeItems, setActiveItems] = React.useState<string | string[]>(
-      defaultValue || (type === 'single' ? '' : [])
-    );
-
-    const handleValueChange = (newValue: string | string[]) => {
-      setActiveItems(newValue);
-      onValueChange?.(newValue);
-    };
-
     const Comp = asChild ? React.Fragment : 'div';
     
-    const accordionProps = asChild ? {} : {
+    const stepperProps = asChild ? {} : {
       ref,
       className: cn(
-        accordionVariants({
+        stepperVariants({
           variant,
           size,
           direction,
@@ -603,18 +611,19 @@ const Accordion = React.forwardRef<HTMLDivElement, AccordionProps>(
           className,
         })
       ),
+      'aria-label': 'Stepper',
       ...props,
     };
 
     return (
-      <Comp {...accordionProps}>
-        {React.Children.map(children, (child) => {
+      <Comp {...stepperProps}>
+        {React.Children.map(children, (child, index) => {
           if (React.isValidElement(child)) {
             return React.cloneElement(child, {
-              type,
-              collapsible,
-              activeItems: value || activeItems,
-              onValueChange: handleValueChange,
+              stepNumber: index + 1,
+              currentStep,
+              totalSteps,
+              onStepChange,
             } as any);
           }
           return child;
@@ -623,32 +632,36 @@ const Accordion = React.forwardRef<HTMLDivElement, AccordionProps>(
     );
   }
 );
-Accordion.displayName = 'Accordion';
+Stepper.displayName = 'Stepper';
 
-const AccordionItem = React.forwardRef<HTMLDivElement, AccordionItemProps>(
+const StepperStep = React.forwardRef<HTMLDivElement, StepperStepProps>(
   ({
     className,
     variant,
     size,
+    state,
     padding,
     margin,
     background,
     border,
     rounded,
     shadow,
-    value,
+    stepNumber,
+    onClick,
     asChild = false,
     children,
     ...props
   }, ref) => {
     const Comp = asChild ? React.Fragment : 'div';
     
-    const itemProps = asChild ? {} : {
+    const stepProps = asChild ? {} : {
       ref,
+      onClick,
       className: cn(
-        accordionItemVariants({
+        stepperStepVariants({
           variant,
           size,
+          state,
           padding,
           margin,
           background,
@@ -658,27 +671,20 @@ const AccordionItem = React.forwardRef<HTMLDivElement, AccordionItemProps>(
           className,
         })
       ),
-      'data-state': 'closed',
+      'data-state': state,
       ...props,
     };
 
     return (
-      <Comp {...itemProps}>
-        {React.Children.map(children, (child) => {
-          if (React.isValidElement(child)) {
-            return React.cloneElement(child, {
-              value,
-            } as any);
-          }
-          return child;
-        })}
+      <Comp {...stepProps}>
+        {children}
       </Comp>
     );
   }
 );
-AccordionItem.displayName = 'AccordionItem';
+StepperStep.displayName = 'StepperStep';
 
-const AccordionTrigger = React.forwardRef<HTMLButtonElement, AccordionTriggerProps>(
+const StepperStepIcon = React.forwardRef<HTMLDivElement, StepperStepIconProps>(
   ({
     className,
     variant,
@@ -687,18 +693,16 @@ const AccordionTrigger = React.forwardRef<HTMLButtonElement, AccordionTriggerPro
     weight,
     rounded,
     shadow,
-    onClick,
     asChild = false,
     children,
     ...props
   }, ref) => {
-    const Comp = asChild ? React.Fragment : 'button';
+    const Comp = asChild ? React.Fragment : 'div';
     
-    const triggerProps = asChild ? {} : {
+    const iconProps = asChild ? {} : {
       ref,
-      onClick,
       className: cn(
-        accordionTriggerVariants({
+        stepperStepIconVariants({
           variant,
           size,
           state,
@@ -708,28 +712,25 @@ const AccordionTrigger = React.forwardRef<HTMLButtonElement, AccordionTriggerPro
           className,
         })
       ),
-      'aria-expanded': 'false',
-      'aria-controls': 'accordion-content',
+      'data-state': state,
       ...props,
     };
 
     return (
-      <Comp {...triggerProps}>
+      <Comp {...iconProps}>
         {children}
-        <span className="ml-auto transition-transform duration-200 group-data-[state=open]/accordion:rotate-180">
-          ▼
-        </span>
       </Comp>
     );
   }
 );
-AccordionTrigger.displayName = 'AccordionTrigger';
+StepperStepIcon.displayName = 'StepperStepIcon';
 
-const AccordionContent = React.forwardRef<HTMLDivElement, AccordionContentProps>(
+const StepperStepContent = React.forwardRef<HTMLDivElement, StepperStepContentProps>(
   ({
     className,
     variant,
     size,
+    state,
     padding,
     margin,
     background,
@@ -745,9 +746,10 @@ const AccordionContent = React.forwardRef<HTMLDivElement, AccordionContentProps>
     const contentProps = asChild ? {} : {
       ref,
       className: cn(
-        accordionContentVariants({
+        stepperStepContentVariants({
           variant,
           size,
+          state,
           padding,
           margin,
           background,
@@ -757,167 +759,164 @@ const AccordionContent = React.forwardRef<HTMLDivElement, AccordionContentProps>
           className,
         })
       ),
-      'data-state': 'closed',
-      'data-orientation': 'vertical',
+      'data-state': state,
       ...props,
     };
 
     return (
       <Comp {...contentProps}>
-        <div className="pb-4 pt-0">
-          {children}
-        </div>
+        {children}
       </Comp>
     );
   }
 );
-AccordionContent.displayName = 'AccordionContent';
+StepperStepContent.displayName = 'StepperStepContent';
 
-// Additional utility components for advanced accordion functionality
-const AccordionSolid = React.forwardRef<
+// Additional utility components for advanced stepper functionality
+const StepperSolid = React.forwardRef<
   HTMLDivElement,
-  Omit<AccordionProps, 'variant'>
+  Omit<StepperProps, 'variant'>
 >(({ className, children, ...props }, ref) => (
-  <Accordion
+  <Stepper
     ref={ref}
     variant="solid"
     className={className}
     {...props}
   >
     {children}
-  </Accordion>
+  </Stepper>
 ));
-AccordionSolid.displayName = 'AccordionSolid';
+StepperSolid.displayName = 'StepperSolid';
 
-const AccordionTransparent = React.forwardRef<
+const StepperTransparent = React.forwardRef<
   HTMLDivElement,
-  Omit<AccordionProps, 'variant'>
+  Omit<StepperProps, 'variant'>
 >(({ className, children, ...props }, ref) => (
-  <Accordion
+  <Stepper
     ref={ref}
     variant="transparent"
     className={className}
     {...props}
   >
     {children}
-  </Accordion>
+  </Stepper>
 ));
-AccordionTransparent.displayName = 'AccordionTransparent';
+StepperTransparent.displayName = 'StepperTransparent';
 
-const AccordionGradient = React.forwardRef<
+const StepperGradient = React.forwardRef<
   HTMLDivElement,
-  Omit<AccordionProps, 'variant'>
+  Omit<StepperProps, 'variant'>
 >(({ className, children, ...props }, ref) => (
-  <Accordion
+  <Stepper
     ref={ref}
     variant="gradient"
     className={className}
     {...props}
   >
     {children}
-  </Accordion>
+  </Stepper>
 ));
-AccordionGradient.displayName = 'AccordionGradient';
+StepperGradient.displayName = 'StepperGradient';
 
-const AccordionDark = React.forwardRef<
+const StepperDark = React.forwardRef<
   HTMLDivElement,
-  Omit<AccordionProps, 'variant'>
+  Omit<StepperProps, 'variant'>
 >(({ className, children, ...props }, ref) => (
-  <Accordion
+  <Stepper
     ref={ref}
     variant="dark"
     className={className}
     {...props}
   >
     {children}
-  </Accordion>
+  </Stepper>
 ));
-AccordionDark.displayName = 'AccordionDark';
+StepperDark.displayName = 'StepperDark';
 
-const AccordionLight = React.forwardRef<
+const StepperLight = React.forwardRef<
   HTMLDivElement,
-  Omit<AccordionProps, 'variant'>
+  Omit<StepperProps, 'variant'>
 >(({ className, children, ...props }, ref) => (
-  <Accordion
+  <Stepper
     ref={ref}
     variant="light"
     className={className}
     {...props}
   >
     {children}
-  </Accordion>
+  </Stepper>
 ));
-AccordionLight.displayName = 'AccordionLight';
+StepperLight.displayName = 'StepperLight';
 
-const AccordionMinimal = React.forwardRef<
+const StepperMinimal = React.forwardRef<
   HTMLDivElement,
-  Omit<AccordionProps, 'variant'>
+  Omit<StepperProps, 'variant'>
 >(({ className, children, ...props }, ref) => (
-  <Accordion
+  <Stepper
     ref={ref}
     variant="minimal"
     className={className}
     {...props}
   >
     {children}
-  </Accordion>
+  </Stepper>
 ));
-AccordionMinimal.displayName = 'AccordionMinimal';
+StepperMinimal.displayName = 'StepperMinimal';
 
-const AccordionFloating = React.forwardRef<
+const StepperFloating = React.forwardRef<
   HTMLDivElement,
-  Omit<AccordionProps, 'variant'>
+  Omit<StepperProps, 'variant'>
 >(({ className, children, ...props }, ref) => (
-  <Accordion
+  <Stepper
     ref={ref}
     variant="floating"
     className={className}
     {...props}
   >
     {children}
-  </Accordion>
+  </Stepper>
 ));
-AccordionFloating.displayName = 'AccordionFloating';
+StepperFloating.displayName = 'StepperFloating';
 
-const AccordionInline = React.forwardRef<
+const StepperInline = React.forwardRef<
   HTMLDivElement,
-  Omit<AccordionProps, 'variant'>
+  Omit<StepperProps, 'variant'>
 >(({ className, children, ...props }, ref) => (
-  <Accordion
+  <Stepper
     ref={ref}
     variant="inline"
     className={className}
     {...props}
   >
     {children}
-  </Accordion>
+  </Stepper>
 ));
-AccordionInline.displayName = 'AccordionInline';
+StepperInline.displayName = 'StepperInline';
 
-const AccordionBlock = React.forwardRef<
+const StepperBlock = React.forwardRef<
   HTMLDivElement,
-  Omit<AccordionProps, 'variant'>
+  Omit<StepperProps, 'variant'>
 >(({ className, children, ...props }, ref) => (
-  <Accordion
+  <Stepper
     ref={ref}
     variant="block"
     className={className}
     {...props}
   >
     {children}
-  </Accordion>
+  </Stepper>
 ));
-AccordionBlock.displayName = 'AccordionBlock';
+StepperBlock.displayName = 'StepperBlock';
 
-// Accordion with responsive breakpoints
-const AccordionResponsive = React.forwardRef<
+// Stepper with responsive breakpoints
+const StepperResponsive = React.forwardRef<
   HTMLDivElement,
-  AccordionProps & {
+  StepperProps & {
     breakpoints?: {
-      sm?: Partial<AccordionProps>;
-      md?: Partial<AccordionProps>;
-      lg?: Partial<AccordionProps>;
-      xl?: Partial<AccordionProps>;
+      sm?: Partial<StepperProps>;
+      md?: Partial<StepperProps>;
+      lg?: Partial<StepperProps>;
+      xl?: Partial<StepperProps>;
     };
   }
 >(({ className, breakpoints, children, ...props }, ref) => {
@@ -943,21 +942,21 @@ const AccordionResponsive = React.forwardRef<
   }, [breakpoints]);
 
   return (
-    <Accordion
+    <Stepper
       ref={ref}
       className={cn(responsiveClasses, className)}
       {...props}
     >
       {children}
-    </Accordion>
+    </Stepper>
   );
 });
-AccordionResponsive.displayName = 'AccordionResponsive';
+StepperResponsive.displayName = 'StepperResponsive';
 
-// Accordion with spacing utilities
-const AccordionSpacing = React.forwardRef<
+// Stepper with spacing utilities
+const StepperSpacing = React.forwardRef<
   HTMLDivElement,
-  AccordionProps & {
+  StepperProps & {
     spacingSize?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   }
 >(({ className, spacingSize = 'md', children, ...props }, ref) => {
@@ -970,24 +969,24 @@ const AccordionSpacing = React.forwardRef<
   };
 
   return (
-    <Accordion
+    <Stepper
       ref={ref}
       size={spacingSizes[spacingSize]}
       className={className}
       {...props}
     >
       {children}
-    </Accordion>
+    </Stepper>
   );
 });
-AccordionSpacing.displayName = 'AccordionSpacing';
+StepperSpacing.displayName = 'StepperSpacing';
 
-// Accordion with card styling
-const AccordionCard = React.forwardRef<
+// Stepper with card styling
+const StepperCard = React.forwardRef<
   HTMLDivElement,
-  Omit<AccordionProps, 'background' | 'border' | 'rounded' | 'shadow' | 'padding'>
+  Omit<StepperProps, 'background' | 'border' | 'rounded' | 'shadow' | 'padding'>
 >(({ className, children, ...props }, ref) => (
-  <Accordion
+  <Stepper
     ref={ref}
     background="card"
     border="default"
@@ -998,16 +997,16 @@ const AccordionCard = React.forwardRef<
     {...props}
   >
     {children}
-  </Accordion>
+  </Stepper>
 ));
-AccordionCard.displayName = 'AccordionCard';
+StepperCard.displayName = 'StepperCard';
 
-// Accordion with section styling
-const AccordionSection = React.forwardRef<
+// Stepper with section styling
+const StepperSection = React.forwardRef<
   HTMLDivElement,
-  Omit<AccordionProps, 'background' | 'padding'>
+  Omit<StepperProps, 'background' | 'padding'>
 >(({ className, children, ...props }, ref) => (
-  <Accordion
+  <Stepper
     ref={ref}
     background="subtle"
     padding="xl"
@@ -1015,30 +1014,30 @@ const AccordionSection = React.forwardRef<
     {...props}
   >
     {children}
-  </Accordion>
+  </Stepper>
 ));
-AccordionSection.displayName = 'AccordionSection';
+StepperSection.displayName = 'StepperSection';
 
 export {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-  AccordionSolid,
-  AccordionTransparent,
-  AccordionGradient,
-  AccordionDark,
-  AccordionLight,
-  AccordionMinimal,
-  AccordionFloating,
-  AccordionInline,
-  AccordionBlock,
-  AccordionResponsive,
-  AccordionSpacing,
-  AccordionCard,
-  AccordionSection,
-  accordionVariants,
-  accordionItemVariants,
-  accordionTriggerVariants,
-  accordionContentVariants,
+  Stepper,
+  StepperStep,
+  StepperStepIcon,
+  StepperStepContent,
+  StepperSolid,
+  StepperTransparent,
+  StepperGradient,
+  StepperDark,
+  StepperLight,
+  StepperMinimal,
+  StepperFloating,
+  StepperInline,
+  StepperBlock,
+  StepperResponsive,
+  StepperSpacing,
+  StepperCard,
+  StepperSection,
+  stepperVariants,
+  stepperStepVariants,
+  stepperStepIconVariants,
+  stepperStepContentVariants,
 };
