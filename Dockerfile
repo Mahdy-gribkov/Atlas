@@ -1,4 +1,4 @@
-# Multi-stage build for production optimization with enhanced security
+# Atlas AI Travel Agent - Multi-stage build for production optimization with enhanced security
 FROM node:18-alpine AS base
 
 # Install security updates and dumb-init

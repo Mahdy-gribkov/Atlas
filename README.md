@@ -1,6 +1,6 @@
-# 🚀 Travel Agent - AI-Powered Travel Planning Platform
+# 🗺️ Atlas - AI-Powered Travel Planning Platform
 
-A comprehensive, production-ready travel planning platform built with Next.js 14, Firebase, and AI integration.
+A comprehensive, production-ready travel planning platform built with Next.js 14, Firebase, and AI integration. Atlas represents trust, intelligence, and accessibility in the travel industry.
 
 ## ✨ Features
 
@@ -78,8 +78,8 @@ src/
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/travel-agent.git
-   cd travel-agent
+   git clone https://github.com/your-username/atlas.git
+   cd atlas
    ```
 
 2. **Install dependencies**
@@ -217,10 +217,10 @@ npm run security:scan
 ### Docker Deployment
 ```bash
 # Build image
-docker build -t travel-agent .
+docker build -t atlas .
 
 # Run container
-docker run -p 3000:3000 travel-agent
+docker run -p 3000:3000 atlas
 ```
 
 ## 🔧 Development
@@ -387,11 +387,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Documentation**: [Wiki](https://github.com/your-username/travel-agent/wiki)
-- **Issues**: [GitHub Issues](https://github.com/your-username/travel-agent/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-username/travel-agent/discussions)
-- **Email**: support@travel-agent.com
+- **Documentation**: [Wiki](https://github.com/your-username/atlas/wiki)
+- **Issues**: [GitHub Issues](https://github.com/your-username/atlas/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/your-username/atlas/discussions)
+- **Email**: support@atlas-travel.com
 
 ---
 
-**Built with ❤️ by the Travel Agent Team**
+**Built with ❤️ by the Atlas Team**
