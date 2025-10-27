@@ -1,45 +1,128 @@
 "use client";
 
-import React, { forwardRef, useState, useCallback, useEffect, useRef } from "react";
+import React, { forwardRef, useState, useCallback, useEffect, useRef, createContext } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/atlas-utils";
+import { createPortal } from "react-dom";
 import { 
-  InfoIcon,
-  HelpCircleIcon,
-  AlertTriangleIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  LightbulbIcon,
-  StarIcon,
-  HeartIcon,
-  ZapIcon,
-  TargetIcon,
-  EyeIcon,
-  EyeOffIcon,
-  LockIcon,
-  UnlockIcon
+  Info,
+  HelpCircle,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Lightbulb,
+  Star,
+  Heart,
+  Zap,
+  Target,
+  Eye,
+  EyeOff,
+  Lock,
+  Unlock,
+  Clock,
+  Calendar,
+  MapPin,
+  User,
+  Users,
+  Tag,
+  Filter,
+  Search,
+  Grid,
+  List,
+  Layout,
+  Image,
+  Video,
+  File,
+  Folder,
+  Archive,
+  Sparkles,
+  Crown,
+  Award,
+  Trophy,
+  Medal,
+  Badge,
+  Flag,
+  Compass,
+  Navigation,
+  Route,
+  Map,
+  Globe,
+  Plane,
+  Car,
+  Train,
+  Ship,
+  Bike,
+  Camera,
+  Flashlight,
+  Battery,
+  Plug,
+  Wifi,
+  Bluetooth,
+  Signal,
+  Radio,
+  Tv,
+  Monitor,
+  Laptop,
+  Smartphone,
+  Tablet,
+  Watch,
+  Headphones,
+  Speaker,
+  Phone,
+  Mail,
+  Send,
+  Upload,
+  Cloud,
+  Database,
+  Server,
+  Network,
+  Clipboard,
+  FileText,
+  FileImage,
+  FileVideo,
+  FileAudio,
+  FolderOpen,
+  FolderPlus,
+  FolderMinus,
+  FolderX,
+  FolderCheck,
+  FolderSync,
+  FolderSearch,
+  FolderHeart,
+  FolderLock,
+  FolderArchive
 } from "lucide-react";
 
 // Tooltip Root Component
 const tooltipVariants = cva(
-  "absolute z-50 px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-md shadow-lg",
+  "absolute z-50 px-3 py-2 text-sm font-medium rounded-md shadow-lg transition-all duration-200",
   {
     variants: {
       variant: {
-        default: "bg-gray-900 text-white",
-        dark: "bg-black text-white",
-        light: "bg-white text-gray-900 border border-gray-200",
-        primary: "bg-primary text-primary-foreground",
-        secondary: "bg-secondary text-secondary-foreground",
-        success: "bg-green-500 text-white",
-        warning: "bg-yellow-500 text-white",
-        error: "bg-red-500 text-white",
-        info: "bg-blue-500 text-white"
+        default: "bg-atlas-text-primary text-atlas-background",
+        dark: "bg-atlas-text-primary text-atlas-background",
+        light: "bg-atlas-background text-atlas-text-primary border border-atlas-border",
+        primary: "bg-atlas-primary-main text-white",
+        secondary: "bg-atlas-secondary-main text-white",
+        ai: "bg-atlas-ai-main text-white",
+        success: "bg-atlas-success-main text-white",
+        warning: "bg-atlas-warning-main text-white",
+        error: "bg-atlas-error-main text-white",
+        info: "bg-atlas-info-main text-white",
+        glass: "bg-white/10 backdrop-blur-md border border-white/20 text-white",
+        gradient: "bg-gradient-to-r from-atlas-primary-main to-atlas-secondary-main text-white",
+        minimal: "bg-transparent text-atlas-text-primary border border-atlas-border",
+        premium: "bg-gradient-to-r from-atlas-warning-main to-atlas-success-main text-white",
+        featured: "bg-gradient-to-r from-atlas-primary-main to-atlas-ai-main text-white",
+        compact: "bg-atlas-text-primary/90 text-atlas-background",
+        spacious: "bg-atlas-text-primary/70 text-atlas-background",
       },
       size: {
+        xs: "text-xs px-2 py-1",
         sm: "text-xs px-2 py-1",
         md: "text-sm px-3 py-2",
-        lg: "text-base px-4 py-3"
+        lg: "text-base px-4 py-3",
+        xl: "text-lg px-5 py-4",
       },
       placement: {
         top: "bottom-full left-1/2 transform -translate-x-1/2 mb-2",
@@ -54,12 +137,41 @@ const tooltipVariants = cva(
         "left-end": "right-full bottom-0 mr-2",
         "right-start": "left-full top-0 ml-2",
         "right-end": "left-full bottom-0 ml-2"
-      }
+      },
+      animation: {
+        none: "",
+        fade: "animate-in fade-in duration-200",
+        slide: "animate-in slide-in-from-bottom-4 duration-200",
+        scale: "animate-in zoom-in-95 duration-200",
+        bounce: "animate-in bounce-in duration-300",
+        spring: "animate-in spring-in duration-300",
+      },
+      rounded: {
+        none: "rounded-none",
+        sm: "rounded-sm",
+        default: "rounded-md",
+        md: "rounded-md",
+        lg: "rounded-lg",
+        xl: "rounded-xl",
+        full: "rounded-full",
+      },
+      shadow: {
+        none: "shadow-none",
+        sm: "shadow-sm",
+        md: "shadow-md",
+        lg: "shadow-lg",
+        xl: "shadow-xl",
+        inner: "shadow-inner",
+        glow: "shadow-lg shadow-atlas-primary-main/25",
+      },
     },
     defaultVariants: {
       variant: "default",
       size: "md",
-      placement: "top"
+      placement: "top",
+      animation: "fade",
+      rounded: "default",
+      shadow: "md",
     }
   }
 );
@@ -83,15 +195,23 @@ const tooltipArrowVariants = cva(
         "right-end": "right-full bottom-4 -mr-1"
       },
       variant: {
-        default: "bg-gray-900",
-        dark: "bg-black",
-        light: "bg-white border border-gray-200",
-        primary: "bg-primary",
-        secondary: "bg-secondary",
-        success: "bg-green-500",
-        warning: "bg-yellow-500",
-        error: "bg-red-500",
-        info: "bg-blue-500"
+        default: "bg-atlas-text-primary",
+        dark: "bg-atlas-text-primary",
+        light: "bg-atlas-background border border-atlas-border",
+        primary: "bg-atlas-primary-main",
+        secondary: "bg-atlas-secondary-main",
+        ai: "bg-atlas-ai-main",
+        success: "bg-atlas-success-main",
+        warning: "bg-atlas-warning-main",
+        error: "bg-atlas-error-main",
+        info: "bg-atlas-info-main",
+        glass: "bg-white/10 backdrop-blur-md border border-white/20",
+        gradient: "bg-gradient-to-r from-atlas-primary-main to-atlas-secondary-main",
+        minimal: "bg-transparent border border-atlas-border",
+        premium: "bg-gradient-to-r from-atlas-warning-main to-atlas-success-main",
+        featured: "bg-gradient-to-r from-atlas-primary-main to-atlas-ai-main",
+        compact: "bg-atlas-text-primary/90",
+        spacious: "bg-atlas-text-primary/70",
       }
     },
     defaultVariants: {
@@ -101,22 +221,92 @@ const tooltipArrowVariants = cva(
   }
 );
 
+// Tooltip Action Interface
+export interface TooltipAction {
+  label: string;
+  onClick?: () => void;
+  variant?: 'default' | 'destructive';
+  disabled?: boolean;
+}
+
+// Portal Component
+const Portal: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return createPortal(children, document.body);
+};
+
 export interface TooltipProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'content'>,
     VariantProps<typeof tooltipVariants> {
+  // Basic content
   content?: string;
   title?: string;
   description?: string;
-  icon?: React.ReactNode;
-  showIcon?: boolean;
-  showArrow?: boolean;
-  trigger?: 'hover' | 'focus' | 'click' | 'manual';
+  children?: React.ReactNode;
+  
+  // Trigger configuration
+  trigger?: 'hover' | 'click' | 'focus' | 'manual';
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  
+  // Positioning
+  placement?: 'top' | 'bottom' | 'left' | 'right' | 
+             'top-start' | 'top-end' | 'bottom-start' | 'bottom-end' |
+             'left-start' | 'left-end' | 'right-start' | 'right-end';
+  offset?: number;
+  sideOffset?: number;
+  alignOffset?: number;
+  avoidCollisions?: boolean;
+  collisionPadding?: number;
+  
+  // Animation
+  animationDuration?: number;
+  animationEasing?: string;
+  onAnimationStart?: () => void;
+  onAnimationEnd?: () => void;
+  
+  // Behavior
+  delayDuration?: number;
+  skipDelayDuration?: number;
+  disableHoverableContent?: boolean;
+  forceMount?: boolean;
   delay?: number;
   duration?: number;
-  disabled?: boolean;
   persistent?: boolean;
   maxWidth?: number;
-  children?: React.ReactNode;
+  
+  // Icon
+  icon?: React.ReactNode;
+  showIcon?: boolean;
+  iconPosition?: 'left' | 'right' | 'top' | 'bottom';
+  showArrow?: boolean;
+  
+  // Interactive
+  interactive?: boolean;
+  clickable?: boolean;
+  disabled?: boolean;
+  
+  // Actions
+  actions?: TooltipAction[];
+  
+  // Responsive
+  responsive?: boolean;
+  breakpoints?: {
+    sm?: string;
+    md?: string;
+    lg?: string;
+    xl?: string;
+  };
+  
+  // Accessibility
+  ariaLabel?: string;
+  ariaDescription?: string;
+  ariaLabelledBy?: string;
+  ariaDescribedBy?: string;
+  role?: string;
+  
+  // Custom
+  customStyles?: React.CSSProperties;
+  customClasses?: string;
 }
 
 const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
@@ -125,42 +315,77 @@ const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
     variant,
     size,
     placement,
-  content,
+    animation,
+    rounded,
+    shadow,
+    content,
     title,
     description,
-    icon,
-    showIcon = false,
-    showArrow = true,
+    children,
     trigger = 'hover',
+    open,
+    onOpenChange,
+    offset = 8,
+    sideOffset,
+    alignOffset,
+    avoidCollisions = true,
+    collisionPadding = 8,
+    animationDuration = 200,
+    animationEasing = 'ease-out',
+    onAnimationStart,
+    onAnimationEnd,
+    delayDuration = 300,
+    skipDelayDuration = 300,
+    disableHoverableContent = false,
+    forceMount = false,
     delay = 300,
     duration = 0,
-  disabled = false,
     persistent = false,
     maxWidth = 200,
-    children,
+    icon,
+    showIcon = false,
+    iconPosition = 'left',
+    showArrow = true,
+    interactive = false,
+    clickable = false,
+    disabled = false,
+    actions,
+    responsive = false,
+    breakpoints,
+    ariaLabel,
+    ariaDescription,
+    ariaLabelledBy,
+    ariaDescribedBy,
+    role = 'tooltip',
+    customStyles,
+    customClasses,
     ...props
-}, ref) => {
+  }, ref) => {
     const [isVisible, setIsVisible] = useState(false);
     const [position, setPosition] = useState({ top: 0, left: 0 });
+    const [isAnimating, setIsAnimating] = useState(false);
     
     const containerRef = useRef<HTMLDivElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
     const timeoutRef = useRef<NodeJS.Timeout>();
+    const animationTimeoutRef = useRef<NodeJS.Timeout>();
 
     const getDefaultIcon = () => {
       if (icon) return icon;
       
       switch (variant) {
         case 'success':
-          return <CheckCircleIcon className="h-3 w-3" />;
+          return <CheckCircle className="h-3 w-3" />;
         case 'warning':
-          return <AlertTriangleIcon className="h-3 w-3" />;
+          return <AlertTriangle className="h-3 w-3" />;
         case 'error':
-          return <XCircleIcon className="h-3 w-3" />;
+          return <XCircle className="h-3 w-3" />;
         case 'info':
-          return <InfoIcon className="h-3 w-3" />;
+          return <Info className="h-3 w-3" />;
+        case 'ai':
+          return <Sparkles className="h-3 w-3" />;
         default:
-          return <HelpCircleIcon className="h-3 w-3" />;
+          return <HelpCircle className="h-3 w-3" />;
       }
     };
 
@@ -177,63 +402,69 @@ const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
 
       switch (placement) {
         case 'top':
-          top = containerRect.top - tooltipRect.height - 8;
+          top = containerRect.top - tooltipRect.height - offset;
           left = containerRect.left + (containerRect.width - tooltipRect.width) / 2;
           break;
         case 'bottom':
-          top = containerRect.bottom + 8;
+          top = containerRect.bottom + offset;
           left = containerRect.left + (containerRect.width - tooltipRect.width) / 2;
           break;
         case 'left':
           top = containerRect.top + (containerRect.height - tooltipRect.height) / 2;
-          left = containerRect.left - tooltipRect.width - 8;
+          left = containerRect.left - tooltipRect.width - offset;
           break;
         case 'right':
           top = containerRect.top + (containerRect.height - tooltipRect.height) / 2;
-          left = containerRect.right + 8;
+          left = containerRect.right + offset;
           break;
         case 'top-start':
-          top = containerRect.top - tooltipRect.height - 8;
+          top = containerRect.top - tooltipRect.height - offset;
           left = containerRect.left;
           break;
         case 'top-end':
-          top = containerRect.top - tooltipRect.height - 8;
+          top = containerRect.top - tooltipRect.height - offset;
           left = containerRect.right - tooltipRect.width;
           break;
         case 'bottom-start':
-          top = containerRect.bottom + 8;
+          top = containerRect.bottom + offset;
           left = containerRect.left;
           break;
         case 'bottom-end':
-          top = containerRect.bottom + 8;
+          top = containerRect.bottom + offset;
           left = containerRect.right - tooltipRect.width;
           break;
         case 'left-start':
           top = containerRect.top;
-          left = containerRect.left - tooltipRect.width - 8;
+          left = containerRect.left - tooltipRect.width - offset;
           break;
         case 'left-end':
           top = containerRect.bottom - tooltipRect.height;
-          left = containerRect.left - tooltipRect.width - 8;
+          left = containerRect.left - tooltipRect.width - offset;
           break;
         case 'right-start':
           top = containerRect.top;
-          left = containerRect.right + 8;
+          left = containerRect.right + offset;
           break;
         case 'right-end':
           top = containerRect.bottom - tooltipRect.height;
-          left = containerRect.right + 8;
+          left = containerRect.right + offset;
+          break;
+        default:
+          top = containerRect.top - tooltipRect.height - offset;
+          left = containerRect.left + (containerRect.width - tooltipRect.width) / 2;
           break;
       }
 
-      // Adjust for viewport boundaries
-      if (left < 8) left = 8;
-      if (left + tooltipRect.width > viewportWidth - 8) left = viewportWidth - tooltipRect.width - 8;
-      if (top < 8) top = 8;
-      if (top + tooltipRect.height > viewportHeight - 8) top = viewportHeight - tooltipRect.height - 8;
+      // Adjust for viewport boundaries with collision padding
+      if (avoidCollisions) {
+        if (left < collisionPadding) left = collisionPadding;
+        if (left + tooltipRect.width > viewportWidth - collisionPadding) left = viewportWidth - tooltipRect.width - collisionPadding;
+        if (top < collisionPadding) top = collisionPadding;
+        if (top + tooltipRect.height > viewportHeight - collisionPadding) top = viewportHeight - tooltipRect.height - collisionPadding;
+      }
 
       setPosition({ top, left });
-    }, [placement]);
+    }, [placement, offset, avoidCollisions, collisionPadding]);
 
     const showTooltip = useCallback(() => {
       if (disabled) return;
@@ -244,9 +475,11 @@ const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
       
       timeoutRef.current = setTimeout(() => {
         setIsVisible(true);
+        onOpenChange?.(true);
+        onAnimationStart?.();
         setTimeout(calculatePosition, 0);
-      }, delay);
-    }, [disabled, delay, calculatePosition]);
+      }, delayDuration);
+    }, [disabled, delayDuration, onOpenChange, onAnimationStart, calculatePosition]);
 
     const hideTooltip = useCallback(() => {
       if (timeoutRef.current) {
@@ -256,9 +489,11 @@ const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
       if (!persistent) {
         timeoutRef.current = setTimeout(() => {
           setIsVisible(false);
-        }, duration);
+          onOpenChange?.(false);
+          onAnimationEnd?.();
+        }, skipDelayDuration);
       }
-    }, [persistent, duration]);
+    }, [persistent, skipDelayDuration, onOpenChange, onAnimationEnd]);
 
     const handleMouseEnter = useCallback(() => {
       if (trigger === 'hover') {
@@ -287,15 +522,41 @@ const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
     const handleClick = useCallback(() => {
       if (trigger === 'click') {
         setIsVisible(!isVisible);
+        onOpenChange?.(!isVisible);
         setTimeout(calculatePosition, 0);
       }
-    }, [trigger, isVisible, calculatePosition]);
+    }, [trigger, isVisible, onOpenChange, calculatePosition]);
+
+    const handleAction = useCallback((action: TooltipAction) => {
+      if (action.onClick) {
+        action.onClick();
+      }
+      return;
+    }, []);
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
       if (e.key === 'Escape' && isVisible) {
         setIsVisible(false);
+        onOpenChange?.(false);
       }
-    }, [isVisible]);
+    }, [isVisible, onOpenChange]);
+
+    // Handle external open state
+    useEffect(() => {
+      if (open !== undefined) {
+        setIsVisible(open);
+      }
+    }, [open]);
+
+    // Handle animation
+    useEffect(() => {
+      if (isVisible) {
+        setIsAnimating(true);
+        animationTimeoutRef.current = setTimeout(() => {
+          setIsAnimating(false);
+        }, animationDuration);
+      }
+    }, [isVisible, animationDuration]);
 
     // Effects
     useEffect(() => {
@@ -317,6 +578,9 @@ const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
       return () => {
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);
+        }
+        if (animationTimeoutRef.current) {
+          clearTimeout(animationTimeoutRef.current);
         }
       };
     }, []);
@@ -341,63 +605,106 @@ const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
           onClick={handleClick}
           className="inline-block"
         >
-      {children}
+          {children}
         </div>
 
         {/* Tooltip */}
-        {isVisible && (
-          <div
-            ref={tooltipRef}
-            className={cn(
-              tooltipVariants({ variant, size, placement }),
-              "opacity-100 transition-opacity duration-200"
-            )}
-            style={{
-              top: `${position.top}px`,
-              left: `${position.left}px`,
-              maxWidth: `${maxWidth}px`,
-            }}
-            role="tooltip"
-            aria-live="polite"
-          >
-            {/* Arrow */}
-            {showArrow && (
-              <div
-                className={tooltipArrowVariants({ placement, variant })}
-              />
-            )}
-
-            {/* Content */}
-            <div className="flex items-center space-x-2">
-              {showIcon && (
-                <div className="flex-shrink-0">
-                  {getDefaultIcon()}
-                </div>
+        {(isVisible || forceMount) && (
+          <Portal>
+            <div
+              ref={tooltipRef}
+              className={cn(
+                tooltipVariants({ 
+                  variant, 
+                  size, 
+                  placement, 
+                  animation,
+                  rounded,
+                  shadow,
+                  className: customClasses
+                }),
+                "opacity-100 transition-opacity duration-200"
               )}
-              
-              <div className="flex-1 min-w-0">
-                {title && (
-                  <div className="font-semibold">
-                    {title}
+              style={{
+                position: 'fixed',
+                top: `${position.top}px`,
+                left: `${position.left}px`,
+                maxWidth: `${maxWidth}px`,
+                zIndex: 50,
+                ...customStyles
+              }}
+              role={role}
+              aria-label={ariaLabel}
+              aria-describedby={ariaDescribedBy}
+              aria-labelledby={ariaLabelledBy}
+              aria-live="polite"
+            >
+              {/* Arrow */}
+              {showArrow && (
+                <div
+                  className={tooltipArrowVariants({ placement, variant })}
+                />
+              )}
+
+              {/* Content */}
+              <div className="flex items-center space-x-2">
+                {showIcon && iconPosition === 'left' && (
+                  <div className="flex-shrink-0">
+                    {getDefaultIcon()}
                   </div>
                 )}
                 
-                {description && (
-                  <div className="text-xs opacity-90 mt-1">
-                    {description}
-                  </div>
-                )}
+                <div className="flex-1 min-w-0">
+                  {title && (
+                    <div className="font-semibold">
+                      {title}
+                    </div>
+                  )}
+                  
+                  {description && (
+                    <div className="text-xs opacity-90 mt-1">
+                      {description}
+                    </div>
+                  )}
 
-                {content && !title && !description && (
-                  <div>
-                    {content}
+                  {content && !title && !description && (
+                    <div>
+                      {content}
+                    </div>
+                  )}
+                </div>
+
+                {showIcon && iconPosition === 'right' && (
+                  <div className="flex-shrink-0">
+                    {getDefaultIcon()}
                   </div>
                 )}
               </div>
+
+              {/* Actions */}
+              {actions && actions.length > 0 && (
+                <div className="flex gap-1 mt-2 pt-2 border-t border-current/20">
+                  {actions.map((action, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleAction(action)}
+                      className={cn(
+                        "px-2 py-1 text-xs rounded transition-colors",
+                        action.variant === 'destructive' 
+                          ? "hover:bg-red-500/20 text-red-400" 
+                          : "hover:bg-white/10"
+                      )}
+                      disabled={action.disabled}
+                    >
+                      {action.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
+          </Portal>
         )}
-    </div>
+      </div>
     );
   }
 );
@@ -561,12 +868,144 @@ const TooltipResponsive = forwardRef<HTMLDivElement, TooltipProps & { breakpoint
 );
 TooltipResponsive.displayName = "TooltipResponsive";
 
+// Tooltip Management Hook
+const useTooltip = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  const open = useCallback(() => setIsOpen(true), []);
+  const close = useCallback(() => setIsOpen(false), []);
+  const toggle = useCallback(() => setIsOpen(prev => !prev), []);
+  
+  return {
+    isOpen,
+    open,
+    close,
+    toggle,
+    setIsOpen
+  };
+};
+
+// Tooltip Provider Context
+const TooltipContext = createContext<{
+  defaultDelay?: number;
+  defaultDuration?: number;
+  defaultPlacement?: TooltipProps['placement'];
+  defaultVariant?: TooltipProps['variant'];
+}>({});
+
+const TooltipProvider: React.FC<{
+  children: React.ReactNode;
+  defaultDelay?: number;
+  defaultDuration?: number;
+  defaultPlacement?: TooltipProps['placement'];
+  defaultVariant?: TooltipProps['variant'];
+}> = ({ 
+  children, 
+  defaultDelay = 300, 
+  defaultDuration = 0, 
+  defaultPlacement = 'top',
+  defaultVariant = 'default'
+}) => {
+  return (
+    <TooltipContext.Provider value={{
+      defaultDelay,
+      defaultDuration,
+      defaultPlacement,
+      defaultVariant
+    }}>
+      {children}
+    </TooltipContext.Provider>
+  );
+};
+
+// Additional Variant Components
+const TooltipAI = forwardRef<HTMLDivElement, TooltipProps>(
+  ({ variant = "ai", ...props }, ref) => (
+    <Tooltip ref={ref} variant={variant} {...props} />
+  )
+);
+TooltipAI.displayName = "TooltipAI";
+
+const TooltipGlass = forwardRef<HTMLDivElement, TooltipProps>(
+  ({ variant = "glass", ...props }, ref) => (
+    <Tooltip ref={ref} variant={variant} {...props} />
+  )
+);
+TooltipGlass.displayName = "TooltipGlass";
+
+const TooltipGradient = forwardRef<HTMLDivElement, TooltipProps>(
+  ({ variant = "gradient", ...props }, ref) => (
+    <Tooltip ref={ref} variant={variant} {...props} />
+  )
+);
+TooltipGradient.displayName = "TooltipGradient";
+
+const TooltipMinimal = forwardRef<HTMLDivElement, TooltipProps>(
+  ({ variant = "minimal", ...props }, ref) => (
+    <Tooltip ref={ref} variant={variant} {...props} />
+  )
+);
+TooltipMinimal.displayName = "TooltipMinimal";
+
+const TooltipPremium = forwardRef<HTMLDivElement, TooltipProps>(
+  ({ variant = "premium", ...props }, ref) => (
+    <Tooltip ref={ref} variant={variant} {...props} />
+  )
+);
+TooltipPremium.displayName = "TooltipPremium";
+
+const TooltipFeatured = forwardRef<HTMLDivElement, TooltipProps>(
+  ({ variant = "featured", ...props }, ref) => (
+    <Tooltip ref={ref} variant={variant} {...props} />
+  )
+);
+TooltipFeatured.displayName = "TooltipFeatured";
+
+const TooltipCompact = forwardRef<HTMLDivElement, TooltipProps>(
+  ({ variant = "compact", ...props }, ref) => (
+    <Tooltip ref={ref} variant={variant} {...props} />
+  )
+);
+TooltipCompact.displayName = "TooltipCompact";
+
+const TooltipSpacious = forwardRef<HTMLDivElement, TooltipProps>(
+  ({ variant = "spacious", ...props }, ref) => (
+    <Tooltip ref={ref} variant={variant} {...props} />
+  )
+);
+TooltipSpacious.displayName = "TooltipSpacious";
+
+// Additional Size Components
+const TooltipExtraSmall = forwardRef<HTMLDivElement, TooltipProps>(
+  ({ size = "xs", ...props }, ref) => (
+    <Tooltip ref={ref} size={size} {...props} />
+  )
+);
+TooltipExtraSmall.displayName = "TooltipExtraSmall";
+
+const TooltipExtraLarge = forwardRef<HTMLDivElement, TooltipProps>(
+  ({ size = "xl", ...props }, ref) => (
+    <Tooltip ref={ref} size={size} {...props} />
+  )
+);
+TooltipExtraLarge.displayName = "TooltipExtraLarge";
+
+// Tooltip Actions Component
+const TooltipActions = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={cn("flex gap-1 mt-2 pt-2 border-t border-current/20", className)} {...props} />
+  )
+);
+TooltipActions.displayName = "TooltipActions";
+
 // Size Utilities
 const TooltipSizes = {
-  sm: "text-xs px-2 py-1",
-  md: "text-sm px-3 py-2",
-  lg: "text-base px-4 py-3"
-};
+  xs: "text-xs px-2 py-1",
+  sm: "text-sm px-2 py-1",
+  default: "text-sm px-3 py-2",
+  lg: "text-base px-3 py-2",
+  xl: "text-lg px-4 py-3"
+} as const;
 
 // Placement Utilities
 const TooltipPlacements = {
@@ -586,16 +1025,24 @@ const TooltipPlacements = {
 
 // Variant Colors
 const TooltipVariantColors = {
-  default: "bg-gray-900 text-white",
-  dark: "bg-black text-white",
-  light: "bg-white text-gray-900 border border-gray-200",
-  primary: "bg-primary text-primary-foreground",
-  secondary: "bg-secondary text-secondary-foreground",
-  success: "bg-green-500 text-white",
-  warning: "bg-yellow-500 text-white",
-  error: "bg-red-500 text-white",
-  info: "bg-blue-500 text-white"
-};
+  default: "bg-atlas-text-primary text-atlas-background",
+  dark: "bg-atlas-text-primary text-atlas-background",
+  light: "bg-atlas-background text-atlas-text-primary border border-atlas-border",
+  primary: "bg-atlas-primary-main text-white",
+  secondary: "bg-atlas-secondary-main text-white",
+  ai: "bg-atlas-ai-main text-white",
+  success: "bg-atlas-success-main text-white",
+  warning: "bg-atlas-warning-main text-white",
+  error: "bg-atlas-error-main text-white",
+  info: "bg-atlas-info-main text-white",
+  glass: "bg-white/10 backdrop-blur-md border border-white/20 text-white",
+  gradient: "bg-gradient-to-r from-atlas-primary-main to-atlas-secondary-main text-white",
+  minimal: "bg-transparent border border-atlas-border text-atlas-text-primary",
+  premium: "bg-gradient-to-r from-atlas-warning-main to-atlas-success-main text-white",
+  featured: "bg-gradient-to-r from-atlas-primary-main to-atlas-ai-main text-white",
+  compact: "bg-atlas-text-primary/90 text-atlas-background",
+  spacious: "bg-atlas-text-primary/70 text-atlas-background"
+} as const;
 
 export {
   Tooltip,
@@ -605,6 +1052,7 @@ export {
   TooltipDescription,
   TooltipIcon,
   TooltipArrow,
+  TooltipActions,
   TooltipDark,
   TooltipLight,
   TooltipPrimary,
@@ -613,15 +1061,27 @@ export {
   TooltipWarning,
   TooltipError,
   TooltipInfo,
+  TooltipAI,
+  TooltipGlass,
+  TooltipGradient,
+  TooltipMinimal,
+  TooltipPremium,
+  TooltipFeatured,
+  TooltipCompact,
+  TooltipSpacious,
   TooltipHover,
   TooltipFocus,
   TooltipClick,
   TooltipSmall,
   TooltipLarge,
+  TooltipExtraSmall,
+  TooltipExtraLarge,
   TooltipResponsive,
   TooltipSizes,
   TooltipPlacements,
   TooltipVariantColors,
   tooltipVariants,
-  tooltipArrowVariants
+  tooltipArrowVariants,
+  useTooltip,
+  TooltipProvider
 };
