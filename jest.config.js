@@ -11,26 +11,23 @@ const customJestConfig = {
   testEnvironment: 'jest-environment-jsdom',
   testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/'],
   moduleNameMapping: {
-    '^@/(.*)$': '<rootDir>/$1',
+    '^@/(.*)$': '<rootDir>/src/$1',
   },
   collectCoverageFrom: [
-    'app/**/*.{js,jsx,ts,tsx}',
-    'components/**/*.{js,jsx,ts,tsx}',
-    'lib/**/*.{js,jsx,ts,tsx}',
-    'services/**/*.{js,jsx,ts,tsx}',
-    '!**/*.d.ts',
-    '!**/node_modules/**',
-    '!**/.next/**',
-    '!**/coverage/**',
-    '!**/*.config.js',
-    '!**/jest.setup.js',
+    'src/**/*.{js,jsx,ts,tsx}',
+    '!src/**/*.d.ts',
+    '!src/**/node_modules/**',
+    '!src/**/.next/**',
+    '!src/**/coverage/**',
+    '!src/**/*.config.js',
+    '!src/**/jest.setup.js',
   ],
   coverageThreshold: {
     global: {
-      branches: 70,
-      functions: 70,
-      lines: 70,
-      statements: 70,
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
     },
   },
   testMatch: [
@@ -74,6 +71,30 @@ const customJestConfig = {
   errorOnDeprecated: true,
   // Custom matchers
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  // Test patterns
+  testPathPattern: [
+    '__tests__/unit/',
+    '__tests__/integration/',
+    'src/.*\\.(test|spec)\\.(ts|tsx|js|jsx)$',
+  ],
+  // Module resolution
+  moduleDirectories: ['node_modules', 'src'],
+  // Clear mocks between tests
+  clearMocks: true,
+  // Restore mocks after each test
+  restoreMocks: true,
+  // Reset modules between tests
+  resetModules: true,
+  // Mock modules
+  moduleNameMapping: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@/components/(.*)$': '<rootDir>/src/components/$1',
+    '^@/lib/(.*)$': '<rootDir>/src/lib/$1',
+    '^@/services/(.*)$': '<rootDir>/src/services/$1',
+    '^@/types/(.*)$': '<rootDir>/src/types/$1',
+    '^@/utils/(.*)$': '<rootDir>/src/utils/$1',
+    '^@/hooks/(.*)$': '<rootDir>/src/hooks/$1',
+  },
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async

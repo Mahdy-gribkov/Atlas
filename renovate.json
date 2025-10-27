@@ -1,0 +1,136 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base",
+    "config:js-app",
+    "config:recommended"
+  ],
+  "timezone": "UTC",
+  "schedule": ["before 6am on monday"],
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "labels": ["dependencies"],
+  "assignees": [],
+  "reviewers": [],
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["major"],
+      "labels": ["dependencies", "major"],
+      "prTitle": "chore: update {{depName}} to v{{newVersion}} (major)",
+      "semanticCommitType": "feat"
+    },
+    {
+      "matchUpdateTypes": ["minor"],
+      "labels": ["dependencies", "minor"],
+      "prTitle": "chore: update {{depName}} to v{{newVersion}} (minor)",
+      "semanticCommitType": "feat"
+    },
+    {
+      "matchUpdateTypes": ["patch"],
+      "labels": ["dependencies", "patch"],
+      "prTitle": "chore: update {{depName}} to v{{newVersion}} (patch)",
+      "semanticCommitType": "fix"
+    },
+    {
+      "matchPackageNames": ["firebase", "firebase-admin"],
+      "groupName": "firebase",
+      "labels": ["dependencies", "firebase"]
+    },
+    {
+      "matchPackageNames": ["@radix-ui/react-*"],
+      "groupName": "radix-ui",
+      "labels": ["dependencies", "ui"]
+    },
+    {
+      "matchPackageNames": ["@testing-library/*"],
+      "groupName": "testing-library",
+      "labels": ["dependencies", "testing"]
+    },
+    {
+      "matchPackageNames": ["@storybook/*"],
+      "groupName": "storybook",
+      "labels": ["dependencies", "storybook"]
+    },
+    {
+      "matchPackageNames": ["eslint*", "@typescript-eslint/*"],
+      "groupName": "eslint",
+      "labels": ["dependencies", "linting"]
+    },
+    {
+      "matchPackageNames": ["prettier*"],
+      "groupName": "prettier",
+      "labels": ["dependencies", "formatting"]
+    },
+    {
+      "matchPackageNames": ["jest*", "@types/jest"],
+      "groupName": "jest",
+      "labels": ["dependencies", "testing"]
+    },
+    {
+      "matchPackageNames": ["playwright*"],
+      "groupName": "playwright",
+      "labels": ["dependencies", "e2e"]
+    },
+    {
+      "matchPackageNames": ["next", "react", "react-dom"],
+      "groupName": "nextjs",
+      "labels": ["dependencies", "framework"]
+    },
+    {
+      "matchPackageNames": ["typescript", "@types/*"],
+      "groupName": "typescript",
+      "labels": ["dependencies", "typescript"]
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "labels": ["security", "vulnerability"],
+    "assignees": [],
+    "reviewers": []
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"],
+    "labels": ["dependencies", "maintenance"]
+  },
+  "rangeStrategy": "bump",
+  "bumpVersion": "patch",
+  "semanticCommits": "enabled",
+  "commitMessagePrefix": "chore:",
+  "commitMessageAction": "update",
+  "commitMessageTopic": "{{depName}}",
+  "commitMessageExtra": "to {{newVersion}}",
+  "automerge": false,
+  "automergeType": "pr",
+  "requiredStatusChecks": null,
+  "ignoreTests": false,
+  "ignoreNpmrcFile": false,
+  "recreateClosed": false,
+  "rebaseWhen": "behind-base-branch",
+  "platform": "github",
+  "forkMode": false,
+  "includeForks": false,
+  "dependencyDashboard": true,
+  "dependencyDashboardTitle": "Dependency Dashboard",
+  "dependencyDashboardHeader": "This dashboard contains a list of Renovate updates and their statuses.",
+  "dependencyDashboardFooter": "This dashboard is automatically updated by Renovate.",
+  "onboarding": true,
+  "onboardingConfig": {
+    "extends": ["config:base"]
+  },
+  "enabledManagers": [
+    "npm",
+    "yarn",
+    "pnpm",
+    "dockerfile",
+    "docker-compose",
+    "github-actions"
+  ],
+  "docker": {
+    "enabled": true,
+    "fileMatch": ["(^|/)Dockerfile$", "(^|/)docker-compose\\.yml$"]
+  },
+  "github-actions": {
+    "enabled": true,
+    "fileMatch": ["^\\.github/workflows/.*\\.ya?ml$"]
+  }
+}

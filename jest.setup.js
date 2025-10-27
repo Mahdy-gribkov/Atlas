@@ -1,43 +1,15 @@
-/**
- * Jest setup file for testing configuration
- */
+import '@testing-library/jest-dom';
+import { TextEncoder, TextDecoder } from 'util';
 
-import '@testing-library/jest-dom'
-import { setupTestEnvironment } from '@/lib/testing/test-utils'
-
-// Setup test environment
-setupTestEnvironment()
-
-// Mock Next.js router
-jest.mock('next/router', () => ({
-  useRouter: () => ({
-    route: '/',
-    pathname: '/',
-    query: {},
-    asPath: '/',
-    push: jest.fn(),
-    pop: jest.fn(),
-    reload: jest.fn(),
-    back: jest.fn(),
-    prefetch: jest.fn(),
-    beforePopState: jest.fn(),
-    events: {
-      on: jest.fn(),
-      off: jest.fn(),
-      emit: jest.fn(),
-    },
-  }),
-}))
-
-// Mock Next.js navigation
+// Mock Next.js modules
 jest.mock('next/navigation', () => ({
   useRouter: () => ({
     push: jest.fn(),
     replace: jest.fn(),
+    prefetch: jest.fn(),
     back: jest.fn(),
     forward: jest.fn(),
     refresh: jest.fn(),
-    prefetch: jest.fn(),
   }),
   useSearchParams: () => ({
     get: jest.fn(),
@@ -49,144 +21,443 @@ jest.mock('next/navigation', () => ({
     forEach: jest.fn(),
     toString: jest.fn(),
   }),
-  usePathname: () => '/',
-}))
+  usePathname: () => '/test-path',
+}));
 
-// Mock Next.js image
-jest.mock('next/image', () => ({
-  __esModule: true,
-  default: (props) => {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img {...props} />
-  },
-}))
+jest.mock('next-auth/react', () => ({
+  useSession: () => ({
+    data: {
+      user: {
+        id: 'test-user-id',
+        email: 'test@example.com',
+        name: 'Test User',
+        role: 'user',
+      },
+      expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    },
+    status: 'authenticated',
+  }),
+  signIn: jest.fn(),
+  signOut: jest.fn(),
+  getSession: jest.fn(),
+}));
 
-// Mock Next.js link
-jest.mock('next/link', () => ({
-  __esModule: true,
-  default: ({ children, href, ...props }) => {
-    return (
-      <a href={href} {...props}>
-        {children}
-      </a>
-    )
-  },
-}))
-
-// Mock environment variables
-process.env.NODE_ENV = 'test'
-process.env.NEXTAUTH_SECRET = 'test-secret'
-process.env.NEXTAUTH_URL = 'http://localhost:3000'
-
-// Mock fetch globally
-global.fetch = jest.fn()
-
-// Mock IntersectionObserver
-global.IntersectionObserver = jest.fn().mockImplementation(() => ({
-  observe: jest.fn(),
-  unobserve: jest.fn(),
-  disconnect: jest.fn(),
-}))
-
-// Mock ResizeObserver
-global.ResizeObserver = jest.fn().mockImplementation(() => ({
-  observe: jest.fn(),
-  unobserve: jest.fn(),
-  disconnect: jest.fn(),
-}))
-
-// Mock matchMedia
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: jest.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: jest.fn(), // deprecated
-    removeListener: jest.fn(), // deprecated
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
+jest.mock('next-auth/next', () => ({
+  getServerSession: jest.fn(() => Promise.resolve({
+    user: {
+      id: 'test-user-id',
+      email: 'test@example.com',
+      name: 'Test User',
+      role: 'user',
+    },
+    expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
   })),
-})
+}));
 
-// Mock localStorage
-const localStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
+// Mock Firebase modules
+jest.mock('@/lib/firebase/client', () => ({
+  auth: {
+    currentUser: {
+      uid: 'test-user-id',
+      email: 'test@example.com',
+      displayName: 'Test User',
+    },
+    signInWithEmailAndPassword: jest.fn(),
+    createUserWithEmailAndPassword: jest.fn(),
+    signOut: jest.fn(),
+    onAuthStateChanged: jest.fn(),
+  },
+  db: {
+    collection: jest.fn(() => ({
+      doc: jest.fn(() => ({
+        get: jest.fn(),
+        set: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+      })),
+      add: jest.fn(),
+      where: jest.fn(() => ({
+        get: jest.fn(),
+        limit: jest.fn(() => ({
+          get: jest.fn(),
+        })),
+        orderBy: jest.fn(() => ({
+          get: jest.fn(),
+          limit: jest.fn(() => ({
+            get: jest.fn(),
+          })),
+        })),
+      })),
+      get: jest.fn(),
+    })),
+  },
+  storage: {
+    ref: jest.fn(() => ({
+      put: jest.fn(),
+      getDownloadURL: jest.fn(),
+      delete: jest.fn(),
+    })),
+  },
+}));
+
+jest.mock('@/lib/firebase/admin', () => ({
+  adminAuth: {
+    verifyIdToken: jest.fn(),
+    createUser: jest.fn(),
+    updateUser: jest.fn(),
+    deleteUser: jest.fn(),
+  },
+  adminDb: {
+    collection: jest.fn(() => ({
+      doc: jest.fn(() => ({
+        get: jest.fn(),
+        set: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+      })),
+      add: jest.fn(),
+      where: jest.fn(() => ({
+        get: jest.fn(),
+        limit: jest.fn(() => ({
+          get: jest.fn(),
+        })),
+        orderBy: jest.fn(() => ({
+          get: jest.fn(),
+          limit: jest.fn(() => ({
+            get: jest.fn(),
+          })),
+        })),
+      })),
+      get: jest.fn(),
+    })),
+    batch: jest.fn(() => ({
+      set: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      commit: jest.fn(),
+    })),
+  },
+}));
+
+// Mock external API services
+jest.mock('@/services/external/weather.service', () => ({
+  WeatherService: jest.fn().mockImplementation(() => ({
+    getCurrentWeather: jest.fn(),
+    getWeatherForecast: jest.fn(),
+    getWeatherByCoordinates: jest.fn(),
+  })),
+}));
+
+jest.mock('@/services/external/flight.service', () => ({
+  FlightService: jest.fn().mockImplementation(() => ({
+    searchFlights: jest.fn(),
+    getFlightOffers: jest.fn(),
+    getFlightDetails: jest.fn(),
+  })),
+}));
+
+jest.mock('@/services/external/maps.service', () => ({
+  MapsService: jest.fn().mockImplementation(() => ({
+    searchPlaces: jest.fn(),
+    getPlaceDetails: jest.fn(),
+    getDirections: jest.fn(),
+    getDistanceMatrix: jest.fn(),
+  })),
+}));
+
+jest.mock('@/services/external/countries.service', () => ({
+  CountriesService: jest.fn().mockImplementation(() => ({
+    getAllCountries: jest.fn(),
+    getCountryByCode: jest.fn(),
+    searchCountries: jest.fn(),
+  })),
+}));
+
+// Mock AI services
+jest.mock('@/services/ai/gemini.service', () => ({
+  GeminiService: jest.fn().mockImplementation(() => ({
+    generateText: jest.fn(),
+    generateResponse: jest.fn(),
+    generateItinerary: jest.fn(),
+    generateEmbedding: jest.fn(),
+  })),
+}));
+
+jest.mock('@/services/ai/vector.service', () => ({
+  VectorService: jest.fn().mockImplementation(() => ({
+    initializeIndex: jest.fn(),
+    embedDocument: jest.fn(),
+    searchSimilar: jest.fn(),
+    addDocument: jest.fn(),
+    deleteDocument: jest.fn(),
+  })),
+}));
+
+// Mock security services
+jest.mock('@/lib/security/rate-limit', () => ({
+  RateLimiter: jest.fn().mockImplementation(() => ({
+    checkLimit: jest.fn(() => Promise.resolve(true)),
+    increment: jest.fn(),
+    reset: jest.fn(),
+  })),
+  withRateLimit: jest.fn(() => jest.fn()),
+}));
+
+jest.mock('@/lib/security/audit', () => ({
+  logAuditEvent: jest.fn(),
+  AuditAction: {
+    LOGIN: 'LOGIN',
+    LOGOUT: 'LOGOUT',
+    CREATE_ITINERARY: 'CREATE_ITINERARY',
+    UPDATE_ITINERARY: 'UPDATE_ITINERARY',
+    DELETE_ITINERARY: 'DELETE_ITINERARY',
+    CHAT_MESSAGE: 'CHAT_MESSAGE',
+    UNAUTHORIZED_ACCESS: 'UNAUTHORIZED_ACCESS',
+    VALIDATION_ERROR: 'VALIDATION_ERROR',
+  },
+}));
+
+// Mock monitoring services
+jest.mock('@/lib/monitoring/metrics', () => ({
+  MetricsCollector: jest.fn().mockImplementation(() => ({
+    incrementRequest: jest.fn(),
+    incrementError: jest.fn(),
+    recordPerformance: jest.fn(),
+    recordMetric: jest.fn(),
+    getMetrics: jest.fn(),
+  })),
+  withMetrics: jest.fn(() => jest.fn()),
+}));
+
+jest.mock('@/lib/monitoring/health-check', () => ({
+  HealthChecker: jest.fn().mockImplementation(() => ({
+    checkHealth: jest.fn(),
+    checkReadiness: jest.fn(),
+    getHealthStatus: jest.fn(),
+  })),
+  handleHealthCheck: jest.fn(),
+  handleReadinessCheck: jest.fn(),
+}));
+
+// Mock error handling
+jest.mock('@/lib/error-handling/error-handler', () => ({
+  ErrorHandler: jest.fn().mockImplementation(() => ({
+    handleError: jest.fn(),
+    logError: jest.fn(),
+    trackError: jest.fn(),
+    checkForAlerts: jest.fn(),
+  })),
+}));
+
+// Mock performance services
+jest.mock('@/lib/performance/cache', () => ({
+  CacheManager: jest.fn().mockImplementation(() => ({
+    get: jest.fn(),
+    set: jest.fn(),
+    delete: jest.fn(),
+    clear: jest.fn(),
+    getStats: jest.fn(),
+  })),
+  cacheManager: {
+    get: jest.fn(),
+    set: jest.fn(),
+    delete: jest.fn(),
   clear: jest.fn(),
-}
-global.localStorage = localStorageMock
+    getStats: jest.fn(),
+  },
+  withCaching: jest.fn(() => jest.fn()),
+  cached: jest.fn(() => jest.fn()),
+}));
 
-// Mock sessionStorage
-const sessionStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-  clear: jest.fn(),
-}
-global.sessionStorage = sessionStorageMock
+jest.mock('@/lib/performance/optimization', () => ({
+  PerformanceOptimizer: jest.fn().mockImplementation(() => ({
+    optimizeRequest: jest.fn(),
+    compressResponse: jest.fn(),
+    addCacheHeaders: jest.fn(),
+    optimizeImages: jest.fn(),
+  })),
+  performanceOptimizer: {
+    optimizeRequest: jest.fn(),
+    compressResponse: jest.fn(),
+    addCacheHeaders: jest.fn(),
+    optimizeImages: jest.fn(),
+  },
+}));
 
-// Mock crypto for Node.js environment
-if (typeof global.crypto === 'undefined') {
-  global.crypto = {
-    getRandomValues: jest.fn((arr) => {
-      for (let i = 0; i < arr.length; i++) {
-        arr[i] = Math.floor(Math.random() * 256)
-      }
-      return arr
-    }),
-    randomUUID: jest.fn(() => 'test-uuid'),
-  }
-}
+// Mock validation services
+jest.mock('@/lib/validation/schemas', () => ({
+  ValidationService: jest.fn().mockImplementation(() => ({
+    validate: jest.fn(),
+    validateOrThrow: jest.fn(),
+    safeValidate: jest.fn(),
+    formatErrors: jest.fn(),
+  })),
+  createUserSchema: jest.fn(),
+  updateUserSchema: jest.fn(),
+  createItinerarySchema: jest.fn(),
+  updateItinerarySchema: jest.fn(),
+  chatMessageSchema: jest.fn(),
+  chatSessionSchema: jest.fn(),
+  paginationSchema: jest.fn(),
+  aiItineraryRequestSchema: jest.fn(),
+  aiChatRequestSchema: jest.fn(),
+}));
 
-// Mock performance API
-global.performance = {
-  now: jest.fn(() => Date.now()),
-  mark: jest.fn(),
-  measure: jest.fn(),
-  getEntriesByType: jest.fn(() => []),
-  getEntriesByName: jest.fn(() => []),
-  clearMarks: jest.fn(),
-  clearMeasures: jest.fn(),
-}
+// Mock data services
+jest.mock('@/lib/data/migrations', () => ({
+  DataMigrationManager: jest.fn().mockImplementation(() => ({
+    migrate: jest.fn(),
+    rollback: jest.fn(),
+    getCurrentVersion: jest.fn(),
+    getPendingMigrations: jest.fn(),
+    validateDataIntegrity: jest.fn(),
+  })),
+  migrationManager: {
+    migrate: jest.fn(),
+    rollback: jest.fn(),
+    getCurrentVersion: jest.fn(),
+    getPendingMigrations: jest.fn(),
+    validateDataIntegrity: jest.fn(),
+  },
+}));
+
+jest.mock('@/lib/data/backup', () => ({
+  BackupManager: jest.fn().mockImplementation(() => ({
+    createFullBackup: jest.fn(),
+    createIncrementalBackup: jest.fn(),
+    restoreBackup: jest.fn(),
+    listBackups: jest.fn(),
+    deleteBackup: jest.fn(),
+    validateBackup: jest.fn(),
+  })),
+  backupManager: {
+    createFullBackup: jest.fn(),
+    createIncrementalBackup: jest.fn(),
+    restoreBackup: jest.fn(),
+    listBackups: jest.fn(),
+    deleteBackup: jest.fn(),
+    validateBackup: jest.fn(),
+  },
+}));
+
+// Mock API manager
+jest.mock('@/services/api/manager', () => ({
+  ApiManager: jest.fn().mockImplementation(() => ({
+    request: jest.fn(),
+    getWeather: jest.fn(),
+    getWeatherForecast: jest.fn(),
+    getFlights: jest.fn(),
+    getPlaces: jest.fn(),
+    getDirections: jest.fn(),
+    getCountryData: jest.fn(),
+    getAllCountries: jest.fn(),
+    getServiceHealth: jest.fn(),
+    clearCache: jest.fn(),
+  })),
+  apiManager: {
+    request: jest.fn(),
+    getWeather: jest.fn(),
+    getWeatherForecast: jest.fn(),
+    getFlights: jest.fn(),
+    getPlaces: jest.fn(),
+    getDirections: jest.fn(),
+    getCountryData: jest.fn(),
+    getAllCountries: jest.fn(),
+    getServiceHealth: jest.fn(),
+    clearCache: jest.fn(),
+  },
+}));
+
+// Global test setup
+beforeAll(() => {
+  // Set up global test environment
+  global.TextEncoder = TextEncoder;
+  global.TextDecoder = TextDecoder;
 
 // Mock console methods to reduce noise in tests
-const originalConsole = global.console
 global.console = {
-  ...originalConsole,
+    ...console,
   log: jest.fn(),
   debug: jest.fn(),
   info: jest.fn(),
   warn: jest.fn(),
   error: jest.fn(),
-}
+  };
+});
 
-// Clean up after each test
+beforeEach(() => {
+  // Clear all mocks before each test
+  jest.clearAllMocks();
+  
+  // Reset any global state
+  process.env.NODE_ENV = 'test';
+});
+
 afterEach(() => {
-  jest.clearAllMocks()
-  localStorageMock.clear()
-  sessionStorageMock.clear()
-})
-
-// Global test timeout
-jest.setTimeout(10000)
-
-// Suppress specific warnings in tests
-const originalWarn = console.warn
-beforeAll(() => {
-  console.warn = (...args) => {
-    if (
-      typeof args[0] === 'string' &&
-      args[0].includes('Warning: ReactDOM.render is deprecated')
-    ) {
-      return
-    }
-    originalWarn.call(console, ...args)
-  }
-})
+// Clean up after each test
+  jest.restoreAllMocks();
+});
 
 afterAll(() => {
-  console.warn = originalWarn
-})
+  // Clean up after all tests
+  jest.clearAllMocks();
+});
+
+// Custom matchers
+expect.extend({
+  toBeValidDate(received) {
+    const pass = received instanceof Date && !isNaN(received.getTime());
+    if (pass) {
+      return {
+        message: () => `expected ${received} not to be a valid date`,
+        pass: true,
+      };
+    } else {
+      return {
+        message: () => `expected ${received} to be a valid date`,
+        pass: false,
+      };
+    }
+  },
+  toBeValidEmail(received) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const pass = typeof received === 'string' && emailRegex.test(received);
+    if (pass) {
+      return {
+        message: () => `expected ${received} not to be a valid email`,
+        pass: true,
+      };
+    } else {
+      return {
+        message: () => `expected ${received} to be a valid email`,
+        pass: false,
+      };
+    }
+  },
+  toBeValidUUID(received) {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const pass = typeof received === 'string' && uuidRegex.test(received);
+    if (pass) {
+      return {
+        message: () => `expected ${received} not to be a valid UUID`,
+        pass: true,
+      };
+    } else {
+      return {
+        message: () => `expected ${received} to be a valid UUID`,
+        pass: false,
+      };
+    }
+  },
+});
+
+// Declare custom matchers for TypeScript
+declare global {
+  namespace jest {
+    interface Matchers<R> {
+      toBeValidDate(): R;
+      toBeValidEmail(): R;
+      toBeValidUUID(): R;
+    }
+  }
+}
