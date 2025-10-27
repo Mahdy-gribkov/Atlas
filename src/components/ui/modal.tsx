@@ -2,60 +2,204 @@
 
 import React, { forwardRef, useState, useCallback, useEffect, useRef } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/atlas-utils";
 import { 
-  XIcon,
-  MaximizeIcon,
-  MinimizeIcon,
-  MoveIcon,
-  RotateCcwIcon,
-  DownloadIcon,
-  ShareIcon,
-  MoreHorizontalIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronUpIcon,
-  ChevronDownIcon,
-  EyeIcon,
-  EyeOffIcon,
-  LockIcon,
-  UnlockIcon
+  X,
+  Maximize2,
+  Minimize2,
+  Move,
+  RotateCcw,
+  Download,
+  Share2,
+  MoreHorizontal,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  ChevronDown,
+  Eye,
+  EyeOff,
+  Lock,
+  Unlock,
+  Settings,
+  Edit,
+  Copy,
+  Check,
+  Plus,
+  Minus,
+  Heart,
+  Star,
+  Bookmark,
+  ExternalLink,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  AlertTriangle,
+  Info,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Calendar,
+  MapPin,
+  User,
+  Users,
+  Tag,
+  Filter,
+  Search,
+  Grid,
+  List,
+  Layout,
+  Image,
+  Video,
+  File,
+  Folder,
+  Archive,
+  Zap,
+  Sparkles,
+  Crown,
+  Award,
+  Trophy,
+  Medal,
+  Badge,
+  Flag,
+  Target,
+  Compass,
+  Navigation,
+  Route,
+  Map,
+  Globe,
+  Plane,
+  Car,
+  Train,
+  Ship,
+  Bike,
+  Camera,
+  Lightbulb,
+  Flashlight,
+  Battery,
+  Plug,
+  Wifi,
+  Bluetooth,
+  Signal,
+  Radio,
+  Tv,
+  Monitor,
+  Laptop,
+  Smartphone,
+  Tablet,
+  Watch,
+  Headphones,
+  Speaker,
+  Phone,
+  Mail,
+  Send,
+  Upload,
+  Cloud,
+  Database,
+  Server,
+  Network,
+  Clipboard,
+  FileText,
+  FileImage,
+  FileVideo,
+  FileAudio,
+  FolderOpen,
+  FolderPlus,
+  FolderMinus,
+  FolderX,
+  FolderCheck,
+  FolderSync,
+  FolderSearch,
+  FolderHeart,
+  FolderLock,
+  FolderArchive
 } from "lucide-react";
 import { Button } from "./button";
 import { Badge } from "./badge";
 
 // Modal Root Component
 const modalVariants = cva(
-  "fixed inset-0 z-50 flex items-center justify-center",
+  "fixed inset-0 z-50 flex items-center justify-center transition-all duration-200",
   {
     variants: {
       variant: {
-        default: "bg-background/80 backdrop-blur-sm",
-        opaque: "bg-background",
+        default: "bg-atlas-background/80 backdrop-blur-sm",
+        opaque: "bg-atlas-background",
         transparent: "bg-transparent",
-        blur: "bg-background/50 backdrop-blur-md",
-        dark: "bg-black/80 backdrop-blur-sm"
+        blur: "bg-atlas-background/50 backdrop-blur-md",
+        dark: "bg-black/80 backdrop-blur-sm",
+        glass: "bg-white/10 backdrop-blur-md border border-white/20",
+        gradient: "bg-gradient-to-br from-atlas-primary-main/20 to-atlas-secondary-main/20 backdrop-blur-sm",
+        minimal: "bg-transparent",
+        premium: "bg-gradient-to-br from-atlas-warning-main/10 to-atlas-success-main/10 backdrop-blur-sm",
+        featured: "bg-gradient-to-br from-atlas-primary-main/5 to-atlas-ai-main/5 backdrop-blur-sm",
+        compact: "bg-atlas-background/90 backdrop-blur-sm",
+        spacious: "bg-atlas-background/70 backdrop-blur-md",
       },
       size: {
+        xs: "p-2",
         sm: "p-4",
         md: "p-6",
         lg: "p-8",
         xl: "p-12",
+        "2xl": "p-16",
         full: "p-0"
-      }
+      },
+      position: {
+        center: "items-center justify-center",
+        top: "items-start justify-center pt-8",
+        bottom: "items-end justify-center pb-8",
+        left: "items-center justify-start pl-8",
+        right: "items-center justify-end pr-8",
+        "top-left": "items-start justify-start pt-8 pl-8",
+        "top-right": "items-start justify-end pt-8 pr-8",
+        "bottom-left": "items-end justify-start pb-8 pl-8",
+        "bottom-right": "items-end justify-end pb-8 pr-8",
+      },
+      animation: {
+        none: "",
+        fade: "animate-in fade-in duration-200",
+        slide: "animate-in slide-in-from-bottom-4 duration-200",
+        scale: "animate-in zoom-in-95 duration-200",
+        bounce: "animate-in bounce-in duration-300",
+        spring: "animate-in spring-in duration-300",
+      },
+      rounded: {
+        none: "rounded-none",
+        sm: "rounded-sm",
+        default: "rounded-lg",
+        md: "rounded-md",
+        lg: "rounded-lg",
+        xl: "rounded-xl",
+        full: "rounded-full",
+      },
+      shadow: {
+        none: "shadow-none",
+        sm: "shadow-sm",
+        md: "shadow-md",
+        lg: "shadow-lg",
+        xl: "shadow-xl",
+        inner: "shadow-inner",
+        glow: "shadow-lg shadow-atlas-primary-main/25",
+      },
     },
     defaultVariants: {
       variant: "default",
-      size: "md"
+      size: "md",
+      position: "center",
+      animation: "fade",
+      rounded: "default",
+      shadow: "md",
     }
   }
 );
 
 const modalContentVariants = cva(
-  "relative bg-background border border-border rounded-lg shadow-lg",
+  "relative bg-atlas-card-bg border border-atlas-border rounded-lg shadow-lg transition-all duration-200",
   {
     variants: {
       size: {
+        xs: "max-w-xs",
         sm: "max-w-sm",
         md: "max-w-md",
         lg: "max-w-lg",
@@ -65,33 +209,80 @@ const modalContentVariants = cva(
         "4xl": "max-w-4xl",
         "5xl": "max-w-5xl",
         "6xl": "max-w-6xl",
+        "7xl": "max-w-7xl",
         full: "max-w-full h-full"
       },
       variant: {
-        default: "bg-background",
-        card: "bg-card",
-        elevated: "bg-background shadow-2xl",
-        glass: "bg-background/80 backdrop-blur-sm border-border/50",
-        minimal: "bg-transparent border-0 shadow-none"
-      }
+        default: "bg-atlas-card-bg",
+        card: "bg-atlas-card-bg",
+        elevated: "bg-atlas-card-bg shadow-2xl",
+        glass: "bg-atlas-card-bg/80 backdrop-blur-sm border-atlas-border/50",
+        minimal: "bg-transparent border-0 shadow-none",
+        gradient: "bg-gradient-to-br from-atlas-primary-main/5 to-atlas-secondary-main/5",
+        premium: "bg-gradient-to-br from-atlas-warning-main/5 to-atlas-success-main/5",
+        featured: "bg-gradient-to-br from-atlas-primary-main/3 to-atlas-ai-main/3",
+        compact: "bg-atlas-card-bg/90",
+        spacious: "bg-atlas-card-bg/70",
+      },
+      animation: {
+        none: "",
+        fade: "animate-in fade-in duration-200",
+        slide: "animate-in slide-in-from-bottom-4 duration-200",
+        scale: "animate-in zoom-in-95 duration-200",
+        bounce: "animate-in bounce-in duration-300",
+        spring: "animate-in spring-in duration-300",
+      },
+      rounded: {
+        none: "rounded-none",
+        sm: "rounded-sm",
+        default: "rounded-lg",
+        md: "rounded-md",
+        lg: "rounded-lg",
+        xl: "rounded-xl",
+        full: "rounded-full",
+      },
+      shadow: {
+        none: "shadow-none",
+        sm: "shadow-sm",
+        md: "shadow-md",
+        lg: "shadow-lg",
+        xl: "shadow-xl",
+        inner: "shadow-inner",
+        glow: "shadow-lg shadow-atlas-primary-main/25",
+      },
     },
     defaultVariants: {
       size: "md",
-      variant: "default"
+      variant: "default",
+      animation: "fade",
+      rounded: "default",
+      shadow: "md",
     }
   }
 );
 
 export interface ModalProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'content'>,
     VariantProps<typeof modalVariants> {
+  // Basic props
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  
+  // Content props
   title?: string;
+  subtitle?: string;
   description?: string;
+  content?: React.ReactNode;
+  footer?: React.ReactNode;
+  
+  // Header props
   showCloseButton?: boolean;
   showHeader?: boolean;
   showFooter?: boolean;
+  headerActions?: React.ReactNode;
+  headerIcon?: React.ReactNode;
+  
+  // Behavior props
   closable?: boolean;
   maskClosable?: boolean;
   keyboard?: boolean;
@@ -99,9 +290,54 @@ export interface ModalProps
   fullscreen?: boolean;
   draggable?: boolean;
   resizable?: boolean;
+  
+  // Actions props
   actions?: ModalAction[];
   onClose?: () => void;
   onAction?: (actionKey: string) => void;
+  
+  // Stacking props
+  stackable?: boolean;
+  zIndex?: number;
+  onStackChange?: (stackIndex: number) => void;
+  
+  // Focus management
+  focusTrap?: boolean;
+  initialFocus?: React.RefObject<HTMLElement>;
+  onFocusChange?: (isFocused: boolean) => void;
+  
+  // Scroll management
+  scrollLock?: boolean;
+  scrollBehavior?: 'auto' | 'smooth';
+  onScrollChange?: (isScrolled: boolean) => void;
+  
+  // Animation props
+  animationDuration?: number;
+  animationEasing?: string;
+  onAnimationStart?: () => void;
+  onAnimationEnd?: () => void;
+  
+  // Responsive props
+  responsive?: boolean;
+  breakpoints?: {
+    sm?: Partial<ModalProps>;
+    md?: Partial<ModalProps>;
+    lg?: Partial<ModalProps>;
+    xl?: Partial<ModalProps>;
+  };
+  
+  // Accessibility props
+  ariaLabel?: string;
+  ariaDescription?: string;
+  ariaLabelledBy?: string;
+  ariaDescribedBy?: string;
+  role?: string;
+  
+  // Custom props
+  customStyles?: React.CSSProperties;
+  customClasses?: string;
+  
+  // Children
   children?: React.ReactNode;
 }
 
@@ -109,9 +345,12 @@ export interface ModalAction {
   key: string;
   label: string;
   icon?: React.ReactNode;
-  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
+  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link' | 'success' | 'warning' | 'info';
   onClick: () => void;
   disabled?: boolean;
+  loading?: boolean;
+  tooltip?: string;
+  keyboardShortcut?: string;
 }
 
 const Modal = forwardRef<HTMLDivElement, ModalProps>(
@@ -119,13 +358,22 @@ const Modal = forwardRef<HTMLDivElement, ModalProps>(
     className,
     variant,
     size,
+    position,
+    animation,
+    rounded,
+    shadow,
     open = false,
-  onOpenChange,
+    onOpenChange,
     title,
+    subtitle,
     description,
+    content,
+    footer,
     showCloseButton = true,
     showHeader = true,
     showFooter = false,
+    headerActions,
+    headerIcon,
     closable = true,
     maskClosable = true,
     keyboard = true,
@@ -136,18 +384,44 @@ const Modal = forwardRef<HTMLDivElement, ModalProps>(
     actions = [],
     onClose,
     onAction,
-  children,
-  ...props
-}, ref) => {
+    stackable = false,
+    zIndex,
+    onStackChange,
+    focusTrap = true,
+    initialFocus,
+    onFocusChange,
+    scrollLock = true,
+    scrollBehavior = 'auto',
+    onScrollChange,
+    animationDuration,
+    animationEasing,
+    onAnimationStart,
+    onAnimationEnd,
+    responsive = false,
+    breakpoints,
+    ariaLabel,
+    ariaDescription,
+    ariaLabelledBy,
+    ariaDescribedBy,
+    role = 'dialog',
+    customStyles,
+    customClasses,
+    children,
+    ...props
+  }, ref) => {
     const [isOpen, setIsOpen] = useState(open);
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const [isResizing, setIsResizing] = useState(false);
     const [resizeOffset, setResizeOffset] = useState({ width: 0, height: 0 });
+    const [isFocused, setIsFocused] = useState(false);
+    const [isScrolled, setIsScrolled] = useState(false);
+    const [stackIndex, setStackIndex] = useState(0);
     
     const modalRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
     const dragStartRef = useRef({ x: 0, y: 0 });
+    const previousActiveElement = useRef<HTMLElement | null>(null);
 
     const handleOpenChange = useCallback((newOpen: boolean) => {
       setIsOpen(newOpen);
