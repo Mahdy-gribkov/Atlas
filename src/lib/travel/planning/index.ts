@@ -25,3 +25,15 @@ export * from './document-management';
 
 // Travel Insurance
 export * from './travel-insurance';
+
+// Emergency Contacts
+export * from './emergency-contacts';
+
+// Packing Lists
+export * from './packing-lists';
+
+// Travel Tips
+export * from './travel-tips';
+
+// Itinerary Optimization
+export * from './itinerary-optimization';
