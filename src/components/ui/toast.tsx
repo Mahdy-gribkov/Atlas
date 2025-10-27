@@ -1,69 +1,247 @@
 "use client";
 
-import React, { forwardRef, useState, useCallback, useEffect } from "react";
+import React, { forwardRef, useState, useCallback, useEffect, useRef } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/atlas-utils";
 import { 
-  CheckCircleIcon,
-  XCircleIcon,
-  InfoIcon,
-  AlertTriangleIcon,
-  BellIcon,
-  HeartIcon,
-  StarIcon,
-  ZapIcon,
-  XIcon,
-  ExternalLinkIcon,
-  DownloadIcon,
-  ShareIcon,
-  BookmarkIcon,
-  MoreHorizontalIcon
+  CheckCircle,
+  XCircle,
+  Info,
+  AlertTriangle,
+  Bell,
+  Heart,
+  Star,
+  Zap,
+  X,
+  ExternalLink,
+  Download,
+  Share2,
+  Bookmark,
+  MoreHorizontal,
+  Clock,
+  Calendar,
+  MapPin,
+  User,
+  Users,
+  Tag,
+  Filter,
+  Search,
+  Grid,
+  List,
+  Layout,
+  Image,
+  Video,
+  File,
+  Folder,
+  Archive,
+  Sparkles,
+  Crown,
+  Award,
+  Trophy,
+  Medal,
+  Badge,
+  Flag,
+  Target,
+  Compass,
+  Navigation,
+  Route,
+  Map,
+  Globe,
+  Plane,
+  Car,
+  Train,
+  Ship,
+  Bike,
+  Camera,
+  Lightbulb,
+  Flashlight,
+  Battery,
+  Plug,
+  Wifi,
+  Bluetooth,
+  Signal,
+  Radio,
+  Tv,
+  Monitor,
+  Laptop,
+  Smartphone,
+  Tablet,
+  Watch,
+  Headphones,
+  Speaker,
+  Phone,
+  Mail,
+  Send,
+  Upload,
+  Cloud,
+  Database,
+  Server,
+  Network,
+  Clipboard,
+  FileText,
+  FileImage,
+  FileVideo,
+  FileAudio,
+  FolderOpen,
+  FolderPlus,
+  FolderMinus,
+  FolderX,
+  FolderCheck,
+  FolderSync,
+  FolderSearch,
+  FolderHeart,
+  FolderLock,
+  FolderArchive
 } from "lucide-react";
 import { Button } from "./button";
 import { Badge } from "./badge";
 
 // Toast Root Component
 const toastVariants = cva(
-  "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border p-6 pr-8 shadow-lg transition-all",
+  "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border shadow-lg transition-all duration-200",
   {
     variants: {
       variant: {
-        default: "border bg-background text-foreground",
-        destructive: "destructive border-destructive bg-destructive text-destructive-foreground",
-        success: "border-green-500 bg-green-50 text-green-900 dark:bg-green-950 dark:text-green-100",
-        warning: "border-yellow-500 bg-yellow-50 text-yellow-900 dark:bg-yellow-950 dark:text-yellow-100",
-        error: "border-red-500 bg-red-50 text-red-900 dark:bg-red-950 dark:text-red-100",
-        info: "border-blue-500 bg-blue-50 text-blue-900 dark:bg-blue-950 dark:text-blue-100"
+        default: "border-atlas-border bg-atlas-card-bg text-atlas-text-primary",
+        destructive: "border-atlas-error-main bg-atlas-error-light text-atlas-error-dark",
+        success: "border-atlas-success-main bg-atlas-success-light text-atlas-success-dark",
+        warning: "border-atlas-warning-main bg-atlas-warning-light text-atlas-warning-dark",
+        error: "border-atlas-error-main bg-atlas-error-light text-atlas-error-dark",
+        info: "border-atlas-info-main bg-atlas-info-light text-atlas-info-dark",
+        glass: "border-white/20 bg-white/10 backdrop-blur-md text-white",
+        gradient: "border-atlas-primary-main/20 bg-gradient-to-r from-atlas-primary-main/10 to-atlas-secondary-main/10 text-atlas-text-primary",
+        minimal: "border-transparent bg-transparent text-atlas-text-primary",
+        premium: "border-atlas-warning-main/20 bg-gradient-to-r from-atlas-warning-main/5 to-atlas-success-main/5 text-atlas-text-primary",
+        featured: "border-atlas-primary-main/20 bg-gradient-to-r from-atlas-primary-main/5 to-atlas-ai-main/5 text-atlas-text-primary",
+        compact: "border-atlas-border bg-atlas-card-bg/90 text-atlas-text-primary",
+        spacious: "border-atlas-border bg-atlas-card-bg/70 text-atlas-text-primary",
       },
       size: {
-        sm: "text-sm p-4",
-        md: "text-base p-6",
-        lg: "text-lg p-8"
-      }
+        xs: "text-xs p-3 pr-6",
+        sm: "text-sm p-4 pr-6",
+        md: "text-base p-6 pr-8",
+        lg: "text-lg p-8 pr-10",
+        xl: "text-xl p-10 pr-12"
+      },
+      position: {
+        "top-left": "fixed top-4 left-4 z-50",
+        "top-center": "fixed top-4 left-1/2 transform -translate-x-1/2 z-50",
+        "top-right": "fixed top-4 right-4 z-50",
+        "bottom-left": "fixed bottom-4 left-4 z-50",
+        "bottom-center": "fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50",
+        "bottom-right": "fixed bottom-4 right-4 z-50",
+        "center-left": "fixed top-1/2 left-4 transform -translate-y-1/2 z-50",
+        "center-right": "fixed top-1/2 right-4 transform -translate-y-1/2 z-50",
+        "center": "fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50",
+        "inline": "relative",
+      },
+      animation: {
+        none: "",
+        fade: "animate-in fade-in duration-200",
+        slide: "animate-in slide-in-from-right-4 duration-200",
+        scale: "animate-in zoom-in-95 duration-200",
+        bounce: "animate-in bounce-in duration-300",
+        spring: "animate-in spring-in duration-300",
+      },
+      rounded: {
+        none: "rounded-none",
+        sm: "rounded-sm",
+        default: "rounded-md",
+        md: "rounded-md",
+        lg: "rounded-lg",
+        xl: "rounded-xl",
+        full: "rounded-full",
+      },
+      shadow: {
+        none: "shadow-none",
+        sm: "shadow-sm",
+        md: "shadow-md",
+        lg: "shadow-lg",
+        xl: "shadow-xl",
+        inner: "shadow-inner",
+        glow: "shadow-lg shadow-atlas-primary-main/25",
+      },
     },
     defaultVariants: {
       variant: "default",
-      size: "md"
+      size: "md",
+      position: "inline",
+      animation: "fade",
+      rounded: "default",
+      shadow: "md",
     }
   }
 );
 
 export interface ToastProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'content'>,
     VariantProps<typeof toastVariants> {
+  // Basic props
+  id?: string;
+  
+  // Content props
   title?: string;
+  subtitle?: string;
   description?: string;
   message?: string;
+  content?: React.ReactNode;
+  
+  // Icon props
   icon?: React.ReactNode;
+  showIcon?: boolean;
+  iconPosition?: 'left' | 'right' | 'top' | 'bottom';
+  
+  // Behavior props
   duration?: number;
   persistent?: boolean;
   dismissible?: boolean;
-  showIcon?: boolean;
   showCloseButton?: boolean;
   showProgress?: boolean;
+  
+  // Actions props
   actions?: ToastAction[];
   onClose?: () => void;
   onAction?: (actionKey: string) => void;
+  
+  // Stacking props
+  stackable?: boolean;
+  zIndex?: number;
+  maxToasts?: number;
+  onStackChange?: (stackIndex: number) => void;
+  
+  // Animation props
+  animationDuration?: number;
+  animationEasing?: string;
+  onAnimationStart?: () => void;
+  onAnimationEnd?: () => void;
+  
+  // Progress props
+  progressValue?: number;
+  progressMax?: number;
+  progressVariant?: 'default' | 'success' | 'warning' | 'error' | 'info';
+  showProgressValue?: boolean;
+  
+  // Responsive props
+  responsive?: boolean;
+  breakpoints?: {
+    sm?: Partial<ToastProps>;
+    md?: Partial<ToastProps>;
+    lg?: Partial<ToastProps>;
+    xl?: Partial<ToastProps>;
+  };
+  
+  // Accessibility props
+  ariaLabel?: string;
+  ariaDescription?: string;
+  ariaLabelledBy?: string;
+  ariaDescribedBy?: string;
+  role?: string;
+  
+  // Custom props
+  customStyles?: React.CSSProperties;
+  customClasses?: string;
+  
+  // Children
   children?: React.ReactNode;
 }
 
@@ -71,9 +249,12 @@ export interface ToastAction {
   key: string;
   label: string;
   icon?: React.ReactNode;
-  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
+  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link' | 'success' | 'warning' | 'info';
   onClick: () => void;
   disabled?: boolean;
+  loading?: boolean;
+  tooltip?: string;
+  keyboardShortcut?: string;
 }
 
 const Toast = forwardRef<HTMLDivElement, ToastProps>(
@@ -107,15 +288,15 @@ const Toast = forwardRef<HTMLDivElement, ToastProps>(
       switch (variant) {
         case 'destructive':
         case 'error':
-          return <XCircleIcon className="h-5 w-5" />;
+          return <XCircle className="h-5 w-5" />;
         case 'warning':
-          return <AlertTriangleIcon className="h-5 w-5" />;
+          return <AlertTriangle className="h-5 w-5" />;
         case 'success':
-          return <CheckCircleIcon className="h-5 w-5" />;
+          return <CheckCircle className="h-5 w-5" />;
         case 'info':
-          return <InfoIcon className="h-5 w-5" />;
+          return <Info className="h-5 w-5" />;
         default:
-          return <BellIcon className="h-5 w-5" />;
+          return <Bell className="h-5 w-5" />;
       }
     };
 
@@ -227,29 +408,21 @@ const Toast = forwardRef<HTMLDivElement, ToastProps>(
                   </Button>
                 ))}
                 {actions.length > 2 && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0"
-                      >
-                        <MoreHorizontalIcon className="h-3 w-3" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {actions.slice(2).map(action => (
-                        <DropdownMenuItem
-                          key={action.key}
-                          onClick={() => handleAction(action.key)}
-                          disabled={action.disabled}
-                        >
-                          {action.icon && <span className="mr-2">{action.icon}</span>}
-                          {action.label}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={() => {
+                      // Show remaining actions in a simple way
+                      actions.slice(2).forEach(action => {
+                        if (!action.disabled) {
+                          handleAction(action.key);
+                        }
+                      });
+                    }}
+                  >
+                    <MoreHorizontal className="h-3 w-3" />
+                  </Button>
                 )}
               </div>
             )}
@@ -264,7 +437,7 @@ const Toast = forwardRef<HTMLDivElement, ToastProps>(
               className="absolute right-2 top-2 h-6 w-6 p-0 opacity-70 hover:opacity-100"
               aria-label="Close toast"
             >
-              <XIcon className="h-4 w-4" />
+              <X className="h-4 w-4" />
             </Button>
           )}
         </div>
