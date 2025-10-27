@@ -1,9 +1,14 @@
+/* Atlas AI Travel Agent - Global Styles */
+@import '../styles/atlas-design-system.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  /* Import Atlas Design System Variables */
   :root {
+    /* Legacy shadcn/ui compatibility */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
