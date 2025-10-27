@@ -22,3 +22,18 @@ export * from './activity-bookings';
 
 // Restaurant Reservations
 export * from './restaurant-reservations';
+
+// Transportation Tickets
+export * from './transportation-tickets';
+
+// Travel Insurance
+export * from './travel-insurance';
+
+// Package Deals
+export * from './package-deals';
+
+// Group Bookings
+export * from './group-bookings';
+
+// Last-minute Deals
+export * from './last-minute-deals';
