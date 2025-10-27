@@ -125,7 +125,7 @@ const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
     variant,
     size,
     placement,
-    content,
+  content,
     title,
     description,
     icon,
@@ -134,12 +134,12 @@ const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
     trigger = 'hover',
     delay = 300,
     duration = 0,
-    disabled = false,
+  disabled = false,
     persistent = false,
     maxWidth = 200,
     children,
     ...props
-  }, ref) => {
+}, ref) => {
     const [isVisible, setIsVisible] = useState(false);
     const [position, setPosition] = useState({ top: 0, left: 0 });
     
@@ -341,7 +341,7 @@ const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
           onClick={handleClick}
           className="inline-block"
         >
-          {children}
+      {children}
         </div>
 
         {/* Tooltip */}
@@ -397,7 +397,7 @@ const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
             </div>
           </div>
         )}
-      </div>
+    </div>
     );
   }
 );

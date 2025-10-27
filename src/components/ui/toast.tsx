@@ -155,16 +155,16 @@ const Toast = forwardRef<HTMLDivElement, ToastProps>(
 
     return (
       <div
-        ref={ref}
-        className={cn(
+    ref={ref}
+    className={cn(
           toastVariants({ variant, size }),
           isClosing && "opacity-0 scale-95 transition-all duration-200",
           !isClosing && "opacity-100 scale-100 transition-all duration-200",
-          className
-        )}
+      className
+    )}
         role="alert"
         aria-live="polite"
-        {...props}
+    {...props}
       >
         {/* Progress Bar */}
         {showProgress && !persistent && duration > 0 && (
@@ -321,13 +321,13 @@ ToastActions.displayName = "ToastActions";
 const ToastClose = forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(
   ({ className, ...props }, ref) => (
     <Button
-      ref={ref}
+    ref={ref}
       variant="ghost"
       size="sm"
       className={cn("absolute right-2 top-2 h-6 w-6 p-0 opacity-70 hover:opacity-100", className)}
       aria-label="Close toast"
-      {...props}
-    />
+    {...props}
+  />
   )
 );
 ToastClose.displayName = "ToastClose";

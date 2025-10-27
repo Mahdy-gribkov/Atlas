@@ -22,3 +22,18 @@ export * from './search';
 
 // Booking
 export * from './booking';
+
+// Itinerary Management
+export * from './itinerary-management';
+
+// Travel Documents
+export * from './travel-documents';
+
+// Check-in
+export * from './check-in';
+
+// Navigation
+export * from './navigation';
+
+// Reviews
+export * from './reviews';
