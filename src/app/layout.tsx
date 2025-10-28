@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import { Noto_Sans_Hebrew } from 'next/font/google';
 import './globals.css';
 import { AtlasThemeProvider } from '@/components/theme/theme-provider';
+import { ToastProvider, Toaster } from '@/components/ui/feedback';
 
 const inter = Inter({
   subsets: ['latin'],
