@@ -2,14 +2,11 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/components/providers/AuthProvider';
 import { Button } from '@/components/ui/core';
 import { Input } from '@/components/ui/core';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/core';
 import { Label } from '@/components/ui/core';
 import { Checkbox } from '@/components/ui/core';
-import { Alert, AlertDescription } from '@/components/ui/feedback';
-import { useToast } from '@/components/ui/feedback';
 import { Eye, EyeOff, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -21,8 +18,6 @@ export function SignInForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { signInWithEmail, signInWithGoogle } = useAuth();
-  const { toast } = useToast();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,47 +25,19 @@ export function SignInForm() {
     setLoading(true);
     setError('');
 
-    try {
-      const result = await signInWithEmail({ email, password });
-      
-      if (result.success) {
-        toast({
-          title: "Welcome back!",
-          description: "You've successfully signed in.",
-          variant: "success",
-        });
-        router.push('/dashboard');
-      } else {
-        setError(result.error || 'Sign in failed');
-      }
-    } catch (err) {
-      setError('An unexpected error occurred');
-    } finally {
+    // TODO: Implement Firebase Auth
+    console.log('Sign in attempt:', { email, password, rememberMe });
+    
+    setTimeout(() => {
       setLoading(false);
-    }
+      setError('Firebase Auth not yet implemented');
+    }, 1000);
   };
 
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    setError('');
-
-    try {
-      const result = await signInWithGoogle();
-      
-      if (result.success) {
-        toast({
-          title: "Welcome to Atlas!",
-          description: "You've successfully signed in with Google.",
-          variant: "success",
-        });
-        router.push('/dashboard');
-      } else {
-        setError(result.error || 'Google sign in failed');
-      }
-    } catch (err) {
-      setError('An unexpected error occurred');
-    } finally {
-      setLoading(false);
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
     }
   };
 
@@ -87,16 +54,16 @@ export function SignInForm() {
       
       <CardContent className="space-y-6">
         {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            {error}
+          </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <div className="relative">
-              <Mail className="absolute left-3 top-3 h-4 w-4 text-atlas-text-secondary" />
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
                 id="email"
                 type="email"
@@ -113,7 +80,7 @@ export function SignInForm() {
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-atlas-text-secondary" />
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
@@ -127,7 +94,7 @@ export function SignInForm() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3 h-4 w-4 text-atlas-text-secondary hover:text-atlas-text-primary"
+                className="absolute right-3 top-3 h-4 w-4 text-gray-400 hover:text-gray-600"
                 disabled={loading}
               >
                 {showPassword ? <EyeOff /> : <Eye />}
@@ -149,7 +116,7 @@ export function SignInForm() {
             </div>
             <Link
               href="/forgot-password"
-              className="text-sm text-atlas-primary-main hover:text-atlas-primary-dark underline-offset-4 hover:underline"
+              className="text-sm text-blue-600 hover:text-blue-800 underline-offset-4 hover:underline"
             >
               Forgot password?
             </Link>
@@ -179,7 +146,7 @@ export function SignInForm() {
             <span className="w-full border-t" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-atlas-text-secondary">
+            <span className="bg-background px-2 text-gray-500">
               Or continue with
             </span>
           </div>
@@ -187,7 +154,6 @@ export function SignInForm() {
 
         <Button
           variant="outline"
-          onClick={handleGoogleSignIn}
           className="w-full"
           disabled={loading}
         >
@@ -212,11 +178,11 @@ export function SignInForm() {
           Google
         </Button>
 
-        <p className="text-center text-sm text-atlas-text-secondary">
+        <p className="text-center text-sm text-gray-600">
           Don't have an account?{' '}
           <Link
             href="/signup"
-            className="text-atlas-primary-main hover:text-atlas-primary-dark underline-offset-4 hover:underline"
+            className="text-blue-600 hover:text-blue-800 underline-offset-4 hover:underline"
           >
             Sign up
           </Link>
