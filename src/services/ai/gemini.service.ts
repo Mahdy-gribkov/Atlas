@@ -1,276 +1,340 @@
+// Gemini 2.5 Pro AI Service - Budget Optimized
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
-import { HumanMessage, SystemMessage, AIMessage } from '@langchain/core/messages';
-import { StringOutputParser } from '@langchain/core/output_parsers';
-import { PromptTemplate } from '@langchain/core/prompts';
 
-export class GeminiService {
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: Date;
+  metadata?: {
+    tokens?: number;
+    cost?: number;
+    model?: string;
+  };
+}
+
+export interface TravelRequest {
+  destination: string;
+  duration: string;
+  budget: string;
+  interests: string[];
+  travelStyle: 'budget' | 'mid-range' | 'luxury';
+  groupSize: number;
+  season: string;
+}
+
+export interface ItinerarySuggestion {
+  day: number;
+  activities: Activity[];
+  estimatedCost: number;
+  notes: string;
+}
+
+export interface Activity {
+  name: string;
+  description: string;
+  duration: string;
+  cost: string;
+  location: string;
+  type: 'attraction' | 'restaurant' | 'accommodation' | 'transport' | 'activity';
+  rating?: number;
+}
+
+export interface AIResponse {
+  success: boolean;
+  message?: string;
+  itinerary?: ItinerarySuggestion[];
+  suggestions?: string[];
+  error?: string;
+  metadata?: {
+    tokens: number;
+    cost: number;
+    model: string;
+  };
+}
+
+class GeminiAIService {
   private genAI: GoogleGenerativeAI;
-  private chatModel: ChatGoogleGenerativeAI;
-  private outputParser: StringOutputParser;
+  private model: any;
+  private isInitialized = false;
 
   constructor() {
-    if (!process.env.GOOGLE_GEMINI_API_KEY) {
-      throw new Error('GOOGLE_GEMINI_API_KEY is not set');
+    const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
+    if (!apiKey) {
+      console.warn('Gemini API key not found. AI features will be disabled.');
+      return;
     }
 
-    this.genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY);
-    this.chatModel = new ChatGoogleGenerativeAI({
-      modelName: 'gemini-2.5-pro',
-      apiKey: process.env.GOOGLE_GEMINI_API_KEY,
-      temperature: 0.7,
-      maxOutputTokens: 2048,
-    });
-    this.outputParser = new StringOutputParser();
-  }
-
-  async generateText(prompt: string, systemPrompt?: string): Promise<string> {
     try {
-      const messages = [];
-      
-      if (systemPrompt) {
-        messages.push(new SystemMessage(systemPrompt));
-      }
-      
-      messages.push(new HumanMessage(prompt));
-
-      const response = await this.chatModel.invoke(messages);
-      return response.content as string;
+      this.genAI = new GoogleGenerativeAI(apiKey);
+      this.model = this.genAI.getGenerativeModel({ 
+        model: "gemini-2.0-flash-exp", // Using the latest model
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 8192,
+        },
+      });
+      this.isInitialized = true;
     } catch (error) {
-      console.error('Error generating text with Gemini:', error);
-      throw new Error('Failed to generate text');
+      console.error('Failed to initialize Gemini AI:', error);
     }
   }
 
-  async generateResponse(message: string, context: any): Promise<string> {
+  // Generate travel itinerary
+  async generateItinerary(request: TravelRequest): Promise<AIResponse> {
+    if (!this.isInitialized) {
+      return {
+        success: false,
+        error: 'AI service not initialized. Please check your API key.',
+      };
+    }
+
     try {
-      const systemPrompt = `You are an expert AI travel assistant. Help users plan amazing trips with personalized recommendations, practical advice, and detailed itineraries.
+      const prompt = this.buildItineraryPrompt(request);
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
 
-Key guidelines:
-1. Be friendly, helpful, and enthusiastic about travel
-2. Provide specific, actionable advice
-3. Consider budget, time, and user preferences
-4. Suggest authentic local experiences
-5. Include practical tips (transportation, timing, costs)
-6. Ask clarifying questions when needed
-7. Format responses clearly with bullet points and sections when appropriate
-
-Always be encouraging and make travel planning feel exciting and achievable.`;
-
-      const messages = [];
-      messages.push(new SystemMessage(systemPrompt));
+      // Parse the response (assuming JSON format)
+      const parsedResponse = this.parseItineraryResponse(text);
       
-      // Add conversation history if available
-      if (context.conversationHistory && context.conversationHistory.length > 0) {
-        context.conversationHistory.forEach((msg: any) => {
-          if (msg.role === 'user') {
-            messages.push(new HumanMessage(msg.content));
-          } else if (msg.role === 'assistant') {
-            messages.push(new AIMessage(msg.content));
-          }
-        });
-      }
-      
-      messages.push(new HumanMessage(message));
-
-      const response = await this.chatModel.invoke(messages);
-      return response.content as string;
-    } catch (error) {
-      console.error('Error generating response with Gemini:', error);
-      return "I'm sorry, I'm having trouble processing your request right now. Please try again in a moment.";
+      return {
+        success: true,
+        itinerary: parsedResponse.itinerary,
+        suggestions: parsedResponse.suggestions,
+        metadata: {
+          tokens: response.usageMetadata?.totalTokenCount || 0,
+          cost: this.calculateCost(response.usageMetadata?.totalTokenCount || 0),
+          model: 'gemini-2.0-flash-exp',
+        },
+      };
+    } catch (error: any) {
+      console.error('Gemini AI error:', error);
+      return {
+        success: false,
+        error: `AI service error: ${error.message}`,
+      };
     }
   }
 
-  async generateItinerary(prompt: string, userPreferences: any): Promise<any> {
-    const systemPrompt = `You are an expert travel planner AI assistant. Your task is to create detailed, personalized travel itineraries based on user preferences and requirements.
+  // Chat with AI for travel advice
+  async chatWithAI(messages: ChatMessage[]): Promise<AIResponse> {
+    if (!this.isInitialized) {
+      return {
+        success: false,
+        error: 'AI service not initialized. Please check your API key.',
+      };
+    }
 
-Key guidelines:
-1. Always consider user preferences for budget, travel style, interests, and accessibility needs
-2. Provide realistic time estimates and costs
-3. Include specific locations with coordinates when possible
-4. Suggest sustainable and accessible options
-5. Format your response as a structured JSON object
-6. Be creative but practical in your recommendations
+    try {
+      const prompt = this.buildChatPrompt(messages);
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
 
-User preferences: ${JSON.stringify(userPreferences)}`;
+      return {
+        success: true,
+        message: text,
+        metadata: {
+          tokens: response.usageMetadata?.totalTokenCount || 0,
+          cost: this.calculateCost(response.usageMetadata?.totalTokenCount || 0),
+          model: 'gemini-2.0-flash-exp',
+        },
+      };
+    } catch (error: any) {
+      console.error('Gemini AI chat error:', error);
+      return {
+        success: false,
+        error: `AI service error: ${error.message}`,
+      };
+    }
+  }
 
-    const fullPrompt = `${systemPrompt}
+  // Get travel recommendations
+  async getRecommendations(query: string, context?: string): Promise<AIResponse> {
+    if (!this.isInitialized) {
+      return {
+        success: false,
+        error: 'AI service not initialized. Please check your API key.',
+      };
+    }
 
-User request: ${prompt}
+    try {
+      const prompt = this.buildRecommendationPrompt(query, context);
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
 
-Please create a detailed travel itinerary in the following JSON format:
+      return {
+        success: true,
+        suggestions: this.parseRecommendations(text),
+        metadata: {
+          tokens: response.usageMetadata?.totalTokenCount || 0,
+          cost: this.calculateCost(response.usageMetadata?.totalTokenCount || 0),
+          model: 'gemini-2.0-flash-exp',
+        },
+      };
+    } catch (error: any) {
+      console.error('Gemini AI recommendations error:', error);
+      return {
+        success: false,
+        error: `AI service error: ${error.message}`,
+      };
+    }
+  }
+
+  // Build itinerary generation prompt
+  private buildItineraryPrompt(request: TravelRequest): string {
+    return `You are Atlas, an expert travel planning AI assistant. Create a detailed ${request.duration} itinerary for ${request.destination}.
+
+Travel Details:
+- Destination: ${request.destination}
+- Duration: ${request.duration}
+- Budget: ${request.budget}
+- Travel Style: ${request.travelStyle}
+- Group Size: ${request.groupSize}
+- Season: ${request.season}
+- Interests: ${request.interests.join(', ')}
+
+Please provide a detailed day-by-day itinerary in JSON format with the following structure:
 {
-  "title": "Trip Title",
-  "destination": "Destination City/Country",
-  "startDate": "YYYY-MM-DD",
-  "endDate": "YYYY-MM-DD",
-  "travelers": number,
-  "budget": number,
-  "days": [
+  "itinerary": [
     {
       "day": 1,
-      "date": "YYYY-MM-DD",
       "activities": [
         {
           "name": "Activity Name",
-          "type": "attraction|restaurant|entertainment|shopping|other",
           "description": "Detailed description",
-          "location": {
-            "name": "Location Name",
-            "address": "Full Address",
-            "coordinates": {"lat": number, "lng": number},
-            "city": "City",
-            "country": "Country"
-          },
-          "duration": number (in minutes),
-          "cost": number,
-          "timeSlot": {
-            "start": "HH:MM",
-            "end": "HH:MM",
-            "flexible": boolean
-          },
-          "bookingRequired": boolean,
-          "accessibility": {
-            "wheelchairAccessible": boolean,
-            "visualAccessibility": boolean,
-            "hearingAccessibility": boolean,
-            "cognitiveAccessibility": boolean
-          },
-          "sustainability": {
-            "ecoFriendly": boolean,
-            "localBusiness": boolean,
-            "sustainableTransport": boolean
-          }
+          "duration": "2 hours",
+          "cost": "$50",
+          "location": "Specific location",
+          "type": "attraction|restaurant|accommodation|transport|activity",
+          "rating": 4.5
         }
       ],
-      "estimatedCost": number,
-      "notes": "Optional notes for the day"
+      "estimatedCost": 150,
+      "notes": "Additional notes for the day"
     }
   ],
-  "metadata": {
-    "totalCost": number,
-    "sustainabilityScore": number (0-100),
-    "accessibilityScore": number (0-100),
-    "tags": ["tag1", "tag2"],
-    "source": "ai-generated"
-  }
-}`;
+  "suggestions": [
+    "Additional travel tips",
+    "Local customs to be aware of",
+    "Best times to visit attractions"
+  ]
+}
 
+Make sure to:
+1. Include realistic costs based on the budget
+2. Consider the travel style and group size
+3. Include a mix of activities based on interests
+4. Provide practical travel tips
+5. Consider the season for weather-appropriate activities
+6. Include transportation between activities
+7. Suggest local restaurants and accommodations
+
+Respond only with valid JSON.`;
+  }
+
+  // Build chat prompt
+  private buildChatPrompt(messages: ChatMessage[]): string {
+    const systemPrompt = `You are Atlas, an expert travel planning AI assistant. You help users plan amazing trips, provide travel advice, and answer questions about destinations around the world. You're knowledgeable about:
+
+- Travel planning and itinerary creation
+- Destination information and local insights
+- Budget travel tips and cost optimization
+- Cultural etiquette and local customs
+- Weather and seasonal considerations
+- Transportation options
+- Accommodation recommendations
+- Food and dining suggestions
+- Safety and travel advisories
+
+Always provide helpful, accurate, and practical advice. If you're unsure about something, say so rather than guessing.`;
+
+    const conversationHistory = messages
+      .slice(-10) // Keep last 10 messages for context
+      .map(msg => `${msg.role}: ${msg.content}`)
+      .join('\n');
+
+    return `${systemPrompt}\n\nConversation History:\n${conversationHistory}\n\nPlease respond as Atlas, the travel planning assistant.`;
+  }
+
+  // Build recommendation prompt
+  private buildRecommendationPrompt(query: string, context?: string): string {
+    return `You are Atlas, an expert travel planning AI assistant. The user is asking: "${query}"
+
+${context ? `Context: ${context}` : ''}
+
+Please provide 5-7 specific, actionable recommendations related to their query. Focus on practical, helpful advice that they can use for their travel planning.
+
+Format your response as a simple list of recommendations, each on a new line starting with a bullet point.`;
+  }
+
+  // Parse itinerary response
+  private parseItineraryResponse(text: string): { itinerary: ItinerarySuggestion[]; suggestions: string[] } {
     try {
-      const response = await this.generateText(fullPrompt);
-      
-      // Try to parse the JSON response
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      // Try to extract JSON from the response
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
+        const parsed = JSON.parse(jsonMatch[0]);
+        return {
+          itinerary: parsed.itinerary || [],
+          suggestions: parsed.suggestions || [],
+        };
       }
-      
-      throw new Error('Invalid JSON response from AI');
     } catch (error) {
-      console.error('Error generating itinerary:', error);
-      throw new Error('Failed to generate itinerary');
+      console.error('Failed to parse itinerary response:', error);
     }
+
+    // Fallback: return empty response
+    return {
+      itinerary: [],
+      suggestions: ['Unable to parse itinerary response. Please try again.'],
+    };
   }
 
-  async chatWithContext(
-    message: string, 
-    conversationHistory: any[], 
-    context: any = {}
-  ): Promise<string> {
-    const systemPrompt = `You are an expert travel planning AI assistant. You help users plan their trips, answer travel questions, and provide personalized recommendations.
+  // Parse recommendations
+  private parseRecommendations(text: string): string[] {
+    return text
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+      .map(line => line.replace(/^[-•*]\s*/, '')) // Remove bullet points
+      .slice(0, 7); // Limit to 7 recommendations
+  }
 
-Context:
-- User preferences: ${JSON.stringify(context.userPreferences || {})}
-- Current itinerary: ${context.currentItinerary ? 'User has an active itinerary' : 'No active itinerary'}
-- Conversation history: ${conversationHistory.length} previous messages
-
-Guidelines:
-1. Be helpful, friendly, and informative
-2. Ask clarifying questions when needed
-3. Provide specific, actionable advice
-4. Consider user preferences and constraints
-5. Suggest sustainable and accessible options
-6. Keep responses concise but comprehensive`;
-
-    const messages = [new SystemMessage(systemPrompt)];
+  // Calculate cost based on token usage
+  private calculateCost(tokens: number): number {
+    // Gemini 2.0 Flash pricing (as of 2024)
+    // Input: $0.075 per 1M tokens
+    // Output: $0.30 per 1M tokens
+    // Assuming 50/50 input/output ratio
+    const inputTokens = tokens * 0.5;
+    const outputTokens = tokens * 0.5;
     
-    // Add conversation history
-    conversationHistory.forEach((msg: any) => {
-      if (msg.role === 'user') {
-        messages.push(new HumanMessage(msg.content));
-      } else if (msg.role === 'assistant') {
-        messages.push(new AIMessage(msg.content));
-      }
-    });
+    const inputCost = (inputTokens / 1000000) * 0.075;
+    const outputCost = (outputTokens / 1000000) * 0.30;
     
-    // Add current message
-    messages.push(new HumanMessage(message));
-
-    try {
-      const response = await this.chatModel.invoke(messages);
-      return response.content as string;
-    } catch (error) {
-      console.error('Error in chat with context:', error);
-      throw new Error('Failed to process chat message');
-    }
+    return inputCost + outputCost;
   }
 
-  async analyzeImage(imageData: string, prompt: string): Promise<string> {
-    try {
-      const model = this.genAI.getGenerativeModel({ model: 'gemini-pro-vision' });
-      
-      const imagePart = {
-        inlineData: {
-          data: imageData,
-          mimeType: 'image/jpeg',
-        },
-      };
-
-      const result = await model.generateContent([prompt, imagePart]);
-      const response = await result.response;
-      return response.text();
-    } catch (error) {
-      console.error('Error analyzing image:', error);
-      throw new Error('Failed to analyze image');
-    }
+  // Check if service is available
+  isAvailable(): boolean {
+    return this.isInitialized;
   }
 
-  async extractLocationFromImage(imageData: string): Promise<any> {
-    const prompt = `Analyze this image and extract travel-related information. Look for:
-1. Location/destination names
-2. Landmarks or attractions
-3. Activities or experiences
-4. Any text that might indicate a place name
-
-Return the information in JSON format:
-{
-  "locations": ["location1", "location2"],
-  "landmarks": ["landmark1", "landmark2"],
-  "activities": ["activity1", "activity2"],
-  "confidence": number (0-1)
-}`;
-
-    try {
-      const response = await this.analyzeImage(imageData, prompt);
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
-      }
-      return { locations: [], landmarks: [], activities: [], confidence: 0 };
-    } catch (error) {
-      console.error('Error extracting location from image:', error);
-      return { locations: [], landmarks: [], activities: [], confidence: 0 };
-    }
-  }
-
-  async generateEmbedding(text: string): Promise<number[]> {
-    try {
-      const model = this.genAI.getGenerativeModel({ model: 'embedding-001' });
-      const result = await model.embedContent(text);
-      return result.embedding.values;
-    } catch (error) {
-      console.error('Error generating embedding:', error);
-      throw new Error('Failed to generate embedding');
-    }
+  // Get service status
+  getStatus(): { available: boolean; model: string; error?: string } {
+    return {
+      available: this.isInitialized,
+      model: 'gemini-2.0-flash-exp',
+      error: this.isInitialized ? undefined : 'API key not configured',
+    };
   }
 }
+
+// Export singleton instance
+export const geminiAIService = new GeminiAIService();
+export default geminiAIService;

@@ -1,0 +1,391 @@
+---
+alwaysApply: true
+---
+## 🏗️ **ARCHITECTURE OVERVIEW**
+
+### **Technology Stack:**
+- **Frontend**: Next.js 16 with App Router, TypeScript, Tailwind CSS
+- **Backend**: Next.js API Routes, Node.js, TypeScript
+- **Database**: Firebase Firestore (Primary), Redis (Caching)
+- **Authentication**: Firebase
+- **AI Integration**: Google Gemini via LangChain
+- **Payment**: Stripe, PayPal integration
+- **Maps**: Google Maps API, Mapbox
+- **Email**: SendGrid, AWS SES
+- **Storage**: Firebase Storage, AWS S3
+- **Monitoring**: Sentry, Google Analytics
+- **Deployment**: Vercel, Docker
+
+### **Architecture Principles:**
+- **Feature-Based Organization**: Modular architecture by business features
+- **Shared Resources**: Common utilities, types, and services
+- **Security-First**: Comprehensive security at every layer
+- **Performance-Optimized**: Fast loading, efficient data flow
+- **Accessibility-Compliant**: WCAG 2.1 AA standards
+- **SEO-Optimized**: Server-side rendering, meta optimization
+- **Scalable**: Microservices-ready, horizontal scaling
+
+---
+
+## 📁 **REFINED PROJECT STRUCTURE - ROUTE-AS-FEATURE**
+
+```
+src/
+├── app/                          # Next.js App Router - Route-as-Feature Architecture
+│   ├── (auth)/                   # Authentication routes
+│   │   ├── signin/
+│   │   │   ├── page.tsx
+│   │   │   ├── components/
+│   │   │   │   └── SignInForm.tsx
+│   │   │   └── services/
+│   │   │       └── auth.service.ts
+│   │   ├── signup/
+│   │   │   ├── page.tsx
+│   │   │   ├── components/
+│   │   │   │   └── SignUpForm.tsx
+│   │   │   └── services/
+│   │   ├── types/
+│   │   │   └── auth.ts
+│   │   └── layout.tsx
+│   │
+│   ├── (app)/                    # Protected app routes
+│   │   ├── dashboard/            # Dashboard feature - Complete slice
+│   │   │   ├── page.tsx
+│   │   │   ├── components/
+│   │   │   │   └── DashboardPage.tsx
+│   │   │   └── hooks/
+│   │   │
+│   │   ├── itinerary/            # Itinerary feature - Complete slice
+│   │   │   ├── page.tsx
+│   │   │   ├── components/
+│   │   │   │   ├── ItineraryList.tsx
+│   │   │   │   ├── ItineraryDisplay.tsx
+│   │   │   │   └── ItineraryWizard.tsx
+│   │   │   ├── services/
+│   │   │   │   └── itinerary.service.ts
+│   │   │   ├── hooks/
+│   │   │   └── types.ts
+│   │   │
+│   │   ├── chat/                 # AI Chat feature - Complete slice
+│   │   │   ├── page.tsx
+│   │   │   ├── components/
+│   │   │   │   ├── ChatInterface.tsx
+│   │   │   │   └── GuestChatPage.tsx
+│   │   │   ├── services/
+│   │   │   └── hooks/
+│   │   │
+│   │   ├── booking/              # Booking system - Complete slice
+│   │   │   ├── page.tsx
+│   │   │   ├── components/
+│   │   │   ├── services/
+│   │   │   └── hooks/
+│   │   │
+│   │   ├── profile/             # User profile - Complete slice
+│   │   │   ├── page.tsx
+│   │   │   ├── components/
+│   │   │   ├── services/
+│   │   │   └── hooks/
+│   │   │
+│   │   └── layout.tsx
+│   │
+│   ├── api/                      # API Routes - Use sparingly, focus on Server Actions
+│   │   ├── auth/
+│   │   ├── chat/
+│   │   ├── itinerary/
+│   │   ├── booking/
+│   │   └── admin/
+│   │
+│   ├── globals.css
+│   ├── layout.tsx
+│   ├── loading.tsx
+│   ├── not-found.tsx
+│   ├── page.tsx
+│   └── LandingPage.tsx
+│
+├── components/                   # Application-wide reusable components
+│   ├── ui/                       # UI Component Library (Organized by category)
+│   │   ├── core/                 # Basic components (Button, Input, Card, etc.)
+│   │   ├── forms/                # Form components
+│   │   ├── layout/               # Layout components
+│   │   ├── navigation/           # Navigation components
+│   │   ├── feedback/             # Feedback components
+│   │   ├── data/                 # Data display components
+│   │   ├── media/                # Media components
+│   │   ├── overlay/              # Overlay components
+│   │   └── index.ts              # Main UI export
+│   ├── layouts/                  # AppLayout, AuthLayout - Global
+│   └── providers/                # Context providers - Global
+│
+├── shared/                       # Global, reusable, non-feature-specific resources
+│   ├── types/                    # Core global types (UserPreferences, ApiError)
+│   ├── utils/                    # Generic utilities (date, currency, validation helpers)
+│   ├── constants/                # Global config/constants (ROUTES, API_CONFIG)
+│   └── hooks/                    # Truly reusable hooks (useDebounce, useLocalStorage)
+│
+└── lib/                          # Core Libraries & Integrations (Stable, low-change)
+    ├── auth.ts                   # NextAuth configuration
+    ├── firebase/                 # Firebase configuration
+    ├── ai/                       # Core AI integration layer
+    ├── security/                 # Global security utilities
+    └── utils/                    # Core utilities
+```
+
+### **🎯 Key Architectural Benefits**
+
+1. **High Cohesion**: Each feature is fully contained within its route directory
+2. **Single Source of Truth**: All feature-related code lives in one place
+3. **App Router Alignment**: Natural integration with Next.js App Router paradigm
+4. **Clear Scope**: Feature-specific vs. application-wide components are clearly separated
+5. **Maintainability**: Changes to a feature only require touching one directory
+6. **Scalability**: Easy to add new features without affecting existing ones
+
+### **🏗️ Architectural Improvements Implemented**
+
+#### **1. Route-as-Feature Architecture**
+- **Eliminated**: Redundant `src/features/` directory
+- **Implemented**: Feature logic directly within route directories
+- **Benefit**: Single source of truth for each feature
+
+#### **2. UI Component Organization**
+- **Organized**: Components by functional category (core, forms, layout, etc.)
+- **Created**: Proper index files for clean imports
+- **Benefit**: Better maintainability and discoverability
+
+#### **3. Shared Directory Cleanup**
+- **Removed**: Feature-specific services and API clients
+- **Kept**: Only truly global utilities and types
+- **Benefit**: Prevents "junk drawer" anti-pattern
+
+#### **4. Database Strategy Refinement**
+- **Firestore**: User-specific, high-velocity data (chat, preferences, drafts)
+- **PostgreSQL**: Relational booking and inventory data (future implementation)
+- **Benefit**: Cost-effective and performance-optimized
+
+#### **5. AI Integration Enhancement**
+- **Centralized**: Prompt management in dedicated structure
+- **Templated**: Prompts as first-class code artifacts
+- **Benefit**: Better maintainability and A/B testing capability
+
+---
+
+## 🔄 **DATA FLOW ARCHITECTURE**
+
+### **Authentication Flow:**
+```
+User → SignIn/SignUp → NextAuth → Firebase Auth → Session → Protected Routes
+```
+
+### **AI Chat Flow:**
+```
+User Input → Chat Interface → API Route → AI Service → Gemini API → Response → UI Update
+```
+
+### **Itinerary Planning Flow:**
+```
+User Request → Chat/AI → Destination Analysis → Activity Suggestions → Itinerary Generation → Booking Integration → User Confirmation
+```
+
+### **Booking Flow:**
+```
+Itinerary Selection → Booking Form → Payment Processing → Confirmation → Email Notification → Calendar Integration
+```
+
+---
+
+## 🛡️ **SECURITY ARCHITECTURE**
+
+### **Authentication & Authorization:**
+- **Multi-Provider Auth**: Google, Email/Password, Social Login
+- **Role-Based Access**: User, Premium, Admin roles
+- **Session Management**: Secure JWT tokens, refresh tokens
+- **Password Security**: Bcrypt hashing, strength requirements
+
+### **API Security:**
+- **Rate Limiting**: Per-user, per-endpoint limits
+- **Input Validation**: Comprehensive validation schemas
+- **CSRF Protection**: Token-based CSRF prevention
+- **SQL Injection Prevention**: Parameterized queries
+- **XSS Protection**: Content sanitization
+
+### **Data Security:**
+- **Encryption**: AES-256 for sensitive data
+- **Audit Logging**: Comprehensive activity tracking
+- **GDPR Compliance**: Data privacy controls
+- **Secure Headers**: CSP, HSTS, X-Frame-Options
+
+---
+
+## 🎨 **DESIGN SYSTEM**
+
+### **Atlas Design Tokens:**
+- **Primary Colors**: Trust Blue (#3B82F6), Energetic Coral (#F97316)
+- **AI Colors**: Intelligent Aqua (#06B6D4), Success Green (#10B981)
+- **Typography**: Inter font family, responsive scale
+- **Spacing**: 4px grid system
+- **Shadows**: Elevation-based shadow system
+- **Animations**: Smooth transitions, micro-interactions
+
+### **Component Architecture:**
+- **Base Components**: Button, Input, Card, Modal
+- **Composite Components**: Forms, Tables, Charts
+- **Feature Components**: Chat, Itinerary, Booking
+- **Layout Components**: Headers, Sidebars, Footers
+
+---
+
+## 🚀 **FEATURE SPECIFICATIONS**
+
+### **1. Authentication System**
+- **Sign Up/Sign In**: Multi-step forms with validation
+- **Social Login**: Google, Facebook, Apple integration
+- **Password Reset**: Secure email-based reset flow
+- **Profile Management**: User preferences, settings
+- **Account Verification**: Email verification, 2FA
+
+### **2. AI Chat Interface**
+- **Natural Language Processing**: Context-aware conversations
+- **Travel Recommendations**: Destination, activity, accommodation suggestions
+- **Itinerary Generation**: AI-powered trip planning
+- **Real-time Assistance**: Live chat support
+- **Multi-language Support**: Global language support
+- **Voice Integration**: Speech-to-text, text-to-speech
+
+### **3. Dashboard & Analytics**
+- **Trip Overview**: Upcoming, past, saved trips
+- **Travel Statistics**: Miles traveled, countries visited
+- **Recommendation Engine**: Personalized suggestions
+- **Budget Tracking**: Expense monitoring, alerts
+- **Calendar Integration**: Trip scheduling, reminders
+
+### **4. Itinerary Management**
+- **Trip Planning**: Multi-day itinerary creation
+- **Activity Scheduling**: Time-based activity planning
+- **Location Integration**: Maps, directions, distances
+- **Collaborative Planning**: Group trip coordination
+- **Export Options**: PDF, calendar, sharing
+
+### **5. Booking System**
+- **Flight Booking**: Multi-airline search, price comparison
+- **Hotel Reservations**: Accommodation booking, reviews
+- **Activity Bookings**: Tours, experiences, tickets
+- **Transportation**: Car rentals, transfers, public transport
+- **Payment Processing**: Multiple payment methods
+- **Booking Management**: Modifications, cancellations
+
+### **6. User Profile & Preferences**
+- **Personal Information**: Profile management, preferences
+- **Travel Preferences**: Budget, interests, dietary requirements
+- **Notification Settings**: Email, push, SMS preferences
+- **Privacy Controls**: Data sharing, visibility settings
+- **Account Settings**: Security, billing, subscription
+
+### **7. Admin Panel**
+- **User Management**: User accounts, roles, permissions
+- **Content Management**: Destinations, activities, reviews
+- **Analytics Dashboard**: Usage statistics, performance metrics
+- **System Configuration**: Feature flags, settings
+- **Support Tools**: Customer service, issue tracking
+
+---
+
+## 🔧 **API ARCHITECTURE**
+
+### **RESTful API Design:**
+- **Authentication**: `/api/auth/*`
+- **Chat**: `/api/chat/*`
+- **Itinerary**: `/api/itinerary/*`
+- **Booking**: `/api/booking/*`
+- **Payment**: `/api/payment/*`
+- **Admin**: `/api/admin/*`
+
+### **API Standards:**
+- **HTTP Methods**: GET, POST, PUT, DELETE, PATCH
+- **Status Codes**: Proper HTTP status code usage
+- **Error Handling**: Consistent error response format
+- **Rate Limiting**: Per-endpoint rate limits
+- **Versioning**: API versioning strategy
+- **Documentation**: OpenAPI/Swagger documentation
+
+---
+
+## 📊 **PERFORMANCE OPTIMIZATION**
+
+### **Frontend Optimization:**
+- **Code Splitting**: Route-based and component-based splitting
+- **Lazy Loading**: Dynamic imports for heavy components
+- **Image Optimization**: Next.js Image component, WebP format
+- **Caching Strategy**: Browser caching, CDN caching
+- **Bundle Optimization**: Tree shaking, minification
+
+### **Backend Optimization:**
+- **Database Optimization**: Indexing, query optimization
+- **Caching Layer**: Redis for session and data caching
+- **API Optimization**: Response compression, pagination
+- **CDN Integration**: Static asset delivery
+- **Monitoring**: Performance metrics, error tracking
+
+---
+
+## 🌐 **SEO & ACCESSIBILITY**
+
+### **SEO Strategy:**
+- **Server-Side Rendering**: Next.js SSR for all pages
+- **Meta Tags**: Dynamic meta tags, Open Graph, Twitter Cards
+- **Structured Data**: JSON-LD markup for rich snippets
+- **Sitemap**: Automated sitemap generation
+- **Performance**: Core Web Vitals optimization
+
+### **Accessibility Compliance:**
+- **WCAG 2.1 AA**: Full compliance with accessibility standards
+- **Keyboard Navigation**: Complete keyboard accessibility
+- **Screen Reader Support**: ARIA labels, semantic HTML
+- **Color Contrast**: Proper contrast ratios
+- **Focus Management**: Clear focus indicators
+
+---
+
+## 🚀 **DEPLOYMENT & SCALING**
+
+### **Deployment Strategy:**
+- **Primary Platform**: Vercel for frontend and API
+- **Database**: Firebase Firestore with global distribution
+- **CDN**: Vercel Edge Network, CloudFlare
+- **Monitoring**: Sentry, Google Analytics, Vercel Analytics
+- **CI/CD**: GitHub Actions for automated deployment
+
+### **Scaling Considerations:**
+- **Horizontal Scaling**: Stateless API design
+- **Database Scaling**: Firestore auto-scaling
+- **Caching Strategy**: Multi-layer caching
+- **Load Balancing**: Vercel automatic load balancing
+- **Performance Monitoring**: Real-time performance tracking
+
+---
+
+## 📈 **SUCCESS METRICS**
+
+### **Technical Metrics:**
+- **Performance**: < 2s page load time, > 90 Lighthouse score
+- **Availability**: 99.9% uptime, < 100ms API response time
+- **Security**: Zero security incidents, 100% HTTPS
+- **Accessibility**: WCAG 2.1 AA compliance, 100% keyboard accessible
+
+### **Business Metrics:**
+- **User Engagement**: Daily active users, session duration
+- **Conversion**: Sign-up rate, booking completion rate
+- **Satisfaction**: User ratings, support ticket volume
+- **Growth**: Monthly active users, revenue growth
+
+
+### **API Integration Strategy:**
+- **Primary AI**: Gemini 2.5 Pro (travel planning, itinerary generation)
+- **Secondary AI**: Perplexity API (real-time search, current events)
+- **Free APIs**:
+OpenWeatherMap (weather)
+REST Countries API (country data)
+OpenStreetMap (maps)
+Public transportation APIs
+
+--
+
+This architecture document serves as the comprehensive blueprint for building Atlas into a world-class AI-powered travel planning platform. It ensures scalability, security, performance, and user experience excellence while maintaining clean, maintainable code architecture.

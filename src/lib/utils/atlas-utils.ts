@@ -309,7 +309,7 @@ export const atlasResponsive = {
 /**
  * Animation utility functions
  */
-export const atlasAnimations = {
+export const atlasAnimationClasses = {
   // Fade animations
   fadeIn: 'animate-fade-in',
   fadeOut: 'animate-fade-out',
@@ -364,6 +364,7 @@ export const atlas = {
   radius: atlasRadius,
   shadows: atlasShadows,
   animations: atlasAnimations,
+  animationClasses: atlasAnimationClasses,
   breakpoints: atlasBreakpoints,
   zIndex: atlasZIndex,
   a11y: atlasA11y,

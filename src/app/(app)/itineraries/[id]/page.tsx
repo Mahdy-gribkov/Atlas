@@ -1,6 +1,6 @@
-import { notFound } from 'next/navigation';
+"use client";
+
 import { ItineraryDisplay } from '@/components/itinerary/ItineraryDisplay';
-import { ItineraryService } from '@/services/itinerary.service';
 
 interface ItineraryPageProps {
   params: {
@@ -8,32 +8,24 @@ interface ItineraryPageProps {
   };
 }
 
-export default async function ItineraryPage({ params }: ItineraryPageProps) {
-  const itineraryService = new ItineraryService();
-  const itinerary = await itineraryService.getItineraryById(params.id);
-
-  if (!itinerary) {
-    notFound();
-  }
-
+export default function ItineraryPage({ params }: ItineraryPageProps) {
   const handleEdit = () => {
     // TODO: Implement edit functionality
-    console.log('Edit itinerary:', itinerary.id);
+    console.log('Edit itinerary:', params.id);
   };
 
   const handleDelete = () => {
     // TODO: Implement delete functionality
-    console.log('Delete itinerary:', itinerary.id);
+    console.log('Delete itinerary:', params.id);
   };
 
   const handleShare = () => {
     // TODO: Implement share functionality
-    console.log('Share itinerary:', itinerary.id);
+    console.log('Share itinerary:', params.id);
   };
 
   return (
     <ItineraryDisplay
-      itinerary={itinerary}
       onEdit={handleEdit}
       onDelete={handleDelete}
       onShare={handleShare}

@@ -1,18 +1,22 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ['firebase-admin'],
-  },
+  // Next.js 16: images.domains deprecated in favor of remotePatterns
   images: {
-    domains: ['images.unsplash.com', 'firebasestorage.googleapis.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'firebasestorage.googleapis.com',
+      },
+    ],
   },
-  i18n: {
-    locales: ['en', 'he'],
-    defaultLocale: 'en',
-    localeDetection: false,
-  },
+  
   // Support for src/ directory
   pageExtensions: ['ts', 'tsx', 'js', 'jsx'],
+  
   async headers() {
     return [
       {

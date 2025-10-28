@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { ThemeProvider as NextThemesProvider } from 'next-themes';
+import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme } from 'next-themes';
 
 interface ThemeContextType {
   theme: 'light' | 'dark' | 'system';
@@ -59,7 +59,7 @@ export function AtlasThemeProvider({
 }
 
 function ThemeContextWrapper({ children }: { children: React.ReactNode }) {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useNextTheme();
   
   return (
     <ThemeContext.Provider

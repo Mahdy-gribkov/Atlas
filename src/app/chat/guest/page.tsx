@@ -1,4 +1,4 @@
-import { GuestChatPage } from '@/components/pages/GuestChatPage';
+import { GuestChatPage } from '../../components/GuestChatPage';
 
 export default function GuestChatPageRoute() {
   return <GuestChatPage />;

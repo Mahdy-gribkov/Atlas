@@ -5,18 +5,21 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase/client';
 import { UserService } from '@/services/user.service';
+import { isDemoMode } from '@/lib/firebase/config';
 
 const userService = new UserService();
 
 export const authOptions: NextAuthOptions = {
-  adapter: FirestoreAdapter({
+  adapter: isDemoMode ? undefined : FirestoreAdapter({
     projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'demo-project',
   }),
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [
+      GoogleProvider({
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      })
+    ] : []),
     CredentialsProvider({
       name: 'credentials',
       credentials: {
@@ -26,6 +29,16 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           return null;
+        }
+
+        // In demo mode, allow any email/password combination
+        if (isDemoMode) {
+          return {
+            id: 'demo-user',
+            email: credentials.email,
+            name: credentials.email.split('@')[0],
+            role: 'user',
+          };
         }
 
         try {

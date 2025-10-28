@@ -1,15 +1,15 @@
-import { SignInForm } from '@/components/auth/SignInForm';
+import { SignInForm } from './components/SignInForm';
 
 export default function SignInPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-atlas-primary-lighter to-atlas-secondary-lighter dark:from-atlas-primary-darkest dark:to-atlas-primary-dark">
       <div className="w-full max-w-md space-y-8 p-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Welcome Back
+          <h1 className="text-3xl font-bold text-atlas-text-primary">
+            Welcome Back to Atlas
           </h1>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            Sign in to your AI Travel Agent account
+          <p className="mt-2 text-sm text-atlas-text-secondary">
+            Sign in to your Atlas account and start planning your next adventure
           </p>
         </div>
         <SignInForm />

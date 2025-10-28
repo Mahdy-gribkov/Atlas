@@ -18,7 +18,6 @@ import {
   InternalServerError,
   SecurityError
 } from './error-types';
-import { logAuditEvent, AuditAction } from '@/lib/security/audit';
 import winston from 'winston';
 
 // Enhanced logger configuration
@@ -172,23 +171,7 @@ export class ErrorHandler {
         break;
     }
 
-    // Log to audit system for security-related errors
-    if (error.code.includes('AUTH_') || error.code.includes('SECURITY_')) {
-      await logAuditEvent(
-        AuditAction.SUSPICIOUS_ACTIVITY,
-        request || new NextRequest('http://localhost'),
-        {
-          ...(error.userId && { userId: error.userId }),
-          error: error.message,
-          metadata: {
-            errorCode: error.code,
-            severity: error.severity,
-            context: error.context,
-          },
-        }
-      );
-    }
-  }
+    return logData;
 
   /**
    * Track error metrics for monitoring
