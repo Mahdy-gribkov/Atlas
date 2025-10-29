@@ -93,8 +93,8 @@ import {
   FolderLock,
   FolderArchive
 } from "lucide-react";
-import { Button } from "../core/button";
-import { Badge } from "../core/badge";
+import { Button } from "./button";
+import { Badge } from "./badge";
 
 // Toast Root Component
 const toastVariants = cva(

@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useEffect } from 'react';
-import { useAuth } from '@/components/providers/AuthProvider';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/core';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/core';
-import { Badge } from '@/components/ui/core';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { 
   Plane, 
   MapPin, 
@@ -21,17 +21,17 @@ import {
 import Link from 'next/link';
 
 export function LandingPage() {
-  const { user, loading } = useAuth();
+  const { data: session, status } = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && user) {
+    if (status === 'authenticated' && session) {
       router.push('/dashboard');
     }
-  }, [user, loading, router]);
+  }, [session, status, router]);
 
   // Show loading state while checking authentication
-  if (loading) {
+  if (status === 'loading') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-atlas-primary-lighter via-atlas-bg to-atlas-secondary-lighter flex items-center justify-center">
         <div className="text-center">

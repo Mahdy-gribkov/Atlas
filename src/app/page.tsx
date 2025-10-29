@@ -1,4 +1,4 @@
-import { LandingPage } from './LandingPage';
+import { LandingPage } from '@/components/pages/LandingPage';
 import { Suspense } from 'react';
 
 // Loading component for the main page

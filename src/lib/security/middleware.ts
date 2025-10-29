@@ -74,3 +74,4 @@ export function sanitizeInput(input: string): string {
     .replace(/on\w+\s*=/gi, '')
     .trim();
 }
+

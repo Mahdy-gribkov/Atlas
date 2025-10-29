@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Button } from '@/components/ui/core';
+import { Button } from '@/components/ui/button';
 import { 
   Globe,
   ArrowLeft,

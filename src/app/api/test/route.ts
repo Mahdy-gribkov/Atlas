@@ -49,3 +49,4 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     timestamp: new Date().toISOString(),
   });
 });
+

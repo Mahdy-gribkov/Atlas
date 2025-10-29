@@ -2,8 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { Noto_Sans_Hebrew } from 'next/font/google';
 import './globals.css';
-import { AtlasThemeProvider } from '@/components/theme/theme-provider';
-import { ToastProvider, Toaster } from '@/components/ui/feedback';
+import { AppProvider } from '@/components/providers/AppProvider';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -75,14 +74,9 @@ export default function RootLayout({
         className={`${inter.variable} ${notoSansHebrew.variable} font-sans antialiased`}
         suppressHydrationWarning
       >
-        <AtlasThemeProvider
-          attribute="data-theme"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange={false}
-        >
+        <AppProvider>
           {children}
-        </AtlasThemeProvider>
+        </AppProvider>
       </body>
     </html>
   );

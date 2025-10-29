@@ -163,3 +163,4 @@ export function validateRequest(request: NextRequest, requiredFields: string[] =
   
   return true;
 }
+

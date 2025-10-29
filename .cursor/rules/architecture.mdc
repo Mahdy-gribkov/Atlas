@@ -1,13 +1,28 @@
+# ATLAS - AI-POWERED TRAVEL PLANNING PLATFORM
+## COMPREHENSIVE ARCHITECTURE DOCUMENT
+
 ---
-alwaysApply: true
+
+## 🎯 **PROJECT VISION**
+
+Atlas is a comprehensive AI-powered travel planning platform that revolutionizes how people discover, plan, and book their travel experiences. The platform combines cutting-edge AI technology with intuitive user experience to create personalized travel recommendations, seamless booking experiences, and intelligent itinerary management.
+
+### **Core Value Propositions:**
+- **AI-Powered Discovery**: Intelligent destination and activity recommendations
+- **Seamless Planning**: End-to-end trip planning with real-time optimization
+- **Smart Booking**: Integrated booking system with price optimization
+- **Personalized Experience**: User-centric design with learning capabilities
+- **Global Reach**: Multi-language, multi-currency, multi-region support
+
 ---
+
 ## 🏗️ **ARCHITECTURE OVERVIEW**
 
 ### **Technology Stack:**
 - **Frontend**: Next.js 16 with App Router, TypeScript, Tailwind CSS
 - **Backend**: Next.js API Routes, Node.js, TypeScript
 - **Database**: Firebase Firestore (Primary), Redis (Caching)
-- **Authentication**: Firebase
+- **Authentication**: NextAuth.js with Firebase
 - **AI Integration**: Google Gemini via LangChain
 - **Payment**: Stripe, PayPal integration
 - **Maps**: Google Maps API, Mapbox
@@ -27,144 +42,140 @@ alwaysApply: true
 
 ---
 
-## 📁 **REFINED PROJECT STRUCTURE - ROUTE-AS-FEATURE**
+## 📁 **PROJECT STRUCTURE**
 
 ```
 src/
-├── app/                          # Next.js App Router - Route-as-Feature Architecture
+├── app/                          # Next.js App Router
 │   ├── (auth)/                   # Authentication routes
 │   │   ├── signin/
-│   │   │   ├── page.tsx
-│   │   │   ├── components/
-│   │   │   │   └── SignInForm.tsx
-│   │   │   └── services/
-│   │   │       └── auth.service.ts
 │   │   ├── signup/
-│   │   │   ├── page.tsx
-│   │   │   ├── components/
-│   │   │   │   └── SignUpForm.tsx
-│   │   │   └── services/
-│   │   ├── types/
-│   │   │   └── auth.ts
-│   │   └── layout.tsx
-│   │
+│   │   └── forgot-password/
 │   ├── (app)/                    # Protected app routes
-│   │   ├── dashboard/            # Dashboard feature - Complete slice
-│   │   │   ├── page.tsx
-│   │   │   ├── components/
-│   │   │   │   └── DashboardPage.tsx
-│   │   │   └── hooks/
-│   │   │
-│   │   ├── itinerary/            # Itinerary feature - Complete slice
-│   │   │   ├── page.tsx
-│   │   │   ├── components/
-│   │   │   │   ├── ItineraryList.tsx
-│   │   │   │   ├── ItineraryDisplay.tsx
-│   │   │   │   └── ItineraryWizard.tsx
-│   │   │   ├── services/
-│   │   │   │   └── itinerary.service.ts
-│   │   │   ├── hooks/
-│   │   │   └── types.ts
-│   │   │
-│   │   ├── chat/                 # AI Chat feature - Complete slice
-│   │   │   ├── page.tsx
-│   │   │   ├── components/
-│   │   │   │   ├── ChatInterface.tsx
-│   │   │   │   └── GuestChatPage.tsx
-│   │   │   ├── services/
-│   │   │   └── hooks/
-│   │   │
-│   │   ├── booking/              # Booking system - Complete slice
-│   │   │   ├── page.tsx
-│   │   │   ├── components/
-│   │   │   ├── services/
-│   │   │   └── hooks/
-│   │   │
-│   │   ├── profile/             # User profile - Complete slice
-│   │   │   ├── page.tsx
-│   │   │   ├── components/
-│   │   │   ├── services/
-│   │   │   └── hooks/
-│   │   │
-│   │   └── layout.tsx
-│   │
-│   ├── api/                      # API Routes - Use sparingly, focus on Server Actions
+│   │   ├── dashboard/
+│   │   ├── chat/
+│   │   ├── itinerary/
+│   │   ├── booking/
+│   │   ├── profile/
+│   │   └── admin/
+│   ├── api/                      # API routes
 │   │   ├── auth/
 │   │   ├── chat/
 │   │   ├── itinerary/
 │   │   ├── booking/
+│   │   ├── payment/
 │   │   └── admin/
-│   │
 │   ├── globals.css
 │   ├── layout.tsx
 │   ├── loading.tsx
 │   ├── not-found.tsx
-│   ├── page.tsx
-│   └── LandingPage.tsx
+│   └── page.tsx
 │
-├── components/                   # Application-wide reusable components
-│   ├── ui/                       # UI Component Library (Organized by category)
-│   │   ├── core/                 # Basic components (Button, Input, Card, etc.)
+├── components/                   # React Components
+│   ├── ui/                       # UI Component Library
+│   │   ├── core/                 # Basic components
 │   │   ├── forms/                # Form components
 │   │   ├── layout/               # Layout components
 │   │   ├── navigation/           # Navigation components
 │   │   ├── feedback/             # Feedback components
 │   │   ├── data/                 # Data display components
 │   │   ├── media/                # Media components
-│   │   ├── overlay/              # Overlay components
-│   │   └── index.ts              # Main UI export
-│   ├── layouts/                  # AppLayout, AuthLayout - Global
-│   └── providers/                # Context providers - Global
+│   │   └── overlay/              # Overlay components
+│   ├── features/                 # Feature-specific components
+│   │   ├── auth/
+│   │   ├── dashboard/
+│   │   ├── chat/
+│   │   ├── itinerary/
+│   │   ├── booking/
+│   │   ├── profile/
+│   │   └── admin/
+│   ├── layouts/                  # Layout components
+│   │   ├── AppLayout.tsx
+│   │   ├── AuthLayout.tsx
+│   │   └── AdminLayout.tsx
+│   └── providers/                # Context providers
+│       ├── AppProvider.tsx
+│       └── ThemeProvider.tsx
 │
-├── shared/                       # Global, reusable, non-feature-specific resources
-│   ├── types/                    # Core global types (UserPreferences, ApiError)
-│   ├── utils/                    # Generic utilities (date, currency, validation helpers)
-│   ├── constants/                # Global config/constants (ROUTES, API_CONFIG)
-│   └── hooks/                    # Truly reusable hooks (useDebounce, useLocalStorage)
+├── features/                     # Feature Modules
+│   ├── auth/                     # Authentication feature
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── services/
+│   │   ├── types/
+│   │   └── utils/
+│   ├── dashboard/                # Dashboard feature
+│   ├── chat/                     # AI Chat feature
+│   ├── itinerary/                # Itinerary management
+│   ├── booking/                  # Booking system
+│   ├── profile/                  # User profile
+│   └── admin/                    # Admin panel
 │
-└── lib/                          # Core Libraries & Integrations (Stable, low-change)
-    ├── auth.ts                   # NextAuth configuration
-    ├── firebase/                 # Firebase configuration
-    ├── ai/                       # Core AI integration layer
-    ├── security/                 # Global security utilities
-    └── utils/                    # Core utilities
+├── shared/                       # Shared Resources
+│   ├── types/                    # TypeScript types
+│   │   ├── auth.ts
+│   │   ├── user.ts
+│   │   ├── itinerary.ts
+│   │   ├── booking.ts
+│   │   └── api.ts
+│   ├── utils/                    # Utility functions
+│   │   ├── atlas-utils.ts
+│   │   ├── date-utils.ts
+│   │   ├── currency-utils.ts
+│   │   └── validation-utils.ts
+│   ├── constants/                # Application constants
+│   │   ├── routes.ts
+│   │   ├── api-endpoints.ts
+│   │   └── config.ts
+│   ├── hooks/                    # Custom React hooks
+│   │   ├── useAuth.ts
+│   │   ├── useChat.ts
+│   │   └── useItinerary.ts
+│   ├── services/                 # Business logic services
+│   │   ├── auth.service.ts
+│   │   ├── chat.service.ts
+│   │   ├── itinerary.service.ts
+│   │   └── booking.service.ts
+│   ├── validations/              # Validation schemas
+│   │   ├── auth.schema.ts
+│   │   ├── itinerary.schema.ts
+│   │   └── booking.schema.ts
+│   └── api/                      # API client
+│       ├── client.ts
+│       ├── auth.api.ts
+│       └── itinerary.api.ts
+│
+├── lib/                          # Core Libraries
+│   ├── auth.ts                   # NextAuth configuration
+│   ├── firebase/                 # Firebase configuration
+│   │   ├── config.ts
+│   │   ├── auth.ts
+│   │   └── firestore.ts
+│   ├── ai/                       # AI integration
+│   │   ├── gemini.ts
+│   │   ├── langchain.ts
+│   │   └── prompts.ts
+│   ├── security/                 # Security utilities
+│   │   ├── middleware.ts
+│   │   ├── audit.ts
+│   │   └── encryption.ts
+│   ├── error-handling/           # Error management
+│   │   ├── production.ts
+│   │   └── types.ts
+│   └── utils/                    # Core utilities
+│       └── atlas-utils.ts
+│
+├── public/                       # Static assets
+│   ├── icons/
+│   ├── images/
+│   ├── manifest.json
+│   └── favicon.svg
+│
+└── docs/                         # Documentation
+    ├── api/
+    ├── components/
+    └── deployment/
 ```
-
-### **🎯 Key Architectural Benefits**
-
-1. **High Cohesion**: Each feature is fully contained within its route directory
-2. **Single Source of Truth**: All feature-related code lives in one place
-3. **App Router Alignment**: Natural integration with Next.js App Router paradigm
-4. **Clear Scope**: Feature-specific vs. application-wide components are clearly separated
-5. **Maintainability**: Changes to a feature only require touching one directory
-6. **Scalability**: Easy to add new features without affecting existing ones
-
-### **🏗️ Architectural Improvements Implemented**
-
-#### **1. Route-as-Feature Architecture**
-- **Eliminated**: Redundant `src/features/` directory
-- **Implemented**: Feature logic directly within route directories
-- **Benefit**: Single source of truth for each feature
-
-#### **2. UI Component Organization**
-- **Organized**: Components by functional category (core, forms, layout, etc.)
-- **Created**: Proper index files for clean imports
-- **Benefit**: Better maintainability and discoverability
-
-#### **3. Shared Directory Cleanup**
-- **Removed**: Feature-specific services and API clients
-- **Kept**: Only truly global utilities and types
-- **Benefit**: Prevents "junk drawer" anti-pattern
-
-#### **4. Database Strategy Refinement**
-- **Firestore**: User-specific, high-velocity data (chat, preferences, drafts)
-- **PostgreSQL**: Relational booking and inventory data (future implementation)
-- **Benefit**: Cost-effective and performance-optimized
-
-#### **5. AI Integration Enhancement**
-- **Centralized**: Prompt management in dedicated structure
-- **Templated**: Prompts as first-class code artifacts
-- **Benefit**: Better maintainability and A/B testing capability
 
 ---
 
@@ -376,16 +387,34 @@ Itinerary Selection → Booking Form → Payment Processing → Confirmation →
 - **Satisfaction**: User ratings, support ticket volume
 - **Growth**: Monthly active users, revenue growth
 
+---
 
-### **API Integration Strategy:**
-- **Primary AI**: Gemini 2.5 Pro (travel planning, itinerary generation)
-- **Secondary AI**: Perplexity API (real-time search, current events)
-- **Free APIs**:
-OpenWeatherMap (weather)
-REST Countries API (country data)
-OpenStreetMap (maps)
-Public transportation APIs
+## 🔮 **FUTURE ROADMAP**
 
---
+### **Phase 1: Core Platform (Current)**
+- Authentication system
+- Basic AI chat
+- Itinerary planning
+- Simple booking flow
+
+### **Phase 2: Enhanced Features**
+- Advanced AI recommendations
+- Social features
+- Mobile app
+- Payment integration
+
+### **Phase 3: Scale & Optimize**
+- Multi-language support
+- Advanced analytics
+- Enterprise features
+- API marketplace
+
+### **Phase 4: Innovation**
+- AR/VR integration
+- IoT device integration
+- Blockchain features
+- Advanced AI capabilities
+
+---
 
 This architecture document serves as the comprehensive blueprint for building Atlas into a world-class AI-powered travel planning platform. It ensures scalability, security, performance, and user experience excellence while maintaining clean, maintainable code architecture.

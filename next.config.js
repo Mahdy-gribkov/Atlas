@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Next.js 16: serverComponentsExternalPackages moved to serverExternalPackages
+  serverExternalPackages: ['firebase-admin'],
+  
   // Next.js 16: images.domains deprecated in favor of remotePatterns
   images: {
     remotePatterns: [
@@ -17,6 +20,10 @@ const nextConfig = {
   // Support for src/ directory
   pageExtensions: ['ts', 'tsx', 'js', 'jsx'],
   
+  // Turbopack configuration for Next.js 16
+  turbopack: {
+    root: process.cwd(),
+  },
   async headers() {
     return [
       {

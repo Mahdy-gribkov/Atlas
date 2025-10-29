@@ -1,10 +1,10 @@
 "use client";
 
 import React, { Suspense } from 'react';
+import { SessionProvider } from 'next-auth/react';
 import { AtlasThemeProvider } from '@/components/theme/theme-provider';
-import { ToastProvider, Toaster } from '@/components/ui/feedback';
-import { ErrorBoundary } from '@/components/ui/feedback';
-import { AuthProvider } from './AuthProvider';
+import { ToastProvider, Toaster } from '@/components/ui/toaster';
+import { ErrorBoundary } from '@/components/ui/errorboundary';
 
 interface AppProviderProps {
   children: React.ReactNode;
@@ -27,7 +27,7 @@ function LoadingFallback() {
 export function AppProvider({ children }: AppProviderProps) {
   return (
     <ErrorBoundary>
-      <AuthProvider>
+      <SessionProvider>
         <AtlasThemeProvider
           attribute="data-theme"
           defaultTheme="system"
@@ -41,7 +41,7 @@ export function AppProvider({ children }: AppProviderProps) {
             <Toaster />
           </ToastProvider>
         </AtlasThemeProvider>
-      </AuthProvider>
+      </SessionProvider>
     </ErrorBoundary>
   );
 }
